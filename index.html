@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>ARCADIA</title>
+
+  <meta name="theme-color" content="#07040f" />
+  <meta name="application-name" content="ARCADIA" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="ARCADIA" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/images/arcadia-icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/images/arcadia-icon-512.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/images/arcadia-icon-180.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <video class="bg-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <source src="BackgroundVideo.mp4" type="video/mp4" />
+  </video>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <div id="app" class="app">
+    <section id="bootScreen" class="boot-screen">
+      <div class="boot-console">
+        <p class="system-line">ARCADIA SYSTEM</p>
+        <h1>ARCADIA</h1>
+        <div class="boot-loader" aria-hidden="true"><span></span></div>
+        <button id="skipBootBtn" class="arcade-btn primary" type="button">Connecting Controller...</button>
+      </div>
+    </section>
+
+    <section id="nameScreen" class="name-screen hidden">
+      <div class="name-card">
+        <p class="system-line">New Player</p>
+        <h1>Enter Arcade</h1>
+        <p>Create a player profile to save scores, XP, coins, and achievements.</p>
+        <form id="playerForm" class="player-form">
+          <label for="playerName">Player Name</label>
+          <div class="input-row">
+            <input id="playerName" maxlength="16" autocomplete="off" placeholder="PLAYER 1" required />
+            <button class="arcade-btn primary" type="submit">Start</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="homeScreen" class="screen home-screen hidden">
+      <header class="arcade-header">
+        <h1>ARCADIA</h1>
+        <button id="openProfileBtn" class="player-strip" type="button">
+          <strong id="playerHandle">PLAYER</strong>
+          <small id="playerLevel">Level 1</small>
+          <em class="coin-pill"><b id="headerCoins">0</b> Coins</em>
+        </button>
+        <div id="headerXpTrack" class="header-xp-track" role="progressbar" aria-label="Level progress" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0">
+          <span id="headerXpFill"></span>
+        </div>
+        <p id="headerXpText" class="header-xp-text">0 / 500 XP to Level 2</p>
+      </header>
+
+      <main class="home-content">
+        <div class="search-wrap">
+          <input id="gameSearch" type="search" placeholder="Search games" autocomplete="off" />
+          <button id="clearSearchBtn" type="button" aria-label="Clear search">X</button>
+        </div>
+
+        <section class="game-library">
+          <div class="section-row">
+            <p class="system-line">Game Library</p>
+            <span id="gameCount">1 Available</span>
+          </div>
+          <div id="gameGrid" class="game-list"></div>
+        </section>
+      </main>
+    </section>
+
+    <section id="profileScreen" class="screen profile-screen hidden">
+      <header class="page-top">
+        <button id="backFromProfileBtn" class="arcade-btn secondary" type="button">Back</button>
+        <h1>Player Profile</h1>
+      </header>
+
+      <main class="profile-content">
+        <section class="profile-hero panel">
+          <div class="profile-avatar" id="profileAvatar">P</div>
+          <div>
+            <p class="system-line">Arcade Player</p>
+            <h2 id="profileName">PLAYER</h2>
+            <p id="profileStatus">Level 1 arcade player.</p>
+          </div>
+          <button id="profileShareBtn" class="arcade-btn primary" type="button">Share</button>
+        </section>
+
+        <section class="progress-panel panel">
+          <div class="progress-head">
+            <div>
+              <span>Level</span>
+              <strong id="levelNumber">1</strong>
+            </div>
+            <small id="xpText">0 / 500 XP</small>
+          </div>
+          <div class="xp-track"><span id="xpFill"></span></div>
+        </section>
+
+        <section class="stats-grid">
+          <div class="stat-card"><span>Total XP</span><strong id="profileXp">0</strong></div>
+          <div class="stat-card"><span>Coins</span><strong id="profileCoins">0</strong></div>
+          <div class="stat-card"><span>Games Played</span><strong id="profileGames">0</strong></div>
+          <div class="stat-card"><span>Snake Best</span><strong id="profileSnakeBest">0</strong></div>
+          <div class="stat-card"><span>Favorite</span><strong id="profileFavorite">Snake</strong></div>
+          <div class="stat-card"><span>Badges</span><strong id="profileAchievements">0</strong></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-row">
+            <p class="system-line">Achievements</p>
+            <span id="achievementCount">0 / 5</span>
+          </div>
+          <div id="achievementList" class="achievement-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-row">
+            <p class="system-line">Leaderboard</p>
+            <span>Preview</span>
+          </div>
+          <div id="leaderboardPreview" class="scoreboard"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-row">
+            <p class="system-line">Rewards Store</p>
+            <span id="storePreviewCoins">0 Coins</span>
+          </div>
+          <div id="storeGrid" class="store-grid"></div>
+        </section>
+      </main>
+    </section>
+
+    <section id="gameScreen" class="screen game-screen hidden">
+      <header class="page-top">
+        <button id="exitGameBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Snake</h1>
+        <button id="topPauseSnakeBtn" class="arcade-btn secondary game-pause-btn" type="button">Pause</button>
+      </header>
+
+      <main class="game-content">
+        <section class="snake-stage panel">
+          <div class="game-hud">
+            <div><span>Score</span><strong id="snakeScore">0</strong></div>
+            <div><span>Best</span><strong id="snakeBest">0</strong></div>
+            <div><span>Streak</span><strong id="snakeStreak">0</strong></div>
+          </div>
+
+          <div class="canvas-shell">
+            <canvas id="snakeCanvas" width="480" height="480" aria-label="Snake game board"></canvas>
+          </div>
+
+          <div class="reward-preview">
+            <div><span>XP Preview</span><strong id="snakeXpPreview">12</strong></div>
+            <div><span>Coins</span><strong id="snakeCoinPreview">0</strong></div>
+          </div>
+
+          <div class="game-actions">
+            <button id="startSnakeBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="pauseSnakeBtn" class="arcade-btn secondary" type="button">Pause</button>
+            <button id="restartSnakeBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint">Desktop: arrows, WASD, or space. Mobile: swipe on the board.</p>
+        </section>
+      </main>
+    </section>
+
+    <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+    <div id="gameOverModal" class="modal hidden">
+      <div class="modal-card">
+        <p class="system-line">Classic Results</p>
+        <h2>Game Over</h2>
+        <div id="newBestBadge" class="new-best hidden">New High Score</div>
+        <div class="result-grid">
+          <div><span>Score</span><strong id="resultScore">0</strong></div>
+          <div><span>XP</span><strong id="resultXp">0</strong></div>
+          <div><span>Coins</span><strong id="resultCoins">0</strong></div>
+          <div><span>Best</span><strong id="resultBest">0</strong></div>
+        </div>
+        <div id="resultAchievements" class="result-achievements"></div>
+        <p id="resultMessage">Keep playing and beat your score.</p>
+        <div class="modal-actions">
+          <button id="retrySnakeBtn" class="arcade-btn primary" type="button">Retry</button>
+          <button id="closeResultBtn" class="arcade-btn secondary" type="button">Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
