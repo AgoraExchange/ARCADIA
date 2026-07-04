@@ -3,9 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "2026.07.04.01";
+  const APP_VERSION = "2.7.4.26";
   const VERSION_URL = "app-version.json";
   const PATCH_NOTES = [
+    "Version labels now use the ARCADIA release and deploy date format.",
+    "Developer Mode version text now has a static fallback for cached mobile browsers.",
     "Home-screen app update checks now refresh the live PWA cache without deleting player data.",
     "Developer Mode now shows the installed ARCADIA version.",
     "Block Grid and Star Invaders now use Pause controls instead of Rules buttons.",
@@ -790,6 +792,10 @@
   function renderAppVersion() {
     if (!el.appVersionText) return;
     el.appVersionText.textContent = `Version ${APP_VERSION}`;
+  }
+
+  function normalizeVersion(value) {
+    return String(value || "").trim();
   }
 
   function resumeCurrentTheme() {
@@ -3001,7 +3007,8 @@
       // Offline or blocked requests fall back to the installed version.
     }
 
-    const previousVersion = localStorage.getItem(VERSION_KEY) || APP_VERSION;
+    remoteVersion = normalizeVersion(remoteVersion) || APP_VERSION;
+    const previousVersion = normalizeVersion(localStorage.getItem(VERSION_KEY)) || APP_VERSION;
     const hasRemoteUpdate = remoteVersion !== APP_VERSION || previousVersion !== APP_VERSION;
 
     try {
@@ -3298,10 +3305,12 @@
     });
 
     el.snakeCanvas.addEventListener("pointerup", (event) => {
+      event.preventDefault();
       if (touchStart?.pointerId === event.pointerId) touchStart = null;
     });
 
-    el.snakeCanvas.addEventListener("pointercancel", () => {
+    el.snakeCanvas.addEventListener("pointercancel", (event) => {
+      event.preventDefault();
       touchStart = null;
     });
 

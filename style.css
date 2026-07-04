@@ -91,6 +91,7 @@ body {
 body {
   overflow: hidden;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body::before {
@@ -433,6 +434,17 @@ input:focus {
     calc(18px + var(--safe-right))
     calc(24px + var(--safe-bottom))
     calc(18px + var(--safe-left));
+}
+
+.game-screen,
+.canvas-shell,
+.block-stage,
+.star-stage,
+.game-actions,
+.star-controls {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .game-screen {
@@ -1393,6 +1405,9 @@ input:focus {
   background: #05030b;
   border: 1px solid rgba(196, 113, 255, 0.26);
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .block-board {

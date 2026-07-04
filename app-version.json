@@ -1,6 +1,8 @@
 {
-  "version": "2026.07.04.01",
+  "version": "2.7.4.26",
   "patchNotes": [
+    "Version labels now use the ARCADIA release and deploy date format.",
+    "Developer Mode version text now has a static fallback for cached mobile browsers.",
     "Home-screen app update checks now refresh the live PWA cache without deleting player data.",
     "Developer Mode now shows the installed ARCADIA version.",
     "Progress modal scrolling improved for smaller phones.",
