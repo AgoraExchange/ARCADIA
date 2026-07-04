@@ -3,9 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "2.7.4.26";
+  const APP_VERSION = "3.7.4.26";
   const VERSION_URL = "app-version.json";
+  const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Developer Operator Gate added with gated Dev Mode tools.",
+    "Dev Mode can now edit player level and coins for testing.",
     "Version labels now use the ARCADIA release and deploy date format.",
     "Developer Mode version text now has a static fallback for cached mobile browsers.",
     "Home-screen app update checks now refresh the live PWA cache without deleting player data.",
@@ -70,6 +73,7 @@
     boosterLevelTarget: null,
     muteSfx: false,
     muteMusic: false,
+    devModeEnabled: false,
     activityLog: [],
     stats: {
       gamesPlayed: 0,
@@ -312,8 +316,21 @@
     toggleMusicBtn: $("toggleMusicBtn"),
     checkUpdatesBtn: $("checkUpdatesBtn"),
     openRenameBtn: $("openRenameBtn"),
+    devUnlockedControls: $("devUnlockedControls"),
+    editLevelBtn: $("editLevelBtn"),
+    editCoinsBtn: $("editCoinsBtn"),
+    devLevelValue: $("devLevelValue"),
+    devCoinsValue: $("devCoinsValue"),
     closeDeveloperBtn: $("closeDeveloperBtn"),
+    openBackdoorBtn: $("openBackdoorBtn"),
     appVersionText: $("appVersionText"),
+    backdoorModal: $("backdoorModal"),
+    backdoorForm: $("backdoorForm"),
+    developerAccessCode: $("developerAccessCode"),
+    closeBackdoorBtn: $("closeBackdoorBtn"),
+    devModeModal: $("devModeModal"),
+    devModeToggle: $("devModeToggle"),
+    closeDevModeBtn: $("closeDevModeBtn"),
     progressModal: $("progressModal"),
     closeProgressBtn: $("closeProgressBtn"),
     progressMostXp: $("progressMostXp"),
@@ -412,6 +429,7 @@
       boosterLevelTarget: Number.isFinite(Number(saved?.boosterLevelTarget)) ? Number(saved.boosterLevelTarget) : null,
       muteSfx: Boolean(saved?.muteSfx),
       muteMusic: Boolean(saved?.muteMusic),
+      devModeEnabled: Boolean(saved?.devModeEnabled),
       stats: { ...clone(defaultState.stats), ...(saved?.stats || {}) },
       owned: Array.isArray(saved?.owned) ? saved.owned : [],
       achievements: Array.isArray(saved?.achievements) ? saved.achievements : [],
@@ -794,6 +812,14 @@
     el.appVersionText.textContent = `Version ${APP_VERSION}`;
   }
 
+  function renderDeveloperTools() {
+    if (!el.devUnlockedControls) return;
+    el.devUnlockedControls.classList.toggle("hidden", !state.devModeEnabled);
+    if (el.devModeToggle) el.devModeToggle.checked = Boolean(state.devModeEnabled);
+    if (el.devLevelValue) el.devLevelValue.textContent = formatNumber(state.level);
+    if (el.devCoinsValue) el.devCoinsValue.textContent = formatNumber(state.coins);
+  }
+
   function normalizeVersion(value) {
     return String(value || "").trim();
   }
@@ -975,6 +1001,7 @@
     renderProgressModal();
     updateAudioToggleButtons();
     renderAppVersion();
+    renderDeveloperTools();
     renderSnakeStats();
     renderBlockStats();
     renderStarStats();
@@ -3049,6 +3076,72 @@
     showToast("Profile Updated", `${state.playerName} is now linked.`, "win", 5000);
   }
 
+  function openBackdoorModal() {
+    el.developerAccessCode.value = "";
+    el.developerModal.classList.add("hidden");
+    el.backdoorModal.classList.remove("hidden");
+    el.developerAccessCode.focus();
+  }
+
+  function openDevModeModal() {
+    el.backdoorModal.classList.add("hidden");
+    el.devModeToggle.checked = Boolean(state.devModeEnabled);
+    el.devModeModal.classList.remove("hidden");
+  }
+
+  function unlockDevMode(event) {
+    event.preventDefault();
+    const code = el.developerAccessCode.value.trim().toLowerCase();
+    if (code !== DEV_ACCESS_CODE) {
+      showToast("Access Denied", "Operator code rejected.", "fail", 3500);
+      return;
+    }
+    playTone("win");
+    openDevModeModal();
+  }
+
+  function setDevModeEnabled(enabled) {
+    state.devModeEnabled = Boolean(enabled);
+    saveState();
+    renderAll();
+    showToast("Dev Mode", state.devModeEnabled ? "Operator tools unlocked." : "Operator tools hidden.", "win", 4000);
+  }
+
+  function editPlayerLevel() {
+    if (!state.devModeEnabled) return;
+    const current = deriveLevel(state.xp);
+    const input = window.prompt("Set player level", String(current));
+    if (input === null) return;
+    const nextLevel = Math.max(1, Math.min(999, Math.floor(Number(input))));
+    if (!Number.isFinite(nextLevel)) {
+      showToast("Invalid Level", "Enter a number from 1 to 999.", "fail", 3500);
+      return;
+    }
+    state.xp = xpForLevel(nextLevel);
+    state.level = deriveLevel(state.xp);
+    if (state.boosterLevelTarget && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    unlockEarnedAchievements();
+    saveState();
+    headerSeenXp = Number(state.xp) || 0;
+    renderAll();
+    showToast("Level Updated", `Player level set to ${state.level}.`, "win", 4000);
+  }
+
+  function editPlayerCoins() {
+    if (!state.devModeEnabled) return;
+    const input = window.prompt("Set player coins", String(state.coins));
+    if (input === null) return;
+    const nextCoins = Math.max(0, Math.min(999999999, Math.floor(Number(input))));
+    if (!Number.isFinite(nextCoins)) {
+      showToast("Invalid Coins", "Enter a valid coin amount.", "fail", 3500);
+      return;
+    }
+    state.coins = nextCoins;
+    saveState();
+    renderAll();
+    showToast("Coins Updated", `${formatNumber(state.coins)} coins loaded.`, "win", 4000);
+  }
+
   function loadImageFile(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -3183,7 +3276,21 @@
     el.toggleMusicBtn.addEventListener("click", toggleSoundtrack);
     el.checkUpdatesBtn.addEventListener("click", searchForUpdates);
     el.openRenameBtn.addEventListener("click", openRenameModal);
+    el.editLevelBtn.addEventListener("click", editPlayerLevel);
+    el.editCoinsBtn.addEventListener("click", editPlayerCoins);
     el.closeRenameBtn.addEventListener("click", () => el.renameModal.classList.add("hidden"));
+    el.openBackdoorBtn.addEventListener("click", openBackdoorModal);
+    el.closeBackdoorBtn.addEventListener("click", () => {
+      el.backdoorModal.classList.add("hidden");
+      el.developerModal.classList.remove("hidden");
+    });
+    el.backdoorForm.addEventListener("submit", unlockDevMode);
+    el.closeDevModeBtn.addEventListener("click", () => {
+      el.devModeModal.classList.add("hidden");
+      el.developerModal.classList.remove("hidden");
+      renderDeveloperTools();
+    });
+    el.devModeToggle.addEventListener("change", () => setDevModeEnabled(el.devModeToggle.checked));
     el.renameForm.addEventListener("submit", (event) => {
       event.preventDefault();
       renamePlayer(el.renamePlayerName.value);

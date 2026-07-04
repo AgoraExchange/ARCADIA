@@ -1,6 +1,8 @@
 {
-  "version": "2.7.4.26",
+  "version": "3.7.4.26",
   "patchNotes": [
+    "Developer Operator Gate added with gated Dev Mode tools.",
+    "Dev Mode can now edit player level and coins for testing.",
     "Version labels now use the ARCADIA release and deploy date format.",
     "Developer Mode version text now has a static fallback for cached mobile browsers.",
     "Home-screen app update checks now refresh the live PWA cache without deleting player data.",

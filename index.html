@@ -321,9 +321,49 @@
           <button id="toggleMusicBtn" class="arcade-btn secondary audio-toggle-btn" type="button">Soundtrack: On</button>
           <button id="checkUpdatesBtn" class="arcade-btn primary" type="button">Search for Updates</button>
           <button id="openRenameBtn" class="arcade-btn secondary" type="button">Profile Name</button>
+          <div id="devUnlockedControls" class="dev-unlocked-controls hidden">
+            <button id="editLevelBtn" class="arcade-btn secondary dev-stat-btn" type="button">
+              <span>Level:</span>
+              <strong id="devLevelValue">1</strong>
+            </button>
+            <button id="editCoinsBtn" class="arcade-btn secondary dev-stat-btn" type="button">
+              <span>Coins:</span>
+              <strong id="devCoinsValue">0</strong>
+            </button>
+          </div>
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
+          <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 2.7.4.26</p>
+        <p id="appVersionText" class="app-version-text">Version 3.7.4.26</p>
+      </div>
+    </div>
+
+    <div id="backdoorModal" class="modal hidden">
+      <div class="modal-card dev-card">
+        <button id="closeBackdoorBtn" class="modal-x" type="button" aria-label="Close">X</button>
+        <p class="system-line">Operator Gate</p>
+        <h2>Access Code</h2>
+        <form id="backdoorForm" class="player-form">
+          <label for="developerAccessCode">Developer Access Code</label>
+          <div class="input-row">
+            <input id="developerAccessCode" type="password" autocomplete="off" placeholder="ENTER CODE" required />
+            <button class="arcade-btn primary" type="submit">Unlock</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="devModeModal" class="modal hidden">
+      <div class="modal-card dev-card">
+        <button id="closeDevModeBtn" class="modal-x" type="button" aria-label="Close">X</button>
+        <p class="system-line">Developer Access</p>
+        <h2>Dev Mode</h2>
+        <p class="dev-warning">Warning: enabling Dev Mode unlocks arcade operator tools. You can alter player data, access hidden controls, and override normal progression. Use it only for testing.</p>
+        <label class="dev-switch">
+          <input id="devModeToggle" type="checkbox" />
+          <span></span>
+          <strong>Dev Mode</strong>
+        </label>
       </div>
     </div>
 
