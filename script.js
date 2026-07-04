@@ -3,8 +3,9 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "2026.07.03.3";
+  const APP_VERSION = "2026.07.03.4";
   const PATCH_NOTES = [
+    "Game over sound effect added for failed runs.",
     "Theme song folders added for lobby and game music.",
     "Lobby music now loops on the dashboard and Snake music starts with the run.",
     "Landscape background video added for laptop and wider screens.",
@@ -17,6 +18,7 @@
   const XP_LEVEL_STEP = 150;
   const GRID_SIZE = 20;
   const GAME_TICK_MS = 112;
+  const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const THEME_SONGS = {
     lobby: [
       "assets/themesong/lobby/lobby1.mp3",
@@ -159,6 +161,7 @@
   let activeStoreTab = "player";
   let storeCountdownTimer = null;
   let themeAudio = null;
+  let gameOverAudio = null;
   let activeTheme = "";
   let themeFadeTimer = null;
   const toastQueue = [];
@@ -419,6 +422,27 @@
       });
     } catch {
       // Optional browser audio.
+    }
+  }
+
+  function getGameOverAudio() {
+    if (!gameOverAudio) {
+      gameOverAudio = new Audio(GAME_OVER_SFX);
+      gameOverAudio.preload = "auto";
+      gameOverAudio.volume = 0.86;
+    }
+    return gameOverAudio;
+  }
+
+  async function playGameOverSound() {
+    try {
+      const audio = getGameOverAudio();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = 0.86;
+      await audio.play();
+    } catch {
+      playFailTone();
     }
   }
 
@@ -1321,7 +1345,11 @@
   function endSnakeRun(reason = "crash") {
     if (!snake.running) return;
     stopSnake();
-    playTone(reason === "manual" ? "tap" : "fail");
+    if (reason === "manual") {
+      playTone("tap");
+    } else {
+      playGameOverSound();
+    }
     stopGameTheme(reason === "crash" ? "death" : "stop");
 
     const previousBest = state.stats.snakeBest;
