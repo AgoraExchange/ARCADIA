@@ -2134,6 +2134,38 @@ input:focus {
   line-height: 1.48;
 }
 
+.modal-card.access-denied {
+  animation: accessDeniedShake 0.42s ease;
+  border-color: rgba(255, 82, 117, 0.88);
+  box-shadow:
+    0 0 0 3px rgba(255, 82, 117, 0.2),
+    0 0 34px rgba(255, 82, 117, 0.34),
+    var(--shadow);
+}
+
+@keyframes accessDeniedShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  18% {
+    transform: translateX(-9px);
+  }
+
+  36% {
+    transform: translateX(8px);
+  }
+
+  54% {
+    transform: translateX(-6px);
+  }
+
+  72% {
+    transform: translateX(5px);
+  }
+}
+
 .connection-ready {
   color: var(--green) !important;
   font-family: var(--font-display);

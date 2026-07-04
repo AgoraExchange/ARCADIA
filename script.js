@@ -3093,6 +3093,10 @@
     event.preventDefault();
     const code = el.developerAccessCode.value.trim().toLowerCase();
     if (code !== DEV_ACCESS_CODE) {
+      const card = el.backdoorModal.querySelector(".modal-card");
+      card?.classList.remove("access-denied");
+      void card?.offsetWidth;
+      card?.classList.add("access-denied");
       showToast("Access Denied", "Operator code rejected.", "fail", 3500);
       return;
     }
