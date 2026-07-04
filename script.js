@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "3.7.4.26";
+  const APP_VERSION = "4.7.4.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Operator Gate now shakes and flashes red when the access code is wrong.",
     "Developer Operator Gate added with gated Dev Mode tools.",
     "Dev Mode can now edit player level and coins for testing.",
     "Version labels now use the ARCADIA release and deploy date format.",
