@@ -13,14 +13,24 @@
   <meta name="format-detection" content="telephone=no" />
 
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/images/arcadia-icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/images/arcadia-icon-512.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/images/arcadia-icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/images/arcadia-logo-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/images/arcadia-logo-512.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/images/arcadia-logo-180.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <video class="bg-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
-    <source src="BackgroundVideo.mp4" type="video/mp4" />
+  <video
+    id="bgVideo"
+    class="bg-video"
+    muted
+    loop
+    playsinline
+    preload="auto"
+    aria-hidden="true"
+    data-mobile-src="assets/background/background-video-mobile.mp4"
+    data-landscape-src="assets/background/background-video-landscape.mp4"
+  >
+    <source src="assets/background/background-video-mobile.mp4" type="video/mp4" />
   </video>
   <div class="noise" aria-hidden="true"></div>
   <div class="scanlines" aria-hidden="true"></div>
@@ -44,7 +54,7 @@
           <label for="playerName">Player Name</label>
           <div class="input-row">
             <input id="playerName" maxlength="16" autocomplete="off" placeholder="PLAYER 1" required />
-            <button class="arcade-btn primary" type="submit">Start</button>
+            <button class="arcade-btn primary" type="submit">Enter Arcadia</button>
           </div>
         </form>
       </div>
@@ -87,14 +97,18 @@
       </header>
 
       <main class="profile-content">
-        <section class="profile-hero panel">
-          <div class="profile-avatar" id="profileAvatar">P</div>
-          <div>
+        <section id="profileHero" class="profile-hero panel">
+          <button class="profile-avatar" id="profileAvatar" type="button" aria-label="Change profile picture">P</button>
+          <input id="profilePhotoInput" class="hidden-file-input" type="file" accept="image/png,image/jpeg,image/*" />
+          <div class="profile-copy">
             <p class="system-line">Arcade Player</p>
             <h2 id="profileName">PLAYER</h2>
             <p id="profileStatus">Level 1 arcade player.</p>
           </div>
-          <button id="profileShareBtn" class="arcade-btn primary" type="button">Share</button>
+          <div class="profile-actions">
+            <button id="profileShareBtn" class="arcade-btn primary" type="button">Share</button>
+            <button id="developerModeBtn" class="arcade-btn secondary dev-mode-btn" type="button">Developer Mode</button>
+          </div>
         </section>
 
         <section class="progress-panel panel">
@@ -112,7 +126,7 @@
           <div class="stat-card"><span>Total XP</span><strong id="profileXp">0</strong></div>
           <div class="stat-card"><span>Coins</span><strong id="profileCoins">0</strong></div>
           <div class="stat-card"><span>Games Played</span><strong id="profileGames">0</strong></div>
-          <div class="stat-card"><span>Snake Best</span><strong id="profileSnakeBest">0</strong></div>
+          <div class="stat-card"><span>Favorite Best</span><strong id="profileSnakeBest">0</strong></div>
           <div class="stat-card"><span>Favorite</span><strong id="profileFavorite">Snake</strong></div>
           <div class="stat-card"><span>Badges</span><strong id="profileAchievements">0</strong></div>
         </section>
@@ -138,6 +152,15 @@
             <p class="system-line">Rewards Store</p>
             <span id="storePreviewCoins">0 Coins</span>
           </div>
+          <div class="store-controls">
+            <div class="store-tabs" role="tablist" aria-label="Reward categories">
+              <button class="store-tab active" type="button" data-store-tab="player">Player</button>
+              <button class="store-tab" type="button" data-store-tab="boosters">Boosters</button>
+            </div>
+            <div class="store-search">
+              <input id="storeSearch" type="search" placeholder="Search rewards" autocomplete="off" />
+            </div>
+          </div>
           <div id="storeGrid" class="store-grid"></div>
         </section>
       </main>
@@ -159,6 +182,7 @@
           </div>
 
           <div class="canvas-shell">
+            <div class="canvas-score-pill"><span>High Score</span><strong id="snakeLiveBest">0</strong></div>
             <canvas id="snakeCanvas" width="480" height="480" aria-label="Snake game board"></canvas>
           </div>
 
@@ -196,6 +220,48 @@
         <div class="modal-actions">
           <button id="retrySnakeBtn" class="arcade-btn primary" type="button">Retry</button>
           <button id="closeResultBtn" class="arcade-btn secondary" type="button">Dashboard</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="connectionModal" class="modal hidden">
+      <div class="modal-card connection-card">
+        <p class="system-line" id="connectionKicker">Controller Link</p>
+        <h2 id="connectionTitle">CONNECTED</h2>
+        <p id="connectionMessage" class="connection-ready">PLAYER READY</p>
+        <div class="modal-actions">
+          <button id="connectionActionBtn" class="arcade-btn primary enter-arcadia-btn" type="button">Enter Arcadia</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="developerModal" class="modal hidden">
+      <div class="modal-card dev-card">
+        <p class="system-line">Developer Mode</p>
+        <h2>Patch Console</h2>
+        <p>Check for new site files or update your player name without clearing XP, coins, scores, or badges.</p>
+        <div class="dev-actions">
+          <button id="checkUpdatesBtn" class="arcade-btn primary" type="button">Search for Updates</button>
+          <button id="openRenameBtn" class="arcade-btn secondary" type="button">Profile Name</button>
+          <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="renameModal" class="modal hidden">
+      <div class="modal-card">
+        <p class="system-line">Player Profile</p>
+        <h2>Profile Name</h2>
+        <form id="renameForm" class="player-form">
+          <label for="renamePlayerName">Player Name</label>
+          <div class="input-row">
+            <input id="renamePlayerName" maxlength="16" autocomplete="off" placeholder="PLAYER 1" required />
+            <button class="arcade-btn primary" type="submit">Save</button>
+          </div>
+          <p class="form-note">Usernames can only be changed every 7 days.</p>
+        </form>
+        <div class="modal-actions">
+          <button id="closeRenameBtn" class="arcade-btn secondary" type="button">Cancel</button>
         </div>
       </div>
     </div>
