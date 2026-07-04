@@ -406,6 +406,21 @@ input:focus {
   transform: translateY(-1px);
 }
 
+.arcade-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+  filter: grayscale(0.35);
+  transform: none;
+}
+
+.audio-toggle-btn.is-muted {
+  border-color: rgba(255, 82, 117, 0.55);
+  color: #ffd1d9;
+  background:
+    linear-gradient(135deg, rgba(255, 82, 117, 0.18), rgba(126, 91, 255, 0.12)),
+    rgba(18, 9, 38, 0.58);
+}
+
 .home-screen,
 .profile-screen,
 .game-screen {
@@ -985,17 +1000,37 @@ input:focus {
 }
 
 .profile-actions {
-  min-width: 132px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: min(330px, 36vw);
 }
 
 .profile-actions .arcade-btn {
   width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  font-size: 0.76rem;
+}
+
+.progress-mode-btn {
+  border-color: rgba(255, 218, 92, 0.72);
+  color: #fff8bd;
+  background:
+    linear-gradient(135deg, rgba(255, 214, 74, 0.24), rgba(255, 65, 171, 0.28), rgba(126, 91, 255, 0.22)),
+    rgba(18, 9, 38, 0.54);
+  box-shadow:
+    0 0 20px rgba(255, 72, 174, 0.22),
+    inset 0 0 18px rgba(255, 214, 74, 0.12);
+}
+
+.progress-mode-btn:hover {
+  box-shadow:
+    0 0 26px rgba(255, 207, 74, 0.34),
+    0 0 34px rgba(255, 72, 174, 0.22),
+    inset 0 0 22px rgba(255, 214, 74, 0.16);
 }
 
 .dev-mode-btn {
-  min-height: 38px;
-  padding: 0 12px;
-  font-size: 0.86rem;
+  min-height: 40px;
 }
 
 .profile-avatar {
@@ -1867,6 +1902,136 @@ input:focus {
   text-align: center;
 }
 
+.progress-card {
+  width: min(620px, 100%);
+}
+
+.progress-card h2 {
+  margin: 8px 0 16px;
+}
+
+.progress-xp-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.progress-xp-board article,
+.progress-game-row,
+.progress-activity-item,
+.progress-empty {
+  border: 1px solid rgba(93, 237, 255, 0.22);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 214, 74, 0.08), rgba(255, 65, 171, 0.08), rgba(93, 237, 255, 0.06)),
+    rgba(9, 10, 31, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.progress-xp-board article {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+}
+
+.progress-xp-board span,
+.progress-log-head span {
+  font-family: var(--font-ui);
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.progress-xp-board strong {
+  font-family: var(--font-game-title);
+  font-size: clamp(1rem, 3.8vw, 1.35rem);
+  color: #ffffff;
+}
+
+.progress-xp-board small,
+.progress-log-head small,
+.progress-game-row small,
+.progress-activity-item small,
+.progress-activity-item time {
+  color: rgba(241, 247, 255, 0.72);
+}
+
+.progress-game-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.progress-game-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.progress-game-row > * {
+  position: relative;
+  z-index: 1;
+}
+
+.progress-game-row strong,
+.progress-activity-item strong {
+  display: block;
+  font-family: var(--font-player);
+  color: #ffffff;
+}
+
+.progress-game-row span {
+  font-family: var(--font-numbers);
+  color: var(--green);
+  align-self: center;
+  white-space: nowrap;
+}
+
+.progress-game-row i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--xp-width);
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--pink), var(--yellow));
+  box-shadow: 0 0 18px rgba(93, 237, 255, 0.42);
+}
+
+.progress-log-head {
+  display: grid;
+  gap: 3px;
+  margin: 18px 0 10px;
+}
+
+.progress-activity-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(34vh, 320px);
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.progress-activity-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 12px;
+}
+
+.progress-activity-item time {
+  font-family: var(--font-numbers);
+  white-space: nowrap;
+}
+
+.progress-empty {
+  padding: 14px;
+  color: rgba(241, 247, 255, 0.76);
+}
+
 .connection-card h2,
 .dev-card h2 {
   margin-top: 8px;
@@ -2250,11 +2415,14 @@ input:focus {
 
   .profile-actions {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-width: 0;
   }
 
   .profile-actions .arcade-btn {
     min-width: 0;
+    padding-inline: 7px;
+    font-size: 0.7rem;
   }
 
   .stats-grid,
@@ -2345,6 +2513,11 @@ input:focus {
   }
 
   .profile-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .progress-xp-board,
+  .progress-activity-item {
     grid-template-columns: 1fr;
   }
 }

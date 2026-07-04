@@ -3,8 +3,10 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "2026.07.03.10";
+  const APP_VERSION = "2026.07.03.11";
   const PATCH_NOTES = [
+    "Block Grid and Star Invaders now use Pause controls instead of Rules buttons.",
+    "Developer Mode audio toggles added for sound effects and soundtrack music.",
     "Star Invaders added with joystick, shooting, enemies, bosses, and meteors.",
     "Block Grid start, grab, and place sound effects added.",
     "Block Grid start reveal animation added before pieces appear.",
@@ -61,7 +63,10 @@
     boosterPurchases: 0,
     boosterUses: 0,
     boosterLevelTarget: null,
-      stats: {
+    muteSfx: false,
+    muteMusic: false,
+    activityLog: [],
+    stats: {
       gamesPlayed: 0,
       snakeRuns: 0,
       snakeBest: 0,
@@ -237,6 +242,7 @@
     profileName: $("profileName"),
     profileStatus: $("profileStatus"),
     profileShareBtn: $("profileShareBtn"),
+    progressModeBtn: $("progressModeBtn"),
     developerModeBtn: $("developerModeBtn"),
     levelNumber: $("levelNumber"),
     xpText: $("xpText"),
@@ -266,7 +272,7 @@
     restartSnakeBtn: $("restartSnakeBtn"),
     exitGameBtn: $("exitGameBtn"),
     exitBlockBtn: $("exitBlockBtn"),
-    blockHelpBtn: $("blockHelpBtn"),
+    blockPauseBtn: $("blockPauseBtn"),
     blockBoard: $("blockBoard"),
     blockTray: $("blockTray"),
     blockScore: $("blockScore"),
@@ -277,7 +283,7 @@
     startBlockBtn: $("startBlockBtn"),
     restartBlockBtn: $("restartBlockBtn"),
     exitStarBtn: $("exitStarBtn"),
-    starHelpBtn: $("starHelpBtn"),
+    starPauseBtn: $("starPauseBtn"),
     starCanvas: $("starCanvas"),
     starScore: $("starScore"),
     starBest: $("starBest"),
@@ -297,9 +303,19 @@
     connectionMessage: $("connectionMessage"),
     connectionActionBtn: $("connectionActionBtn"),
     developerModal: $("developerModal"),
+    toggleSfxBtn: $("toggleSfxBtn"),
+    toggleMusicBtn: $("toggleMusicBtn"),
     checkUpdatesBtn: $("checkUpdatesBtn"),
     openRenameBtn: $("openRenameBtn"),
     closeDeveloperBtn: $("closeDeveloperBtn"),
+    progressModal: $("progressModal"),
+    closeProgressBtn: $("closeProgressBtn"),
+    progressMostXp: $("progressMostXp"),
+    progressMostXpMeta: $("progressMostXpMeta"),
+    progressLeastXp: $("progressLeastXp"),
+    progressLeastXpMeta: $("progressLeastXpMeta"),
+    progressGameXpList: $("progressGameXpList"),
+    progressActivityList: $("progressActivityList"),
     renameModal: $("renameModal"),
     renameForm: $("renameForm"),
     renamePlayerName: $("renamePlayerName"),
@@ -356,9 +372,12 @@
       boosterPurchases: Number.isFinite(Number(saved?.boosterPurchases)) ? Number(saved.boosterPurchases) : 0,
       boosterUses: Number.isFinite(Number(saved?.boosterUses)) ? Number(saved.boosterUses) : 0,
       boosterLevelTarget: Number.isFinite(Number(saved?.boosterLevelTarget)) ? Number(saved.boosterLevelTarget) : null,
+      muteSfx: Boolean(saved?.muteSfx),
+      muteMusic: Boolean(saved?.muteMusic),
       stats: { ...clone(defaultState.stats), ...(saved?.stats || {}) },
       owned: Array.isArray(saved?.owned) ? saved.owned : [],
-      achievements: Array.isArray(saved?.achievements) ? saved.achievements : []
+      achievements: Array.isArray(saved?.achievements) ? saved.achievements : [],
+      activityLog: Array.isArray(saved?.activityLog) ? saved.activityLog.slice(0, 40) : []
     };
   }
 
@@ -375,6 +394,16 @@
     if (Math.abs(number) < 1000) return formatNumber(number);
     const compact = number / 1000;
     return `${compact >= 10 || Number.isInteger(compact) ? Math.floor(compact) : Math.floor(compact * 10) / 10}k`;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
   }
 
   function deriveLevel(xp) {
@@ -426,6 +455,7 @@
   }
 
   function playTone(kind = "tap") {
+    if (state.muteSfx) return;
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
       if (kind === "fail") {
@@ -458,6 +488,7 @@
   }
 
   function playFailTone() {
+    if (state.muteSfx) return;
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
       const now = audioCtx.currentTime;
@@ -504,6 +535,7 @@
   }
 
   async function playGameOverSound() {
+    if (state.muteSfx) return;
     try {
       const audio = getGameOverAudio();
       audio.pause();
@@ -525,6 +557,7 @@
   }
 
   async function playLevelUpSound() {
+    if (state.muteSfx) return;
     try {
       const audio = getLevelUpAudio();
       audio.pause();
@@ -537,6 +570,7 @@
   }
 
   function playOneShotSfx(src, volume = 0.85) {
+    if (state.muteSfx) return;
     try {
       const audio = new Audio(src);
       audio.preload = "auto";
@@ -571,6 +605,7 @@
   }
 
   function playToneAt(frequency, duration = 0.055, type = "square", volume = 0.06) {
+    if (state.muteSfx) return;
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
       const osc = audioCtx.createOscillator();
@@ -638,6 +673,11 @@
   async function playTheme(src, key, options = {}) {
     const audio = getThemeAudio();
     if (!src) return;
+    if (state.muteMusic) {
+      activeTheme = "";
+      fadeThemeOut(160);
+      return;
+    }
     if (activeTheme === key && !audio.paused && !options.restart) return;
 
     if (audio.src && !audio.paused && options.transition) {
@@ -703,6 +743,49 @@
     fadeThemeOut(420);
   }
 
+  function updateAudioToggleButtons() {
+    if (!el.toggleSfxBtn || !el.toggleMusicBtn) return;
+    el.toggleSfxBtn.textContent = `Sound FX: ${state.muteSfx ? "Off" : "On"}`;
+    el.toggleMusicBtn.textContent = `Soundtrack: ${state.muteMusic ? "Off" : "On"}`;
+    el.toggleSfxBtn.classList.toggle("is-muted", state.muteSfx);
+    el.toggleMusicBtn.classList.toggle("is-muted", state.muteMusic);
+  }
+
+  function resumeCurrentTheme() {
+    if (state.muteMusic) return;
+    if (currentScreen === "home") {
+      playLobbyTheme();
+      return;
+    }
+    if (currentScreen === "game" && snake.running) playGameTheme("snake");
+    if (currentScreen === "block" && block.running) playGameTheme("block");
+    if (currentScreen === "star" && star.running) {
+      const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
+      playStarTheme(bossOnScreen ? "boss" : "normal");
+    }
+  }
+
+  function toggleSoundEffects() {
+    state.muteSfx = !state.muteSfx;
+    saveState();
+    updateAudioToggleButtons();
+    if (!state.muteSfx) playTone("win");
+    showToast("Sound FX", state.muteSfx ? "Sound effects muted." : "Sound effects enabled.", "silent", 3000);
+  }
+
+  function toggleSoundtrack() {
+    state.muteMusic = !state.muteMusic;
+    saveState();
+    updateAudioToggleButtons();
+    if (state.muteMusic) {
+      fadeThemeOut(180);
+      showToast("Soundtrack", "Soundtrack muted.", "silent", 3000);
+      return;
+    }
+    resumeCurrentTheme();
+    showToast("Soundtrack", "Soundtrack enabled.", "silent", 3000);
+  }
+
   function showToast(title, text, kind = "tap", duration = 3000) {
     const key = `${title}::${text}`;
     const now = Date.now();
@@ -712,8 +795,26 @@
     if (activeToasts.has(key) || alreadyQueued || now - lastShown < 6000) return;
 
     toastCooldowns.set(key, now);
+    recordActivity(title, text, kind);
     toastQueue.push({ key, title, text, kind, duration });
     drainToastQueue();
+  }
+
+  function recordActivity(title, text, kind = "tap") {
+    const ignored = new Set(["Coming Soon", "Start Game", "No Updates Found", "Share Canceled"]);
+    if (ignored.has(title)) return;
+    state.activityLog = [
+      {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        title,
+        text,
+        kind,
+        at: Date.now()
+      },
+      ...(Array.isArray(state.activityLog) ? state.activityLog : [])
+    ].slice(0, 40);
+    saveState();
+    if (!el.progressModal?.classList.contains("hidden")) renderProgressModal();
   }
 
   function drainToastQueue() {
@@ -824,6 +925,8 @@
     renderAchievements();
     renderLeaderboard();
     renderStore();
+    renderProgressModal();
+    updateAudioToggleButtons();
     renderSnakeStats();
     renderBlockStats();
     renderStarStats();
@@ -971,6 +1074,81 @@
     el.profileSnakeBest.textContent = formatNumber(favorite.best);
     el.profileFavorite.textContent = favorite.title;
     el.profileAchievements.textContent = `${state.achievements.length}/${achievements.length}`;
+  }
+
+  function getGameProgressRows() {
+    return [
+      {
+        title: "Snake",
+        xp: Number(state.stats.snakeXpEarned) || 0,
+        runs: Number(state.stats.snakeRuns) || 0,
+        best: Number(state.stats.snakeBest) || 0,
+        metricLabel: "Best"
+      },
+      {
+        title: "Block Grid",
+        xp: Number(state.stats.blockXpEarned) || 0,
+        runs: Number(state.stats.blockRuns) || 0,
+        best: Number(state.stats.blockBest) || 0,
+        metricLabel: "Best"
+      },
+      {
+        title: "Star Invaders",
+        xp: Number(state.stats.starXpEarned) || 0,
+        runs: Number(state.stats.starRuns) || 0,
+        best: Number(state.stats.starBossKills) || 0,
+        metricLabel: "Bosses"
+      }
+    ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
+  }
+
+  function formatActivityTime(timestamp) {
+    const elapsed = Math.max(0, Date.now() - (Number(timestamp) || Date.now()));
+    const minutes = Math.floor(elapsed / 60000);
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  }
+
+  function renderProgressModal() {
+    const rows = getGameProgressRows();
+    const playedRows = rows.filter((row) => row.xp > 0 || row.runs > 0);
+    const most = playedRows[0] || rows[0];
+    const least = playedRows.length ? playedRows[playedRows.length - 1] : rows[rows.length - 1];
+    const maxXp = Math.max(1, ...rows.map((row) => row.xp));
+
+    el.progressMostXp.textContent = most.title;
+    el.progressMostXpMeta.textContent = `${formatNumber(most.xp)} XP earned`;
+    el.progressLeastXp.textContent = least.title;
+    el.progressLeastXpMeta.textContent = `${formatNumber(least.xp)} XP earned`;
+    el.progressGameXpList.innerHTML = rows.map((row) => {
+      const pct = Math.max(4, Math.round((row.xp / maxXp) * 100));
+      return `
+        <div class="progress-game-row">
+          <div>
+            <strong>${escapeHtml(row.title)}</strong>
+            <small>${formatNumber(row.runs)} plays &middot; ${escapeHtml(row.metricLabel)} ${formatNumber(row.best)}</small>
+          </div>
+          <span>${formatNumber(row.xp)} XP</span>
+          <i style="--xp-width: ${pct}%"></i>
+        </div>
+      `;
+    }).join("");
+
+    const activity = (Array.isArray(state.activityLog) ? state.activityLog : []).slice(0, 14);
+    el.progressActivityList.innerHTML = activity.length
+      ? activity.map((item) => `
+        <article class="progress-activity-item">
+          <div>
+            <strong>${escapeHtml(item.title)}</strong>
+            <small>${escapeHtml(item.text)}</small>
+          </div>
+          <time>${formatActivityTime(item.at)}</time>
+        </article>
+      `).join("")
+      : `<div class="progress-empty">No recent notifications yet. Play a game to start filling this up.</div>`;
   }
 
   function getFavoriteGame() {
@@ -1230,6 +1408,7 @@
   function createBlockState() {
     return {
       running: false,
+      paused: false,
       board: Array.from({ length: BLOCK_GRID_SIZE }, () => Array(BLOCK_GRID_SIZE).fill(0)),
       pieces: [],
       selected: null,
@@ -1241,6 +1420,8 @@
       multiplier: 1,
       lastPieceShapeIds: [],
       runStartedAt: 0,
+      pausedAt: 0,
+      pausedMs: 0,
       starting: false,
       dragIndex: null,
       dragPointerId: null,
@@ -1347,8 +1528,22 @@
     startBlock();
   }
 
+  function toggleBlockPause() {
+    if (!block.running || block.starting) return;
+    block.paused = !block.paused;
+    if (block.paused) {
+      block.pausedAt = Date.now();
+      cleanupBlockDrag();
+    } else if (block.pausedAt) {
+      block.pausedMs += Date.now() - block.pausedAt;
+      block.pausedAt = 0;
+    }
+    renderBlock();
+    renderBlockStats();
+  }
+
   function blockCanInteract() {
-    return block.running && !block.starting && !block.clearing.length;
+    return block.running && !block.paused && !block.starting && !block.clearing.length;
   }
 
   function blockIntroColor(row, col) {
@@ -1361,7 +1556,12 @@
   }
 
   function stopBlock(render = true) {
+    if (block.paused && block.pausedAt) {
+      block.pausedMs += Date.now() - block.pausedAt;
+      block.pausedAt = 0;
+    }
     block.running = false;
+    block.paused = false;
     block.selected = null;
     cleanupBlockDrag();
     if (render) renderBlock();
@@ -1477,7 +1677,8 @@
 
   function blockElapsedSeconds() {
     if (!block.runStartedAt) return 0;
-    return Math.max(0, Math.floor((Date.now() - block.runStartedAt) / 1000));
+    const activePause = block.paused && block.pausedAt ? Date.now() - block.pausedAt : 0;
+    return Math.max(0, Math.floor((Date.now() - block.runStartedAt - block.pausedMs - activePause) / 1000));
   }
 
   function calculateBlockXp() {
@@ -1504,6 +1705,8 @@
     el.blockXpPreview.textContent = formatNumber(applyRewardBooster(calculateBlockXp()));
     el.blockCoinPreview.textContent = formatNumber(previewBlockCoins());
     el.startBlockBtn.textContent = block.running ? "End Game" : "Start Game";
+    el.blockPauseBtn.textContent = block.paused ? "Resume" : "Pause";
+    el.blockPauseBtn.disabled = !block.running || block.starting;
   }
 
   function getBlockPreviewCells() {
@@ -1780,6 +1983,7 @@
   function createStarState() {
     return {
       running: false,
+      paused: false,
       player: { x: 360, y: 590, r: 16 },
       input: { x: 0, y: 0 },
       bullets: [],
@@ -1801,6 +2005,8 @@
       meteorSpawnAt: 0,
       bossSpawnAt: 0,
       runStartedAt: 0,
+      pausedAt: 0,
+      pausedMs: 0,
       joystickPointerId: null,
       shootHeld: false
     };
@@ -1850,7 +2056,12 @@
       clearInterval(starTimer);
       starTimer = null;
     }
+    if (star.paused && star.pausedAt) {
+      star.pausedMs += Date.now() - star.pausedAt;
+      star.pausedAt = 0;
+    }
     star.running = false;
+    star.paused = false;
     star.shootHeld = false;
     resetJoystickVisual();
     if (render) {
@@ -1867,8 +2078,29 @@
     startStar();
   }
 
+  function toggleStarPause() {
+    if (!star.running) return;
+    star.paused = !star.paused;
+    if (star.paused) {
+      star.pausedAt = Date.now();
+      star.input = { x: 0, y: 0 };
+      star.shootHeld = false;
+      resetJoystickVisual();
+    } else {
+      if (star.pausedAt) {
+        star.pausedMs += Date.now() - star.pausedAt;
+        star.pausedAt = 0;
+      }
+      star.lastFrame = performance.now();
+    }
+    renderStarStats();
+    drawStar();
+  }
+
   function starElapsedSeconds() {
-    return star.runStartedAt ? Math.floor((Date.now() - star.runStartedAt) / 1000) : 0;
+    if (!star.runStartedAt) return 0;
+    const activePause = star.paused && star.pausedAt ? Date.now() - star.pausedAt : 0;
+    return Math.max(0, Math.floor((Date.now() - star.runStartedAt - star.pausedMs - activePause) / 1000));
   }
 
   function starDifficulty() {
@@ -1911,6 +2143,7 @@
   }
 
   function shootStar() {
+    if (!star.running || star.paused) return;
     const now = performance.now();
     if (now - star.lastShotAt < 190) return;
     star.lastShotAt = now;
@@ -1975,7 +2208,7 @@
   }
 
   function tickStar() {
-    if (!star.running) return;
+    if (!star.running || star.paused) return;
     const now = performance.now();
     const dt = Math.min(0.04, (now - star.lastFrame) / 1000 || 0.016);
     star.lastFrame = now;
@@ -2095,6 +2328,8 @@
     el.starXpPreview.textContent = formatNumber(applyRewardBooster(calculateStarXp()));
     el.starCoinPreview.textContent = formatNumber(previewStarCoins());
     el.startStarBtn.textContent = star.running ? "End Game" : "Start Game";
+    el.starPauseBtn.textContent = star.paused ? "Resume" : "Pause";
+    el.starPauseBtn.disabled = !star.running;
   }
 
   function drawStarHealthBar(ctx, entity, yOffset) {
@@ -2801,6 +3036,7 @@
   }
 
   function startStarJoystick(event) {
+    if (!star.running || star.paused) return;
     event.preventDefault();
     star.joystickPointerId = event.pointerId;
     el.starJoystick.setPointerCapture?.(event.pointerId);
@@ -2808,6 +3044,7 @@
   }
 
   function moveStarJoystick(event) {
+    if (star.paused) return;
     if (star.joystickPointerId !== event.pointerId) return;
     event.preventDefault();
     updateStarJoystick(event);
@@ -2857,8 +3094,15 @@
       el.profilePhotoInput.value = "";
       saveProfilePhoto(file);
     });
+    el.progressModeBtn.addEventListener("click", () => {
+      renderProgressModal();
+      el.progressModal.classList.remove("hidden");
+    });
+    el.closeProgressBtn.addEventListener("click", () => el.progressModal.classList.add("hidden"));
     el.developerModeBtn.addEventListener("click", () => el.developerModal.classList.remove("hidden"));
     el.closeDeveloperBtn.addEventListener("click", () => el.developerModal.classList.add("hidden"));
+    el.toggleSfxBtn.addEventListener("click", toggleSoundEffects);
+    el.toggleMusicBtn.addEventListener("click", toggleSoundtrack);
     el.checkUpdatesBtn.addEventListener("click", searchForUpdates);
     el.openRenameBtn.addEventListener("click", openRenameModal);
     el.closeRenameBtn.addEventListener("click", () => el.renameModal.classList.add("hidden"));
@@ -2900,11 +3144,11 @@
       showScreen("home");
     });
     el.exitBlockBtn.addEventListener("click", () => showScreen("home"));
-    el.blockHelpBtn.addEventListener("click", () => showToast("Block Grid", "Place all three pieces. Full rows or columns clear.", "win", 4500));
+    el.blockPauseBtn.addEventListener("click", toggleBlockPause);
     el.startBlockBtn.addEventListener("click", handlePrimaryBlockAction);
     el.restartBlockBtn.addEventListener("click", restartBlock);
     el.exitStarBtn.addEventListener("click", () => showScreen("home"));
-    el.starHelpBtn.addEventListener("click", () => showToast("Star Invaders", "Dodge meteors. Shoot enemies. Boss kills raise your multiplier.", "win", 4500));
+    el.starPauseBtn.addEventListener("click", toggleStarPause);
     el.startStarBtn.addEventListener("click", handlePrimaryStarAction);
     el.restartStarBtn.addEventListener("click", restartStar);
     el.starJoystick.addEventListener("pointerdown", startStarJoystick);
@@ -2913,6 +3157,7 @@
     el.starJoystick.addEventListener("pointercancel", endStarJoystick);
     el.starShootBtn.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      if (!star.running || star.paused) return;
       star.shootHeld = true;
       shootStar();
     });
@@ -2941,7 +3186,7 @@
         event.preventDefault();
         changeDirection(keyMap[event.key]);
       }
-      if (keyMap[event.key] && currentScreen === "star") {
+      if (keyMap[event.key] && currentScreen === "star" && star.running && !star.paused) {
         event.preventDefault();
         const dir = keyMap[event.key];
         star.input.x = dir === "left" ? -1 : dir === "right" ? 1 : star.input.x;
@@ -2953,7 +3198,8 @@
       }
       if (event.key === " " && currentScreen === "star") {
         event.preventDefault();
-        star.running ? shootStar() : startStar();
+        if (!star.running) startStar();
+        else if (!star.paused) shootStar();
       }
     });
 

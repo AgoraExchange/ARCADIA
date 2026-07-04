@@ -107,7 +107,8 @@
           </div>
           <div class="profile-actions">
             <button id="profileShareBtn" class="arcade-btn primary" type="button">Share</button>
-            <button id="developerModeBtn" class="arcade-btn secondary dev-mode-btn" type="button">Developer Mode</button>
+            <button id="progressModeBtn" class="arcade-btn secondary progress-mode-btn" type="button">Progress</button>
+            <button id="developerModeBtn" class="arcade-btn secondary dev-mode-btn" type="button">Dev Mode</button>
           </div>
         </section>
 
@@ -206,7 +207,7 @@
       <header class="page-top">
         <button id="exitBlockBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
         <h1>Block Grid</h1>
-        <button id="blockHelpBtn" class="arcade-btn secondary game-pause-btn" type="button">Rules</button>
+        <button id="blockPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
       </header>
 
       <main class="game-content">
@@ -240,7 +241,7 @@
       <header class="page-top">
         <button id="exitStarBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
         <h1>Star Invaders</h1>
-        <button id="starHelpBtn" class="arcade-btn secondary game-pause-btn" type="button">Rules</button>
+        <button id="starPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
       </header>
 
       <main class="game-content">
@@ -316,9 +317,39 @@
         <h2>Patch Console</h2>
         <p>Check for new site files or update your player name without clearing XP, coins, scores, or badges.</p>
         <div class="dev-actions">
+          <button id="toggleSfxBtn" class="arcade-btn secondary audio-toggle-btn" type="button">Sound FX: On</button>
+          <button id="toggleMusicBtn" class="arcade-btn secondary audio-toggle-btn" type="button">Soundtrack: On</button>
           <button id="checkUpdatesBtn" class="arcade-btn primary" type="button">Search for Updates</button>
           <button id="openRenameBtn" class="arcade-btn secondary" type="button">Profile Name</button>
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="progressModal" class="modal hidden">
+      <div class="modal-card progress-card">
+        <p class="system-line">Player Progress</p>
+        <h2>Progress</h2>
+        <div class="progress-xp-board">
+          <article>
+            <span>Most XP</span>
+            <strong id="progressMostXp">-</strong>
+            <small id="progressMostXpMeta">0 XP</small>
+          </article>
+          <article>
+            <span>Least XP</span>
+            <strong id="progressLeastXp">-</strong>
+            <small id="progressLeastXpMeta">0 XP</small>
+          </article>
+        </div>
+        <div id="progressGameXpList" class="progress-game-list" aria-label="XP by game"></div>
+        <div class="progress-log-head">
+          <span>Recent Notifications</span>
+          <small>Latest rewards, updates, and arcade activity</small>
+        </div>
+        <div id="progressActivityList" class="progress-activity-list"></div>
+        <div class="modal-actions">
+          <button id="closeProgressBtn" class="arcade-btn secondary" type="button">Close</button>
         </div>
       </div>
     </div>
