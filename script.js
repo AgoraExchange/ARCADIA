@@ -3,8 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "2026.07.03.11";
+  const APP_VERSION = "2026.07.04.01";
+  const VERSION_URL = "app-version.json";
   const PATCH_NOTES = [
+    "Home-screen app update checks now refresh the live PWA cache without deleting player data.",
+    "Developer Mode now shows the installed ARCADIA version.",
     "Block Grid and Star Invaders now use Pause controls instead of Rules buttons.",
     "Developer Mode audio toggles added for sound effects and soundtrack music.",
     "Star Invaders added with joystick, shooting, enemies, bosses, and meteors.",
@@ -308,6 +311,7 @@
     checkUpdatesBtn: $("checkUpdatesBtn"),
     openRenameBtn: $("openRenameBtn"),
     closeDeveloperBtn: $("closeDeveloperBtn"),
+    appVersionText: $("appVersionText"),
     progressModal: $("progressModal"),
     closeProgressBtn: $("closeProgressBtn"),
     progressMostXp: $("progressMostXp"),
@@ -334,6 +338,38 @@
   function syncAppHeight() {
     const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     document.documentElement.style.setProperty("--app-height", `${h}px`);
+  }
+
+  async function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return null;
+    try {
+      return await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+    } catch {
+      return null;
+    }
+  }
+
+  function waitForServiceWorkerRefresh() {
+    if (!("serviceWorker" in navigator)) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      let resolved = false;
+      const finish = (value) => {
+        if (resolved) return;
+        resolved = true;
+        navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+        resolve(value);
+      };
+      const onControllerChange = () => finish(true);
+      navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+      setTimeout(() => finish(false), 1800);
+    });
+  }
+
+  async function activateWaitingWorker(registration) {
+    if (!registration?.waiting) return false;
+    const refreshed = waitForServiceWorkerRefresh();
+    registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    return refreshed;
   }
 
   function clone(value) {
@@ -751,6 +787,11 @@
     el.toggleMusicBtn.classList.toggle("is-muted", state.muteMusic);
   }
 
+  function renderAppVersion() {
+    if (!el.appVersionText) return;
+    el.appVersionText.textContent = `Version ${APP_VERSION}`;
+  }
+
   function resumeCurrentTheme() {
     if (state.muteMusic) return;
     if (currentScreen === "home") {
@@ -927,6 +968,7 @@
     renderStore();
     renderProgressModal();
     updateAudioToggleButtons();
+    renderAppVersion();
     renderSnakeStats();
     renderBlockStats();
     renderStarStats();
@@ -2943,25 +2985,44 @@
   async function searchForUpdates() {
     el.developerModal.classList.add("hidden");
     await startBackgroundVideo();
+    let remoteVersion = APP_VERSION;
+    let remoteNotes = PATCH_NOTES;
     try {
-      if (navigator.serviceWorker?.getRegistration) {
-        const registration = await navigator.serviceWorker.getRegistration();
-        await registration?.update();
+      const versionResponse = await fetch(`${VERSION_URL}?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" }
+      });
+      if (versionResponse.ok) {
+        const versionData = await versionResponse.json();
+        remoteVersion = versionData.version || APP_VERSION;
+        remoteNotes = Array.isArray(versionData.patchNotes) ? versionData.patchNotes : PATCH_NOTES;
       }
-      if ("caches" in window) {
+    } catch {
+      // Offline or blocked requests fall back to the installed version.
+    }
+
+    const previousVersion = localStorage.getItem(VERSION_KEY) || APP_VERSION;
+    const hasRemoteUpdate = remoteVersion !== APP_VERSION || previousVersion !== APP_VERSION;
+
+    try {
+      const registration = await registerServiceWorker();
+      await registration?.update();
+      await activateWaitingWorker(registration);
+      if (hasRemoteUpdate && "caches" in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map((key) => caches.delete(key)));
+        await Promise.all(keys.filter((key) => key.startsWith("arcadia-")).map((key) => caches.delete(key)));
       }
     } catch {
       // Cache access can be blocked in some browser modes.
     }
 
-    const previousVersion = localStorage.getItem(VERSION_KEY);
-    localStorage.setItem(VERSION_KEY, APP_VERSION);
-    if (previousVersion !== APP_VERSION) {
-      showToast("Update Successful", `Patches include: ${PATCH_NOTES.join(" ")}`, "win", 5000);
+    if (hasRemoteUpdate) {
+      localStorage.setItem(VERSION_KEY, remoteVersion);
+      showToast("Update Successful", `Patches include: ${remoteNotes.join(" ")}`, "win", 5000);
+      setTimeout(() => window.location.reload(), 900);
       return;
     }
+    localStorage.setItem(VERSION_KEY, APP_VERSION);
     showToast("No Updates Found", "ARCADIA is already running the latest patch.", "tap", 5000);
   }
 
@@ -3252,6 +3313,8 @@
 
   function init() {
     bindEvents();
+    registerServiceWorker();
+    localStorage.setItem(VERSION_KEY, APP_VERSION);
     drawSnake();
     setTimeout(() => {
       if (currentScreen === "boot") {

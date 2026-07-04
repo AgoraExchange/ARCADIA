@@ -2146,6 +2146,14 @@ input:focus {
   margin-top: 16px;
 }
 
+.app-version-text {
+  margin: 12px 0 0;
+  color: rgba(241, 247, 255, 0.58);
+  font-family: var(--font-numbers);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
 .form-note {
   margin: 9px 0 0;
   font-size: 0.78rem;

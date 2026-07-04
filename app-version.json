@@ -1,0 +1,9 @@
+{
+  "version": "2026.07.04.01",
+  "patchNotes": [
+    "Home-screen app update checks now refresh the live PWA cache without deleting player data.",
+    "Developer Mode now shows the installed ARCADIA version.",
+    "Progress modal scrolling improved for smaller phones.",
+    "Snake swipe input is snappier with live swipe detection and queued turns."
+  ]
+}
