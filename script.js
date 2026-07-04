@@ -2555,6 +2555,7 @@
       streak: 0,
       direction: { x: 1, y: 0 },
       nextDirection: { x: 1, y: 0 },
+      directionQueue: [],
       body: [
         { x: 8, y: 10 },
         { x: 7, y: 10 },
@@ -2626,13 +2627,22 @@
     };
     const next = vectors[dir];
     if (!next || snake.paused) return;
-    if (next.x + snake.direction.x === 0 && next.y + snake.direction.y === 0) return;
-    snake.nextDirection = next;
+    const queue = snake.directionQueue || [];
+    const basis = queue.length ? queue[queue.length - 1] : snake.nextDirection || snake.direction;
+    if (next.x === basis.x && next.y === basis.y) return;
+    if (next.x + basis.x === 0 && next.y + basis.y === 0) return;
+    if (queue.length >= 3) queue.shift();
+    queue.push(next);
+    snake.directionQueue = queue;
+    snake.nextDirection = queue[0];
   }
 
   function tickSnake() {
     if (snake.paused) return;
 
+    if (snake.directionQueue?.length) {
+      snake.nextDirection = snake.directionQueue.shift();
+    }
     snake.direction = snake.nextDirection;
     const head = snake.body[0];
     const next = { x: head.x + snake.direction.x, y: head.y + snake.direction.y };
@@ -3210,16 +3220,28 @@
     });
 
     el.snakeCanvas.addEventListener("pointerdown", (event) => {
-      touchStart = { x: event.clientX, y: event.clientY };
+      event.preventDefault();
+      touchStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+      el.snakeCanvas.setPointerCapture?.(event.pointerId);
+    });
+
+    el.snakeCanvas.addEventListener("pointermove", (event) => {
+      if (!touchStart || touchStart.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      const dx = event.clientX - touchStart.x;
+      const dy = event.clientY - touchStart.y;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 10) return;
+      changeDirection(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
+      touchStart.x = event.clientX;
+      touchStart.y = event.clientY;
     });
 
     el.snakeCanvas.addEventListener("pointerup", (event) => {
-      if (!touchStart) return;
-      const dx = event.clientX - touchStart.x;
-      const dy = event.clientY - touchStart.y;
+      if (touchStart?.pointerId === event.pointerId) touchStart = null;
+    });
+
+    el.snakeCanvas.addEventListener("pointercancel", () => {
       touchStart = null;
-      if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
-      changeDirection(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
     });
 
     window.addEventListener("resize", () => {

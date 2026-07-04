@@ -1904,6 +1904,11 @@ input:focus {
 
 .progress-card {
   width: min(620px, 100%);
+  max-height: calc(var(--app-height) - 32px - var(--safe-top) - var(--safe-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(22px, calc(22px + var(--safe-bottom)));
 }
 
 .progress-card h2 {
