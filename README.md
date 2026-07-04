@@ -2,6 +2,8 @@
 
 ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play Snake, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
+If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
+
 ## Current Layout
 
 - Splash / boot screen
