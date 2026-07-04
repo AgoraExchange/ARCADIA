@@ -3,8 +3,9 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "2026.07.03.4";
+  const APP_VERSION = "2026.07.03.5";
   const PATCH_NOTES = [
+    "Level up sound and dashboard pulse reward added.",
     "Game over sound effect added for failed runs.",
     "Theme song folders added for lobby and game music.",
     "Lobby music now loops on the dashboard and Snake music starts with the run.",
@@ -19,6 +20,7 @@
   const GRID_SIZE = 20;
   const GAME_TICK_MS = 112;
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
+  const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
   const THEME_SONGS = {
     lobby: [
       "assets/themesong/lobby/lobby1.mp3",
@@ -162,6 +164,7 @@
   let storeCountdownTimer = null;
   let themeAudio = null;
   let gameOverAudio = null;
+  let levelUpAudio = null;
   let activeTheme = "";
   let themeFadeTimer = null;
   const toastQueue = [];
@@ -446,6 +449,40 @@
     }
   }
 
+  function getLevelUpAudio() {
+    if (!levelUpAudio) {
+      levelUpAudio = new Audio(LEVEL_UP_SFX);
+      levelUpAudio.preload = "auto";
+      levelUpAudio.volume = 0.9;
+    }
+    return levelUpAudio;
+  }
+
+  async function playLevelUpSound() {
+    try {
+      const audio = getLevelUpAudio();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = 0.9;
+      await audio.play();
+    } catch {
+      playTone("level");
+    }
+  }
+
+  function triggerLevelUpReward(level) {
+    if (currentScreen !== "home") return;
+    el.playerLevel.textContent = `Level ${level}`;
+    el.playerLevel.classList.remove("level-reward-pop");
+    void el.playerLevel.offsetWidth;
+    el.playerLevel.classList.add("level-reward-pop");
+    showToast("Level Up", `You reached level ${level}.`, "silent", 4000);
+    playLevelUpSound();
+    setTimeout(() => {
+      el.playerLevel.classList.remove("level-reward-pop");
+    }, 3100);
+  }
+
   function playToneAt(frequency, duration = 0.055, type = "square", volume = 0.06) {
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
@@ -599,7 +636,7 @@
     toast.innerHTML = `<strong>${item.title}</strong><small>${item.text}</small>`;
     el.toastStack.appendChild(toast);
     activeToasts.add(item.key);
-    playTone(item.kind);
+    if (item.kind !== "silent") playTone(item.kind);
     setTimeout(() => {
       toast.remove();
       activeToasts.delete(item.key);
@@ -760,7 +797,9 @@
               });
             }, Math.max(520, animationDuration * 0.58));
           });
-          showToast("Level Up", `You reached level ${target.level}.`, "level", 4000);
+          setTimeout(() => {
+            triggerLevelUpReward(target.level);
+          }, animationDuration + 160);
         } else {
           requestAnimationFrame(() => {
             el.headerXpFill.style.width = `${target.pct}%`;

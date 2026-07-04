@@ -488,6 +488,16 @@ input:focus {
   color: var(--muted);
 }
 
+.player-strip small.level-reward-pop {
+  position: relative;
+  color: var(--green);
+  animation: levelRewardPop 3s ease both;
+  text-shadow:
+    0 0 8px rgba(87, 255, 154, 0.95),
+    0 0 18px rgba(73, 244, 255, 0.62),
+    0 0 34px rgba(255, 211, 90, 0.42);
+}
+
 .player-strip strong {
   font-family: var(--font-player);
   min-width: 0;
@@ -645,6 +655,42 @@ input:focus {
   100% {
     opacity: 0;
     transform: translateY(-18px) scale(1.12);
+  }
+}
+
+@keyframes levelRewardPop {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  10% {
+    transform: scale(1.28) rotate(-1deg);
+    filter: brightness(1.55);
+  }
+
+  22% {
+    transform: scale(1.08) rotate(1deg);
+    color: var(--yellow);
+  }
+
+  36%,
+  62% {
+    transform: scale(1.2);
+    color: var(--green);
+    filter: brightness(1.45) drop-shadow(0 0 10px rgba(87, 255, 154, 0.76));
+  }
+
+  48%,
+  74% {
+    transform: scale(1.1);
+    color: var(--cyan);
+  }
+
+  100% {
+    transform: scale(1);
+    color: var(--muted);
+    filter: brightness(1);
   }
 }
 
