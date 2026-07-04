@@ -197,7 +197,82 @@
             <button id="restartSnakeBtn" class="arcade-btn secondary" type="button">Restart</button>
           </div>
 
-          <p class="hint">Desktop: arrows, WASD, or space. Mobile: swipe on the board.</p>
+          <p class="hint">Swipe on the screen to navigate, eat pellets, and grow your snake.</p>
+        </section>
+      </main>
+    </section>
+
+    <section id="blockScreen" class="screen game-screen block-screen hidden">
+      <header class="page-top">
+        <button id="exitBlockBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Block Grid</h1>
+        <button id="blockHelpBtn" class="arcade-btn secondary game-pause-btn" type="button">Rules</button>
+      </header>
+
+      <main class="game-content">
+        <section class="block-stage panel">
+          <div class="game-hud">
+            <div><span>Score</span><strong id="blockScore">0</strong></div>
+            <div><span>Best</span><strong id="blockBest">0</strong></div>
+            <div><span>Lines</span><strong id="blockLines">0</strong></div>
+          </div>
+
+          <div id="blockBoard" class="block-board" aria-label="Block Grid board"></div>
+
+          <div class="block-tray" id="blockTray" aria-label="Available pieces"></div>
+
+          <div class="reward-preview">
+            <div><span>XP Preview</span><strong id="blockXpPreview">0</strong></div>
+            <div><span>Coins</span><strong id="blockCoinPreview">0</strong></div>
+          </div>
+
+          <div class="game-actions">
+            <button id="startBlockBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="restartBlockBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint">Tap a piece, then tap the board. Fill rows or columns to clear space.</p>
+        </section>
+      </main>
+    </section>
+
+    <section id="starScreen" class="screen game-screen star-screen hidden">
+      <header class="page-top">
+        <button id="exitStarBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Star Invaders</h1>
+        <button id="starHelpBtn" class="arcade-btn secondary game-pause-btn" type="button">Rules</button>
+      </header>
+
+      <main class="game-content">
+        <section class="star-stage panel">
+          <div class="game-hud">
+            <div><span>Score</span><strong id="starScore">0</strong></div>
+            <div><span>Best</span><strong id="starBest">0</strong></div>
+            <div><span>Kills</span><strong id="starKills">0</strong></div>
+          </div>
+
+          <div class="star-canvas-shell">
+            <canvas id="starCanvas" width="720" height="720" aria-label="Star Invaders game board"></canvas>
+          </div>
+
+          <div class="star-controls" aria-label="Star Invaders controls">
+            <div id="starJoystick" class="arcade-joystick" role="application" aria-label="Move spaceship">
+              <span id="starJoystickKnob"></span>
+            </div>
+            <button id="starShootBtn" class="shoot-button" type="button">Shoot</button>
+          </div>
+
+          <div class="reward-preview">
+            <div><span>XP Preview</span><strong id="starXpPreview">0</strong></div>
+            <div><span>Coins</span><strong id="starCoinPreview">0</strong></div>
+          </div>
+
+          <div class="game-actions">
+            <button id="startStarBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="restartStarBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint">Use the joystick to fly and press Shoot to blast enemies and meteors.</p>
         </section>
       </main>
     </section>

@@ -3,8 +3,15 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "2026.07.03.5";
+  const APP_VERSION = "2026.07.03.10";
   const PATCH_NOTES = [
+    "Star Invaders added with joystick, shooting, enemies, bosses, and meteors.",
+    "Block Grid start, grab, and place sound effects added.",
+    "Block Grid start reveal animation added before pieces appear.",
+    "Block Grid theme music added and starts only when the run starts.",
+    "Block Grid tray now stays empty until Start Game.",
+    "Block Grid drag-and-drop placement with neon board previews added.",
+    "Block Grid added as the second playable ARCADIA game.",
     "Level up sound and dashboard pulse reward added.",
     "Game over sound effect added for failed runs.",
     "Theme song folders added for lobby and game music.",
@@ -18,9 +25,14 @@
   const BASE_XP_PER_LEVEL = 500;
   const XP_LEVEL_STEP = 150;
   const GRID_SIZE = 20;
+  const BLOCK_GRID_SIZE = 8;
   const GAME_TICK_MS = 112;
+  const STAR_TICK_MS = 1000 / 60;
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
+  const BLOCK_START_SFX = "assets/audio/sfx/block-grid/start.mp3";
+  const BLOCK_GRAB_SFX = "assets/audio/sfx/block-grid/grab.mp3";
+  const BLOCK_PLACE_SFX = "assets/audio/sfx/block-grid/place.mp3";
   const THEME_SONGS = {
     lobby: [
       "assets/themesong/lobby/lobby1.mp3",
@@ -28,7 +40,10 @@
       "assets/themesong/lobby/lobby3.mp3"
     ],
     games: {
-      snake: "assets/themesong/games/snake.mp3"
+      snake: "assets/themesong/games/snake.mp3",
+      block: "assets/themesong/games/block-grid.mp3",
+      star: "assets/themesong/games/star-invaders.mp3",
+      starBoss: "assets/themesong/games/star-invaders-boss.mp3"
     }
   };
 
@@ -52,7 +67,18 @@
       snakeBest: 0,
       snakeXpEarned: 0,
       snakeTotalScore: 0,
-      snakeApples: 0
+      snakeApples: 0,
+      blockRuns: 0,
+      blockBest: 0,
+      blockXpEarned: 0,
+      blockTotalScore: 0,
+      blockLines: 0,
+      starRuns: 0,
+      starBest: 0,
+      starXpEarned: 0,
+      starTotalScore: 0,
+      starKills: 0,
+      starBossKills: 0
     },
     achievements: []
   };
@@ -71,12 +97,13 @@
     },
     {
       id: "breakout",
-      title: "Neon Breakout",
+      title: "Block Grid",
       gameNo: "02",
-      tags: ["breakout", "brick", "paddle"],
-      description: "Break neon bricks and chase clean combos.",
-      status: "Coming Soon",
-      available: false,
+      tags: ["block", "puzzle", "grid", "combo", "blast"],
+      description: "Place fixed pieces, clear lines, and keep the board open.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/blockgrid.png",
       mark: "B"
     },
     {
@@ -84,9 +111,10 @@
       title: "Star Invaders",
       gameNo: "03",
       tags: ["space", "shooter", "aliens"],
-      description: "A space blaster game for future score runs.",
-      status: "Coming Soon",
-      available: false,
+      description: "Dodge meteors, blast enemies, and survive the star lane.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/starinvaders.png",
       mark: "I"
     },
     {
@@ -105,6 +133,10 @@
     { id: "first_run", title: "Inserted Coin", text: "Complete your first Snake run." },
     { id: "snake_10", title: "Grid Runner", text: "Score 10 or higher in Snake." },
     { id: "snake_25", title: "Snake Master", text: "Score 25 or higher in Snake." },
+    { id: "block_first", title: "Block Drop", text: "Complete your first Block Grid run." },
+    { id: "block_500", title: "Line Crusher", text: "Score 500 or higher in Block Grid." },
+    { id: "star_first", title: "First Launch", text: "Complete your first Star Invaders run." },
+    { id: "star_25", title: "Astro Ace", text: "Destroy 25 enemies in Star Invaders." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -155,8 +187,12 @@
   let state = loadState();
   let audioCtx = null;
   let currentScreen = "boot";
+  let currentGame = "";
   let snakeTimer = null;
   let snake = createSnakeState();
+  let block = createBlockState();
+  let star = createStarState();
+  let starTimer = null;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -178,6 +214,8 @@
     homeScreen: $("homeScreen"),
     profileScreen: $("profileScreen"),
     gameScreen: $("gameScreen"),
+    blockScreen: $("blockScreen"),
+    starScreen: $("starScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -227,6 +265,30 @@
     topPauseSnakeBtn: $("topPauseSnakeBtn"),
     restartSnakeBtn: $("restartSnakeBtn"),
     exitGameBtn: $("exitGameBtn"),
+    exitBlockBtn: $("exitBlockBtn"),
+    blockHelpBtn: $("blockHelpBtn"),
+    blockBoard: $("blockBoard"),
+    blockTray: $("blockTray"),
+    blockScore: $("blockScore"),
+    blockBest: $("blockBest"),
+    blockLines: $("blockLines"),
+    blockXpPreview: $("blockXpPreview"),
+    blockCoinPreview: $("blockCoinPreview"),
+    startBlockBtn: $("startBlockBtn"),
+    restartBlockBtn: $("restartBlockBtn"),
+    exitStarBtn: $("exitStarBtn"),
+    starHelpBtn: $("starHelpBtn"),
+    starCanvas: $("starCanvas"),
+    starScore: $("starScore"),
+    starBest: $("starBest"),
+    starKills: $("starKills"),
+    starXpPreview: $("starXpPreview"),
+    starCoinPreview: $("starCoinPreview"),
+    starJoystick: $("starJoystick"),
+    starJoystickKnob: $("starJoystickKnob"),
+    starShootBtn: $("starShootBtn"),
+    startStarBtn: $("startStarBtn"),
+    restartStarBtn: $("restartStarBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     connectionModal: $("connectionModal"),
@@ -350,11 +412,15 @@
     el.homeScreen.classList.toggle("hidden", name !== "home");
     el.profileScreen.classList.toggle("hidden", name !== "profile");
     el.gameScreen.classList.toggle("hidden", name !== "game");
+    el.blockScreen.classList.toggle("hidden", name !== "block");
+    el.starScreen.classList.toggle("hidden", name !== "star");
     if (name !== "game") stopSnake();
+    if (name !== "block") stopBlock(false);
+    if (name !== "star") stopStar(false);
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: previousScreen === "game" });
-    } else if (previousScreen === "game" && name !== "game") {
+      playLobbyTheme({ transition: ["game", "block", "star"].includes(previousScreen) });
+    } else if (["game", "block", "star"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -468,6 +534,27 @@
     } catch {
       playTone("level");
     }
+  }
+
+  function playOneShotSfx(src, volume = 0.85) {
+    try {
+      const audio = new Audio(src);
+      audio.preload = "auto";
+      audio.volume = volume;
+      audio.play().catch(() => {});
+    } catch {
+      playTone("tap");
+    }
+  }
+
+  function playBlockSfx(kind) {
+    const map = {
+      start: [BLOCK_START_SFX, 0.9],
+      grab: [BLOCK_PLACE_SFX, 0.78],
+      place: [BLOCK_GRAB_SFX, 0.82]
+    };
+    const [src, volume] = map[kind] || map.grab;
+    playOneShotSfx(src, volume);
   }
 
   function triggerLevelUpReward(level) {
@@ -599,6 +686,11 @@
 
   function playGameTheme(gameId, options = {}) {
     playTheme(THEME_SONGS.games[gameId], `game-${gameId}`, { transition: false, ...options });
+  }
+
+  function playStarTheme(mode = "normal", options = {}) {
+    const key = mode === "boss" ? "starBoss" : "star";
+    playTheme(THEME_SONGS.games[key], `game-${key}`, { transition: false, ...options });
   }
 
   function stopGameTheme(reason = "stop") {
@@ -733,6 +825,8 @@
     renderLeaderboard();
     renderStore();
     renderSnakeStats();
+    renderBlockStats();
+    renderStarStats();
   }
 
   function progressForXp(totalXp) {
@@ -851,7 +945,9 @@
         showToast("Coming Soon", `${game.title} is not open yet.`);
           return;
         }
-        openSnake();
+        if (game.id === "snake") openSnake();
+        if (game.id === "breakout") openBlockGrid();
+        if (game.id === "invaders") openStarInvaders();
       });
       el.gameGrid.appendChild(card);
     });
@@ -885,6 +981,20 @@
         runs: Number(state.stats.snakeRuns) || 0,
         xp: Number(state.stats.snakeXpEarned) || 0,
         best: Number(state.stats.snakeBest) || 0
+      },
+      {
+        id: "block",
+        title: "Block Grid",
+        runs: Number(state.stats.blockRuns) || 0,
+        xp: Number(state.stats.blockXpEarned) || 0,
+        best: Number(state.stats.blockBest) || 0
+      },
+      {
+        id: "star",
+        title: "Star Invaders",
+        runs: Number(state.stats.starRuns) || 0,
+        xp: Number(state.stats.starXpEarned) || 0,
+        best: Number(state.stats.starBest) || 0
       }
     ];
 
@@ -1093,9 +1203,1113 @@
   }
 
   function openSnake() {
+    currentGame = "snake";
     prepareGameTheme();
     showScreen("game");
     resetSnake();
+  }
+
+  const blockShapes = [
+    [[1]],
+    [[1, 1]],
+    [[1], [1]],
+    [[1, 1, 1]],
+    [[1], [1], [1]],
+    [[1, 1], [1, 1]],
+    [[1, 1, 1], [0, 1, 0]],
+    [[1, 0], [1, 0], [1, 1]],
+    [[0, 1], [0, 1], [1, 1]],
+    [[1, 1, 0], [0, 1, 1]],
+    [[0, 1, 1], [1, 1, 0]],
+    [[1, 1, 1], [1, 0, 0]],
+    [[1, 1, 1], [0, 0, 1]],
+    [[1, 1, 1, 1]],
+    [[1], [1], [1], [1]]
+  ];
+
+  function createBlockState() {
+    return {
+      running: false,
+      board: Array.from({ length: BLOCK_GRID_SIZE }, () => Array(BLOCK_GRID_SIZE).fill(0)),
+      pieces: [],
+      selected: null,
+      score: 0,
+      lines: 0,
+      placements: 0,
+      clearEvents: 0,
+      bestClear: 0,
+      multiplier: 1,
+      lastPieceShapeIds: [],
+      runStartedAt: 0,
+      starting: false,
+      dragIndex: null,
+      dragPointerId: null,
+      dragOffset: { x: 0, y: 0 },
+      preview: null,
+      clearing: [],
+      ghost: null
+    };
+  }
+
+  function normalizeShape(shape) {
+    return shape.map((row) => row.map(Boolean));
+  }
+
+  function blockShapeId(shape) {
+    return shape.map((row) => row.map((filled) => filled ? "1" : "0").join("")).join("/");
+  }
+
+  function hasDuplicateBlockShapes(shapeIds) {
+    return new Set(shapeIds).size < shapeIds.length;
+  }
+
+  function createBlockPieceFromShape(shape) {
+    const colors = ["cyan", "green", "pink", "yellow", "purple"];
+    const normalized = normalizeShape(shape);
+    return {
+      id: window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      shape: normalized,
+      shapeId: blockShapeId(normalized),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      used: false
+    };
+  }
+
+  function randomBlockShape(excludedIds = []) {
+    const available = blockShapes.filter((shape) => !excludedIds.includes(blockShapeId(normalizeShape(shape))));
+    const pool = available.length ? available : blockShapes;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function buildBlockTray() {
+    const forceUnique = hasDuplicateBlockShapes(block.lastPieceShapeIds);
+    const pieces = [];
+    const usedIds = [];
+    while (pieces.length < 3) {
+      const allowOnePair = !forceUnique && pieces.length === 2 && Math.random() < 0.28;
+      const excluded = allowOnePair ? [] : usedIds;
+      const piece = createBlockPieceFromShape(randomBlockShape(excluded));
+      if (!forceUnique && pieces.length === 2 && usedIds.every((id) => id === piece.shapeId)) continue;
+      pieces.push(piece);
+      usedIds.push(piece.shapeId);
+    }
+    return pieces;
+  }
+
+  function refillBlockPieces() {
+    const nextPieces = buildBlockTray();
+    block.lastPieceShapeIds = nextPieces.map((piece) => piece.shapeId);
+    block.pieces = nextPieces;
+    block.selected = null;
+  }
+
+  function openBlockGrid() {
+    currentGame = "block";
+    prepareGameTheme();
+    showScreen("block");
+    resetBlock();
+  }
+
+  function resetBlock(fillTray = false) {
+    const lastPieceShapeIds = block.lastPieceShapeIds || [];
+    block = createBlockState();
+    block.lastPieceShapeIds = lastPieceShapeIds;
+    if (fillTray) refillBlockPieces();
+    renderBlock();
+  }
+
+  function startBlock() {
+    resetBlock(false);
+    block.running = true;
+    block.starting = true;
+    block.runStartedAt = Date.now();
+    playBlockSfx("start");
+    playGameTheme("block", { restart: true });
+    renderBlock();
+    setTimeout(() => {
+      if (currentScreen !== "block" || !block.running || !block.starting) return;
+      block.starting = false;
+      refillBlockPieces();
+      renderBlock();
+    }, 1600);
+  }
+
+  function restartBlock() {
+    cleanupBlockDrag();
+    startBlock();
+  }
+
+  function handlePrimaryBlockAction() {
+    if (block.running) {
+      endBlockRun("manual");
+      return;
+    }
+    startBlock();
+  }
+
+  function blockCanInteract() {
+    return block.running && !block.starting && !block.clearing.length;
+  }
+
+  function blockIntroColor(row, col) {
+    const colors = ["cyan", "green", "pink", "yellow", "purple"];
+    return colors[(row * 3 + col * 2) % colors.length];
+  }
+
+  function blockIntroDelay(row) {
+    return `${(BLOCK_GRID_SIZE - 1 - row) * 85}ms`;
+  }
+
+  function stopBlock(render = true) {
+    block.running = false;
+    block.selected = null;
+    cleanupBlockDrag();
+    if (render) renderBlock();
+  }
+
+  function blockCells(piece) {
+    const cells = [];
+    piece.shape.forEach((row, y) => {
+      row.forEach((filled, x) => {
+        if (filled) cells.push({ x, y });
+      });
+    });
+    return cells;
+  }
+
+  function canPlaceBlock(piece, row, col) {
+    if (!piece || piece.used) return false;
+    return blockCells(piece).every(({ x, y }) => {
+      const r = row + y;
+      const c = col + x;
+      return r >= 0 && c >= 0 && r < BLOCK_GRID_SIZE && c < BLOCK_GRID_SIZE && !block.board[r][c];
+    });
+  }
+
+  function anyBlockFits() {
+    return block.pieces.some((piece) => !piece.used && block.board.some((_, row) => block.board[row].some((__, col) => canPlaceBlock(piece, row, col))));
+  }
+
+  function findFullBlockLines() {
+    const fullRows = [];
+    const fullCols = [];
+    for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
+      if (block.board[r].every(Boolean)) fullRows.push(r);
+    }
+    for (let c = 0; c < BLOCK_GRID_SIZE; c += 1) {
+      if (block.board.every((row) => row[c])) fullCols.push(c);
+    }
+    return { fullRows, fullCols };
+  }
+
+  function lineClearCells(fullRows, fullCols) {
+    const cells = new Map();
+    fullRows.forEach((r) => {
+      for (let c = 0; c < BLOCK_GRID_SIZE; c += 1) {
+        if (block.board[r][c]) cells.set(`${r}:${c}`, { row: r, col: c, color: block.board[r][c] });
+      }
+    });
+    fullCols.forEach((c) => {
+      for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
+        if (block.board[r][c]) cells.set(`${r}:${c}`, { row: r, col: c, color: block.board[r][c] });
+      }
+    });
+    return Array.from(cells.values());
+  }
+
+  function clearBlockLines() {
+    const { fullRows, fullCols } = findFullBlockLines();
+    const cleared = fullRows.length + fullCols.length;
+    if (cleared) {
+      block.lines += cleared;
+      block.clearEvents += 1;
+      block.bestClear = Math.max(block.bestClear, cleared);
+      block.multiplier += 0.14 * cleared + Math.max(0, cleared - 1) * 0.18;
+      block.score += cleared * 80 + Math.max(0, cleared - 1) * 70;
+      block.clearing = lineClearCells(fullRows, fullCols);
+      playTone("win");
+    }
+    return { cleared, fullRows, fullCols };
+  }
+
+  function finishBlockLineClear(fullRows, fullCols) {
+    fullRows.forEach((r) => {
+      for (let c = 0; c < BLOCK_GRID_SIZE; c += 1) block.board[r][c] = 0;
+    });
+    fullCols.forEach((c) => {
+      for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) block.board[r][c] = 0;
+    });
+    block.clearing = [];
+    if (block.pieces.every((pieceItem) => pieceItem.used)) refillBlockPieces();
+    renderBlock();
+    if (!anyBlockFits()) endBlockRun("crash");
+  }
+
+  function placeBlock(row, col) {
+    if (!blockCanInteract()) {
+      showToast("Start Game", "Press Start Game before placing blocks.");
+      return;
+    }
+    const piece = block.pieces[block.selected];
+    if (!canPlaceBlock(piece, row, col)) {
+      playTone("fail");
+      return;
+    }
+    const cells = blockCells(piece);
+    cells.forEach(({ x, y }) => {
+      block.board[row + y][col + x] = piece.color;
+    });
+    playBlockSfx("place");
+    piece.used = true;
+    block.score += cells.length * 12;
+    block.placements += 1;
+    const clearResult = clearBlockLines();
+    block.selected = null;
+    renderBlock();
+    if (clearResult.cleared) {
+      setTimeout(() => finishBlockLineClear(clearResult.fullRows, clearResult.fullCols), 460);
+      return;
+    }
+    if (block.pieces.every((pieceItem) => pieceItem.used)) refillBlockPieces();
+    renderBlock();
+    if (!anyBlockFits()) endBlockRun("crash");
+  }
+
+  function blockElapsedSeconds() {
+    if (!block.runStartedAt) return 0;
+    return Math.max(0, Math.floor((Date.now() - block.runStartedAt) / 1000));
+  }
+
+  function calculateBlockXp() {
+    if (block.score <= 0) return 0;
+    const placementXp = Math.min(30, block.placements * 2);
+    const clearXp = block.lines * 26 + block.clearEvents * 12 + block.bestClear * 18;
+    const survivalBonus = Math.floor(blockElapsedSeconds() / 30);
+    const newBestBonus = block.score > state.stats.blockBest && block.score >= 250 ? 45 : 0;
+    return Math.round(placementXp + (clearXp + survivalBonus + newBestBonus) * block.multiplier);
+  }
+
+  function previewBlockCoins(newBest = block.score > state.stats.blockBest) {
+    if (block.score <= 0) return 0;
+    let earned = Math.max(2, Math.floor(block.score / 28) + block.lines * 5 + Math.floor(blockElapsedSeconds() / 20));
+    if (newBest) earned += 30;
+    return applyRewardBooster(earned);
+  }
+
+  function renderBlockStats() {
+    if (!el.blockScore) return;
+    el.blockScore.textContent = formatNumber(block.score);
+    el.blockBest.textContent = formatNumber(Math.max(Number(state.stats.blockBest) || 0, block.score));
+    el.blockLines.textContent = formatNumber(block.lines);
+    el.blockXpPreview.textContent = formatNumber(applyRewardBooster(calculateBlockXp()));
+    el.blockCoinPreview.textContent = formatNumber(previewBlockCoins());
+    el.startBlockBtn.textContent = block.running ? "End Game" : "Start Game";
+  }
+
+  function getBlockPreviewCells() {
+    const cells = new Map();
+    if (!block.preview || block.selected === null) return cells;
+    const piece = block.pieces[block.selected];
+    if (!piece) return cells;
+    const type = block.preview.valid ? `valid ${piece.color}` : "invalid";
+    blockCells(piece).forEach(({ x, y }) => {
+      const r = block.preview.row + y;
+      const c = block.preview.col + x;
+      if (r >= 0 && c >= 0 && r < BLOCK_GRID_SIZE && c < BLOCK_GRID_SIZE) cells.set(`${r}:${c}`, type);
+    });
+    return cells;
+  }
+
+  function getClearingBlockCells() {
+    const cells = new Map();
+    block.clearing.forEach((cell, index) => {
+      cells.set(`${cell.row}:${cell.col}`, { ...cell, index });
+    });
+    return cells;
+  }
+
+  function blockCellFromPoint(clientX, clientY) {
+    const target = document.elementFromPoint(clientX, clientY);
+    const cell = target?.closest?.(".block-cell");
+    if (!cell || !el.blockBoard.contains(cell)) return null;
+    return {
+      row: Number(cell.dataset.row),
+      col: Number(cell.dataset.col)
+    };
+  }
+
+  function blockGrabOffsetFromEvent(piece, event) {
+    const mini = event.target?.closest?.(".mini-block:not(.empty)");
+    if (mini && event.currentTarget.contains(mini)) {
+      return {
+        x: Number(mini.dataset.x) || 0,
+        y: Number(mini.dataset.y) || 0
+      };
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const cols = piece.shape[0].length;
+    const rows = piece.shape.length;
+    return {
+      x: Math.max(0, Math.min(cols - 1, Math.floor(((event.clientX - rect.left) / rect.width) * cols))),
+      y: Math.max(0, Math.min(rows - 1, Math.floor(((event.clientY - rect.top) / rect.height) * rows)))
+    };
+  }
+
+  function createBlockGhost(piece) {
+    const ghost = document.createElement("div");
+    ghost.className = `block-drag-ghost ${piece.color}`;
+    ghost.style.setProperty("--piece-cols", piece.shape[0].length);
+    ghost.style.setProperty("--piece-rows", piece.shape.length);
+    piece.shape.forEach((row, y) => row.forEach((filled, x) => {
+      const dot = document.createElement("span");
+      dot.className = filled ? "mini-block" : "mini-block empty";
+      dot.dataset.x = String(x);
+      dot.dataset.y = String(y);
+      ghost.appendChild(dot);
+    }));
+    document.body.appendChild(ghost);
+    return ghost;
+  }
+
+  function moveBlockGhost(event) {
+    if (!block.ghost) return;
+    const piece = block.pieces[block.selected];
+    const rect = block.ghost.getBoundingClientRect();
+    const cols = piece?.shape?.[0]?.length || 1;
+    const rows = piece?.shape?.length || 1;
+    const cellW = rect.width / cols;
+    const cellH = rect.height / rows;
+    const x = event.clientX - ((block.dragOffset?.x || 0) + 0.5) * cellW;
+    const y = event.clientY - ((block.dragOffset?.y || 0) + 0.5) * cellH;
+    block.ghost.style.left = `${x}px`;
+    block.ghost.style.top = `${y}px`;
+  }
+
+  function updateBlockPreview(event) {
+    const cell = blockCellFromPoint(event.clientX, event.clientY);
+    const piece = block.pieces[block.selected];
+    const row = cell ? cell.row - (block.dragOffset?.y || 0) : null;
+    const col = cell ? cell.col - (block.dragOffset?.x || 0) : null;
+    block.preview = cell && piece
+      ? { row, col, valid: canPlaceBlock(piece, row, col) }
+      : null;
+    renderBlockBoard();
+  }
+
+  function startBlockDrag(index, event) {
+    if (!blockCanInteract()) {
+      showToast("Start Game", "Press Start Game before choosing pieces.");
+      return;
+    }
+    const piece = block.pieces[index];
+    if (!piece || piece.used) return;
+    event.preventDefault();
+    block.selected = index;
+    block.dragIndex = index;
+    block.dragPointerId = event.pointerId;
+    block.dragOffset = blockGrabOffsetFromEvent(piece, event);
+    block.preview = null;
+    block.ghost?.remove();
+    block.ghost = createBlockGhost(piece);
+    playBlockSfx("grab");
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    moveBlockGhost(event);
+    updateBlockPreview(event);
+    renderBlockTray();
+  }
+
+  function moveBlockDrag(event) {
+    if (block.dragPointerId !== event.pointerId) return;
+    event.preventDefault();
+    moveBlockGhost(event);
+    updateBlockPreview(event);
+  }
+
+  function endBlockDrag(event) {
+    if (block.dragPointerId !== event.pointerId) return;
+    event.preventDefault();
+    const preview = block.preview;
+    const canDrop = Boolean(preview?.valid);
+    cleanupBlockDrag(false);
+    if (canDrop) {
+      placeBlock(preview.row, preview.col);
+    } else {
+      block.preview = null;
+      renderBlock();
+      playTone("fail");
+    }
+  }
+
+  function cleanupBlockDrag(render = false) {
+    block.ghost?.remove();
+    block.ghost = null;
+    block.dragIndex = null;
+    block.dragPointerId = null;
+    block.dragOffset = { x: 0, y: 0 };
+    block.preview = null;
+    if (render) renderBlock();
+  }
+
+  function renderBlockBoard() {
+    if (!el.blockBoard) return;
+    el.blockBoard.innerHTML = "";
+    const previewCells = getBlockPreviewCells();
+    const clearingCells = getClearingBlockCells();
+    for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
+      for (let c = 0; c < BLOCK_GRID_SIZE; c += 1) {
+        const cell = document.createElement("button");
+        const preview = previewCells.get(`${r}:${c}`);
+        const clearing = clearingCells.get(`${r}:${c}`);
+        cell.type = "button";
+        cell.dataset.row = String(r);
+        cell.dataset.col = String(c);
+        cell.style.setProperty("--intro-delay", blockIntroDelay(r));
+        cell.style.setProperty("--clear-delay", `${(clearing?.index || 0) * 18}ms`);
+        cell.className = `block-cell ${block.starting ? `intro ${blockIntroColor(r, c)}` : ""} ${block.board[r][c] ? `filled ${block.board[r][c]}` : ""} ${clearing ? `clearing ${clearing.color}` : ""} ${preview ? `preview ${preview}` : ""}`;
+        cell.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}`);
+        cell.addEventListener("click", () => placeBlock(r, c));
+        el.blockBoard.appendChild(cell);
+      }
+    }
+  }
+
+  function renderBlockTray() {
+    if (!el.blockTray) return;
+    el.blockTray.innerHTML = "";
+    if (!block.running && !block.pieces.length) {
+      return;
+    }
+    block.pieces.forEach((piece, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `block-piece ${piece.color} ${piece.used ? "used" : ""} ${block.selected === index ? "selected" : ""}`;
+      button.disabled = piece.used;
+      button.style.setProperty("--piece-cols", piece.shape[0].length);
+      button.style.setProperty("--piece-rows", piece.shape.length);
+      button.addEventListener("pointerdown", (event) => startBlockDrag(index, event));
+      button.addEventListener("pointermove", moveBlockDrag);
+      button.addEventListener("pointerup", endBlockDrag);
+      button.addEventListener("pointercancel", () => cleanupBlockDrag(true));
+      button.addEventListener("click", () => {
+        if (piece.used) return;
+        if (!blockCanInteract()) {
+          showToast("Start Game", "Press Start Game before choosing pieces.");
+          return;
+        }
+        playBlockSfx("grab");
+        block.selected = index;
+        renderBlockTray();
+      });
+      piece.shape.forEach((row, y) => row.forEach((filled, x) => {
+        const dot = document.createElement("span");
+        dot.className = filled ? "mini-block" : "mini-block empty";
+        dot.dataset.x = String(x);
+        dot.dataset.y = String(y);
+        button.appendChild(dot);
+      }));
+      el.blockTray.appendChild(button);
+    });
+  }
+
+  function renderBlock() {
+    renderBlockBoard();
+    renderBlockTray();
+    renderBlockStats();
+  }
+
+  function endBlockRun(reason = "manual") {
+    if (!block.running && reason !== "crash") return;
+    stopBlock(false);
+    if (reason === "manual") {
+      playTone("tap");
+    } else {
+      playGameOverSound();
+    }
+    stopGameTheme(reason === "crash" ? "death" : "stop");
+
+    const previousBest = state.stats.blockBest;
+    const newBest = block.score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem();
+    const earned = applyRewardBooster(calculateBlockXp());
+    const coinsEarned = previewBlockCoins(newBest);
+
+    state.stats.gamesPlayed += 1;
+    state.stats.blockRuns += 1;
+    state.stats.blockTotalScore += block.score;
+    state.stats.blockBest = Math.max(previousBest, block.score);
+    state.stats.blockLines += block.lines;
+
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+
+    state.xp += earned;
+    state.stats.blockXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "block";
+    if (newBest) showToast("New High Score", `Block Grid best is now ${formatNumber(block.score)}.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(block.score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.blockBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = newBest
+      ? "New Block Grid best. Keep the board open."
+      : reason === "manual"
+        ? "Run ended. Your score has been saved."
+        : "No current pieces fit. Clear smarter next run.";
+    el.gameOverModal.classList.remove("hidden");
+  }
+
+  function createStarState() {
+    return {
+      running: false,
+      player: { x: 360, y: 590, r: 16 },
+      input: { x: 0, y: 0 },
+      bullets: [],
+      enemyBullets: [],
+      enemies: [],
+      meteors: [],
+      stars: [],
+      particles: [],
+      score: 0,
+      kills: 0,
+      bossKills: 0,
+      shots: 0,
+      meteorsDestroyed: 0,
+      survivedMs: 0,
+      multiplier: 1,
+      lastFrame: 0,
+      lastShotAt: 0,
+      enemySpawnAt: 0,
+      meteorSpawnAt: 0,
+      bossSpawnAt: 0,
+      runStartedAt: 0,
+      joystickPointerId: null,
+      shootHeld: false
+    };
+  }
+
+  function openStarInvaders() {
+    currentGame = "star";
+    prepareGameTheme();
+    showScreen("star");
+    resetStar();
+  }
+
+  function resetStar() {
+    stopStar(false);
+    star = createStarState();
+    seedStarfield();
+    renderStarStats();
+    drawStar();
+  }
+
+  function seedStarfield() {
+    star.stars = Array.from({ length: 90 }, () => ({
+      x: Math.random() * 720,
+      y: Math.random() * 720,
+      size: Math.random() * 1.8 + 0.4,
+      speed: Math.random() * 75 + 35
+    }));
+  }
+
+  function startStar() {
+    resetStar();
+    star.running = true;
+    star.runStartedAt = Date.now();
+    star.lastFrame = performance.now();
+    playTone("tap");
+    playStarTheme("normal", { restart: true });
+    starTimer = setInterval(tickStar, STAR_TICK_MS);
+    renderStarStats();
+  }
+
+  function restartStar() {
+    startStar();
+  }
+
+  function stopStar(render = true) {
+    if (starTimer) {
+      clearInterval(starTimer);
+      starTimer = null;
+    }
+    star.running = false;
+    star.shootHeld = false;
+    resetJoystickVisual();
+    if (render) {
+      renderStarStats();
+      drawStar();
+    }
+  }
+
+  function handlePrimaryStarAction() {
+    if (star.running) {
+      endStarRun("manual");
+      return;
+    }
+    startStar();
+  }
+
+  function starElapsedSeconds() {
+    return star.runStartedAt ? Math.floor((Date.now() - star.runStartedAt) / 1000) : 0;
+  }
+
+  function starDifficulty() {
+    return 1 + Math.min(4, starElapsedSeconds() / 45);
+  }
+
+  function spawnStarEnemy(type = "enemy") {
+    const difficulty = starDifficulty();
+    const isBoss = type === "boss";
+    const hp = isBoss ? Math.round(8 + difficulty * 3 + star.bossKills * 2) : Math.round(2 + difficulty);
+    star.enemies.push({
+      type,
+      x: 45 + Math.random() * 630,
+      y: -40,
+      r: isBoss ? 28 : 17,
+      hp,
+      maxHp: hp,
+      speed: isBoss ? 46 + difficulty * 6 : 82 + difficulty * 14,
+      drift: (Math.random() - 0.5) * (isBoss ? 30 : 60),
+      healthUntil: 0,
+      nextShotAt: performance.now() + 2000 + Math.random() * 2000
+    });
+    if (isBoss) playStarTheme("boss", { restart: true });
+  }
+
+  function spawnMeteor() {
+    const difficulty = starDifficulty();
+    const radius = 14 + Math.random() * 16;
+    const hp = Math.max(2, Math.round(radius / 10 + difficulty * 0.7));
+    star.meteors.push({
+      x: 24 + Math.random() * 672,
+      y: -36,
+      r: radius,
+      hp,
+      maxHp: hp,
+      healthUntil: 0,
+      speed: 120 + difficulty * 20 + Math.random() * 70,
+      spin: Math.random() * Math.PI
+    });
+  }
+
+  function shootStar() {
+    const now = performance.now();
+    if (now - star.lastShotAt < 190) return;
+    star.lastShotAt = now;
+    star.shots += 1;
+    playToneAt(1120, 0.04, "square", 0.05);
+    star.bullets.push({ x: star.player.x, y: star.player.y - 18, vy: -520, r: 4 });
+  }
+
+  function enemyShoot(enemy, now) {
+    star.enemyBullets.push({
+      x: enemy.x,
+      y: enemy.y + enemy.r,
+      vy: enemy.type === "boss" ? 235 : 205,
+      r: enemy.type === "boss" ? 5 : 4
+    });
+    enemy.nextShotAt = now + 2000 + Math.random() * 2000;
+  }
+
+  function markDamaged(target) {
+    target.healthUntil = performance.now() + 1600;
+  }
+
+  function destroyStarEnemy(enemy) {
+    enemy.dead = true;
+    const boss = enemy.type === "boss";
+    star.kills += 1;
+    if (boss) {
+      star.bossKills += 1;
+      star.multiplier += 0.55 + star.bossKills * 0.08;
+    }
+    star.score += Math.round((boss ? 420 : 75) * star.multiplier);
+    addStarExplosion(enemy.x, enemy.y, boss ? "#ffd35a" : "#ff2fad", boss ? 24 : 12);
+    playTone(boss ? "level" : "win");
+    if (boss && !star.enemies.some((item) => item !== enemy && item.type === "boss" && !item.dead)) {
+      playStarTheme("normal", { restart: true });
+    }
+  }
+
+  function destroyMeteor(meteor) {
+    meteor.dead = true;
+    star.meteorsDestroyed += 1;
+    star.score += Math.round((28 + meteor.r) * star.multiplier);
+    addStarExplosion(meteor.x, meteor.y, "#ffd35a", 10);
+    playTone("win");
+  }
+
+  function addStarExplosion(x, y, color = "#49f4ff", count = 10) {
+    for (let i = 0; i < count; i += 1) {
+      star.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 180,
+        vy: (Math.random() - 0.5) * 180,
+        life: 24,
+        color
+      });
+    }
+  }
+
+  function distance(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function tickStar() {
+    if (!star.running) return;
+    const now = performance.now();
+    const dt = Math.min(0.04, (now - star.lastFrame) / 1000 || 0.016);
+    star.lastFrame = now;
+    star.survivedMs += dt * 1000;
+    const difficulty = starDifficulty();
+
+    star.player.x = Math.max(20, Math.min(700, star.player.x + star.input.x * 260 * dt));
+    star.player.y = Math.max(80, Math.min(690, star.player.y + star.input.y * 260 * dt));
+    if (star.shootHeld) shootStar();
+
+    star.stars.forEach((s) => {
+      s.y += s.speed * difficulty * dt;
+      if (s.y > 730) {
+        s.y = -10;
+        s.x = Math.random() * 720;
+      }
+    });
+
+    if (now > star.enemySpawnAt) {
+      spawnStarEnemy();
+      star.enemySpawnAt = now + Math.max(520, 1400 - difficulty * 160);
+    }
+    if (now > star.meteorSpawnAt) {
+      spawnMeteor();
+      star.meteorSpawnAt = now + Math.max(430, 1050 - difficulty * 120);
+    }
+    if (starElapsedSeconds() > 22 && now > star.bossSpawnAt) {
+      spawnStarEnemy("boss");
+      star.bossSpawnAt = now + Math.max(9000, 19000 - difficulty * 1200);
+    }
+
+    star.bullets.forEach((b) => b.y += b.vy * dt);
+    star.enemyBullets.forEach((b) => b.y += b.vy * dt);
+    star.enemies.forEach((e) => {
+      e.y += e.speed * dt;
+      e.x += Math.sin((now + e.y) / 430) * e.drift * dt;
+      if (e.y > 20 && now > e.nextShotAt) enemyShoot(e, now);
+    });
+    star.meteors.forEach((m) => {
+      m.y += m.speed * dt;
+      m.spin += dt * 3;
+    });
+    star.particles.forEach((p) => {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= 1;
+    });
+
+    star.bullets = star.bullets.filter((b) => b.y > -20);
+    star.enemyBullets = star.enemyBullets.filter((b) => b.y < 760);
+    star.particles = star.particles.filter((p) => p.life > 0);
+
+    for (const bullet of star.bullets) {
+      for (const enemy of star.enemies) {
+        if (distance(bullet, enemy) < bullet.r + enemy.r) {
+          bullet.y = -999;
+          enemy.hp -= 1;
+          markDamaged(enemy);
+          addStarExplosion(bullet.x, bullet.y, enemy.type === "boss" ? "#ffd35a" : "#49f4ff", 4);
+          if (enemy.hp <= 0) destroyStarEnemy(enemy);
+        }
+      }
+      for (const meteor of star.meteors) {
+        if (distance(bullet, meteor) < bullet.r + meteor.r) {
+          bullet.y = -999;
+          meteor.hp -= 1;
+          markDamaged(meteor);
+          addStarExplosion(bullet.x, bullet.y, "#ffd35a", 4);
+          if (meteor.hp <= 0) destroyMeteor(meteor);
+        }
+      }
+    }
+
+    star.bullets = star.bullets.filter((b) => b.y > -100);
+    star.enemyBullets = star.enemyBullets.filter((b) => b.y < 820);
+    star.enemies = star.enemies.filter((e) => !e.dead && e.y < 780);
+    star.meteors = star.meteors.filter((m) => !m.dead && m.y < 780);
+    if (activeTheme === "game-starBoss" && !star.enemies.some((e) => e.type === "boss")) {
+      playStarTheme("normal", { restart: true });
+    }
+
+    const hitEnemy = star.enemies.some((e) => distance(star.player, e) < star.player.r + e.r * 0.82);
+    const hitMeteor = star.meteors.some((m) => distance(star.player, m) < star.player.r + m.r * 0.78);
+    const hitEnemyBullet = star.enemyBullets.some((b) => distance(star.player, b) < star.player.r + b.r);
+    if (hitEnemy || hitMeteor || hitEnemyBullet) {
+      endStarRun("crash");
+      return;
+    }
+
+    star.score += dt * 3;
+    renderStarStats();
+    drawStar();
+  }
+
+  function calculateStarXp() {
+    if (star.score <= 0) return 0;
+    const survival = Math.floor(starElapsedSeconds() * 0.6);
+    const killXp = star.kills * 18;
+    const bossXp = star.bossKills * 95;
+    const newBestBonus = star.bossKills > state.stats.starBest ? 75 : 0;
+    const meteorXp = star.meteorsDestroyed * 7;
+    return Math.round((survival + killXp + bossXp + meteorXp + newBestBonus) * star.multiplier);
+  }
+
+  function previewStarCoins(newBest = star.bossKills > state.stats.starBest) {
+    if (star.score <= 0) return 0;
+    let earned = Math.floor(star.kills * 3 + star.bossKills * 18 + star.meteorsDestroyed * 2 + starElapsedSeconds() / 12);
+    if (newBest) earned += 25;
+    return applyRewardBooster(Math.max(1, earned));
+  }
+
+  function renderStarStats() {
+    if (!el.starScore) return;
+    el.starScore.textContent = formatNumber(Math.floor(star.score));
+    el.starBest.textContent = formatNumber(Math.max(Number(state.stats.starBest) || 0, star.bossKills));
+    el.starKills.textContent = formatNumber(star.kills);
+    el.starXpPreview.textContent = formatNumber(applyRewardBooster(calculateStarXp()));
+    el.starCoinPreview.textContent = formatNumber(previewStarCoins());
+    el.startStarBtn.textContent = star.running ? "End Game" : "Start Game";
+  }
+
+  function drawStarHealthBar(ctx, entity, yOffset) {
+    if (!entity.healthUntil || performance.now() > entity.healthUntil) return;
+    const width = Math.max(42, entity.r * 2.4);
+    const pct = Math.max(0, Math.min(1, entity.hp / entity.maxHp));
+    const x = entity.x - width / 2;
+    const y = entity.y + yOffset;
+    ctx.save();
+    ctx.fillStyle = "rgba(5, 3, 11, 0.78)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.24)";
+    ctx.lineWidth = 1;
+    ctx.fillRect(x, y, width, 12);
+    ctx.strokeRect(x, y, width, 12);
+    ctx.fillStyle = pct > 0.5 ? "#57ff9a" : pct > 0.25 ? "#ffd35a" : "#ff5275";
+    ctx.fillRect(x + 2, y + 2, Math.max(4, (width - 4) * pct), 8);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 8px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${Math.round(pct * 100)}%`, entity.x, y + 6);
+    ctx.restore();
+  }
+
+  function drawPixelAlien(ctx, enemy) {
+    const boss = enemy.type === "boss";
+    const sprite = [
+      "00111100",
+      "01111110",
+      "11011011",
+      "11111111",
+      "10111101",
+      "10100101",
+      "01000010",
+      "10000001"
+    ];
+    const scale = boss ? 7 : 4.8;
+    const width = sprite[0].length * scale;
+    const height = sprite.length * scale;
+    const x0 = -width / 2;
+    const y0 = -height / 2;
+    const body = boss ? "#ffd35a" : "#57ff9a";
+    const shade = boss ? "#ff2fad" : "#49f4ff";
+
+    ctx.save();
+    ctx.translate(enemy.x, enemy.y);
+    ctx.shadowBlur = boss ? 24 : 16;
+    ctx.shadowColor = boss ? "#ffd35a" : "#57ff9a";
+    sprite.forEach((row, y) => {
+      [...row].forEach((pixel, x) => {
+        if (pixel !== "1") return;
+        ctx.fillStyle = (x + y) % 5 === 0 ? shade : body;
+        ctx.fillRect(x0 + x * scale, y0 + y * scale, scale - 0.5, scale - 0.5);
+      });
+    });
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = boss ? "#10051d" : "#05030b";
+    ctx.fillRect(x0 + scale * 2, y0 + scale * 2, scale, scale);
+    ctx.fillRect(x0 + scale * 5, y0 + scale * 2, scale, scale);
+    ctx.restore();
+  }
+
+  function drawStar() {
+    if (!el.starCanvas) return;
+    const ctx = el.starCanvas.getContext("2d");
+    const w = el.starCanvas.width;
+    const h = el.starCanvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, "#05030b");
+    bg.addColorStop(0.55, "#0b0820");
+    bg.addColorStop(1, "#140725");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    star.stars.forEach((s) => {
+      ctx.globalAlpha = 0.45 + Math.min(0.5, s.size / 3);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(s.x, s.y, s.size, s.size * 3.2);
+    });
+    ctx.globalAlpha = 1;
+
+    star.meteors.forEach((m) => {
+      ctx.save();
+      ctx.translate(m.x, m.y);
+      ctx.rotate(m.spin);
+      ctx.fillStyle = "#7d647d";
+      ctx.strokeStyle = "rgba(255, 211, 90, 0.42)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-m.r, -m.r * 0.2);
+      ctx.lineTo(-m.r * 0.25, -m.r);
+      ctx.lineTo(m.r * 0.8, -m.r * 0.5);
+      ctx.lineTo(m.r, m.r * 0.25);
+      ctx.lineTo(m.r * 0.2, m.r);
+      ctx.lineTo(-m.r * 0.8, m.r * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      drawStarHealthBar(ctx, m, m.r + 8);
+    });
+
+    star.enemies.forEach((e) => {
+      drawPixelAlien(ctx, e);
+      drawStarHealthBar(ctx, e, e.r + 18);
+    });
+
+    star.bullets.forEach((b) => {
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = "#49f4ff";
+      ctx.fillStyle = "#49f4ff";
+      ctx.fillRect(b.x - 2, b.y - 12, 4, 18);
+    });
+    star.enemyBullets.forEach((b) => {
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = "#ff5275";
+      ctx.fillStyle = "#ff5275";
+      ctx.fillRect(b.x - 2, b.y - 2, 4, 16);
+    });
+    ctx.shadowBlur = 0;
+
+    star.particles.forEach((p) => {
+      ctx.globalAlpha = Math.max(0, p.life / 24);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, 3, 3);
+    });
+    ctx.globalAlpha = 1;
+
+    ctx.save();
+    ctx.translate(star.player.x, star.player.y);
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = "#49f4ff";
+    const ship = ctx.createLinearGradient(-18, -22, 18, 24);
+    ship.addColorStop(0, "#49f4ff");
+    ship.addColorStop(0.55, "#ffffff");
+    ship.addColorStop(1, "#ff2fad");
+    ctx.fillStyle = ship;
+    ctx.beginPath();
+    ctx.moveTo(0, -24);
+    ctx.lineTo(20, 20);
+    ctx.lineTo(0, 10);
+    ctx.lineTo(-20, 20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ffd35a";
+    ctx.fillRect(-5, 16, 10, 12);
+    ctx.restore();
+
+    if (!star.running) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.44)";
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+
+  function endStarRun(reason = "manual") {
+    if (!star.running && reason !== "crash") return;
+    stopStar(false);
+    if (reason === "manual") {
+      playTone("tap");
+    } else {
+      playGameOverSound();
+    }
+    stopGameTheme(reason === "crash" ? "death" : "stop");
+
+    const previousBest = state.stats.starBest;
+    const finalScore = Math.floor(star.score);
+    const newBest = star.bossKills > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem();
+    const earned = applyRewardBooster(calculateStarXp());
+    const coinsEarned = previewStarCoins(newBest);
+
+    state.stats.gamesPlayed += 1;
+    state.stats.starRuns += 1;
+    state.stats.starTotalScore += finalScore;
+    state.stats.starBest = Math.max(previousBest, star.bossKills);
+    state.stats.starKills += star.kills;
+    state.stats.starBossKills += star.bossKills;
+
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+
+    state.xp += earned;
+    state.stats.starXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "star";
+    if (newBest) showToast("New High Score", `Star Invaders best is now ${formatNumber(star.bossKills)} bosses.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(finalScore);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = `${formatNumber(state.stats.starBest)} Bosses`;
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = newBest
+      ? "New star lane best. Keep flying."
+      : reason === "manual"
+        ? "Run ended. Your flight data has been saved."
+        : "Ship destroyed. Retry and push deeper.";
+    el.gameOverModal.classList.remove("hidden");
   }
 
   function createSnakeState() {
@@ -1423,6 +2637,7 @@
     renderAll();
 
     const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "snake";
     if (newBest) showToast("New High Score", `Snake best is now ${formatNumber(snake.score)}.`, "win");
     showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
     showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
@@ -1445,6 +2660,10 @@
       ["first_run", state.stats.gamesPlayed >= 1],
       ["snake_10", state.stats.snakeBest >= 10],
       ["snake_25", state.stats.snakeBest >= 25],
+      ["block_first", state.stats.blockRuns >= 1],
+      ["block_500", state.stats.blockBest >= 500],
+      ["star_first", state.stats.starRuns >= 1],
+      ["star_25", state.stats.starKills >= 25],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -1461,7 +2680,8 @@
   }
 
   async function shareProfile() {
-    const text = `Check out my ARCADIA profile. Level ${state.level}, ${formatNumber(state.xp)} XP, ${formatNumber(state.coins)} coins, Snake best ${formatNumber(state.stats.snakeBest)}. Bet you can't top that.`;
+    const favorite = getFavoriteGame();
+    const text = `Check out my ARCADIA profile. Level ${state.level}, ${formatNumber(state.xp)} XP, ${formatNumber(state.coins)} coins, ${favorite.title} best ${formatNumber(favorite.best)}. Bet you can't top that.`;
     const data = { title: "ARCADIA", text, url: window.location.href };
     try {
       if (navigator.share) {
@@ -1557,6 +2777,48 @@
     }
   }
 
+  function updateStarJoystick(event) {
+    const rect = el.starJoystick.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const max = rect.width * 0.34;
+    const dx = event.clientX - cx;
+    const dy = event.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    const scale = dist > max ? max / dist : 1;
+    const x = dx * scale;
+    const y = dy * scale;
+    star.input.x = x / max;
+    star.input.y = y / max;
+    el.starJoystickKnob.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  function resetJoystickVisual() {
+    if (!el.starJoystickKnob) return;
+    star.input.x = 0;
+    star.input.y = 0;
+    el.starJoystickKnob.style.transform = "translate(0, 0)";
+  }
+
+  function startStarJoystick(event) {
+    event.preventDefault();
+    star.joystickPointerId = event.pointerId;
+    el.starJoystick.setPointerCapture?.(event.pointerId);
+    updateStarJoystick(event);
+  }
+
+  function moveStarJoystick(event) {
+    if (star.joystickPointerId !== event.pointerId) return;
+    event.preventDefault();
+    updateStarJoystick(event);
+  }
+
+  function endStarJoystick(event) {
+    if (star.joystickPointerId !== event.pointerId) return;
+    star.joystickPointerId = null;
+    resetJoystickVisual();
+  }
+
   function bindEvents() {
     syncAppHeight();
     window.addEventListener("resize", syncAppHeight);
@@ -1625,12 +2887,40 @@
     el.restartSnakeBtn.addEventListener("click", startSnake);
     el.retrySnakeBtn.addEventListener("click", () => {
       el.gameOverModal.classList.add("hidden");
-      startSnake();
+      if (currentGame === "block") {
+        startBlock();
+      } else if (currentGame === "star") {
+        startStar();
+      } else {
+        startSnake();
+      }
     });
     el.closeResultBtn.addEventListener("click", () => {
       el.gameOverModal.classList.add("hidden");
       showScreen("home");
     });
+    el.exitBlockBtn.addEventListener("click", () => showScreen("home"));
+    el.blockHelpBtn.addEventListener("click", () => showToast("Block Grid", "Place all three pieces. Full rows or columns clear.", "win", 4500));
+    el.startBlockBtn.addEventListener("click", handlePrimaryBlockAction);
+    el.restartBlockBtn.addEventListener("click", restartBlock);
+    el.exitStarBtn.addEventListener("click", () => showScreen("home"));
+    el.starHelpBtn.addEventListener("click", () => showToast("Star Invaders", "Dodge meteors. Shoot enemies. Boss kills raise your multiplier.", "win", 4500));
+    el.startStarBtn.addEventListener("click", handlePrimaryStarAction);
+    el.restartStarBtn.addEventListener("click", restartStar);
+    el.starJoystick.addEventListener("pointerdown", startStarJoystick);
+    el.starJoystick.addEventListener("pointermove", moveStarJoystick);
+    el.starJoystick.addEventListener("pointerup", endStarJoystick);
+    el.starJoystick.addEventListener("pointercancel", endStarJoystick);
+    el.starShootBtn.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      star.shootHeld = true;
+      shootStar();
+    });
+    el.starShootBtn.addEventListener("pointerup", () => { star.shootHeld = false; });
+    el.starShootBtn.addEventListener("pointercancel", () => { star.shootHeld = false; });
+    document.addEventListener("pointermove", moveBlockDrag);
+    document.addEventListener("pointerup", endBlockDrag);
+    document.addEventListener("pointercancel", () => cleanupBlockDrag(true));
 
     document.addEventListener("keydown", (event) => {
       const keyMap = {
@@ -1651,10 +2941,26 @@
         event.preventDefault();
         changeDirection(keyMap[event.key]);
       }
+      if (keyMap[event.key] && currentScreen === "star") {
+        event.preventDefault();
+        const dir = keyMap[event.key];
+        star.input.x = dir === "left" ? -1 : dir === "right" ? 1 : star.input.x;
+        star.input.y = dir === "up" ? -1 : dir === "down" ? 1 : star.input.y;
+      }
       if (event.key === " " && currentScreen === "game") {
         event.preventDefault();
         snake.running ? togglePause() : startSnake();
       }
+      if (event.key === " " && currentScreen === "star") {
+        event.preventDefault();
+        star.running ? shootStar() : startStar();
+      }
+    });
+
+    document.addEventListener("keyup", (event) => {
+      if (currentScreen !== "star") return;
+      if (["ArrowLeft", "ArrowRight", "a", "A", "d", "D"].includes(event.key)) star.input.x = 0;
+      if (["ArrowUp", "ArrowDown", "w", "W", "s", "S"].includes(event.key)) star.input.y = 0;
     });
 
     el.snakeCanvas.addEventListener("pointerdown", (event) => {
