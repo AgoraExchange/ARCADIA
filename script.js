@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "4.7.4.26";
+  const APP_VERSION = "5.7.4.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders blast sound effect added for every shot.",
     "Operator Gate now shakes and flashes red when the access code is wrong.",
     "Developer Operator Gate added with gated Dev Mode tools.",
     "Dev Mode can now edit player level and coins for testing.",
@@ -44,6 +45,7 @@
   const BLOCK_START_SFX = "assets/audio/sfx/block-grid/start.mp3";
   const BLOCK_GRAB_SFX = "assets/audio/sfx/block-grid/grab.mp3";
   const BLOCK_PLACE_SFX = "assets/audio/sfx/block-grid/place.mp3";
+  const STAR_BLAST_SFX = "assets/audio/sfx/star-invaders/blast.mp3";
   const THEME_SONGS = {
     lobby: [
       "assets/themesong/lobby/lobby1.mp3",
@@ -2224,7 +2226,7 @@
     if (now - star.lastShotAt < 190) return;
     star.lastShotAt = now;
     star.shots += 1;
-    playToneAt(1120, 0.04, "square", 0.05);
+    playOneShotSfx(STAR_BLAST_SFX, 0.72);
     star.bullets.push({ x: star.player.x, y: star.player.y - 18, vy: -520, r: 4 });
   }
 

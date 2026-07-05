@@ -1,6 +1,7 @@
 {
-  "version": "4.7.4.26",
+  "version": "5.7.4.26",
   "patchNotes": [
+    "Star Invaders blast sound effect added for every shot.",
     "Operator Gate now shakes and flashes red when the access code is wrong.",
     "Developer Operator Gate added with gated Dev Mode tools.",
     "Dev Mode can now edit player level and coins for testing.",
