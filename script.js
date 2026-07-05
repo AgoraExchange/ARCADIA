@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "15.7.5.26";
+  const APP_VERSION = "16.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Flappy Bird countdown now uses the ARCADIA pixel number font.",
     "Flappy Bird added as Game 05 with pipe scoring, countdown start, XP scaling, and soundtrack.",
     "Machine Gun booster now lasts 30 seconds in Star Invaders before normal shooting returns.",
     "Rewards Store expanded with new nameplates, Star Invaders laser cosmetics, Machine Gun booster, and fixed Stack action button sizing.",
@@ -4391,9 +4392,11 @@
       ctx.fillStyle = "#ffd35a";
       ctx.shadowBlur = 22;
       ctx.shadowColor = "#ffd35a";
-      ctx.font = "900 92px Arial Black";
+      ctx.font = "900 104px ByteBounce, Arial Black";
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.fillText(String(flappy.countdown), w / 2, h / 2);
+      ctx.textBaseline = "alphabetic";
       ctx.shadowBlur = 0;
     }
 
