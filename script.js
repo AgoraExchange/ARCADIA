@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "13.7.5.26";
+  const APP_VERSION = "14.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Machine Gun booster now lasts 30 seconds in Star Invaders before normal shooting returns.",
     "Rewards Store expanded with new nameplates, Star Invaders laser cosmetics, Machine Gun booster, and fixed Stack action button sizing.",
     "Star Invaders boss outlines removed, Freefire sped up, and rare powerup balance tuned.",
     "Star Invaders now shows active powerup countdowns on the top-right of the game screen.",
@@ -2321,6 +2322,7 @@
       freefireUntil: 0,
       lastFreefireShotAt: 0,
       machineGunActive: false,
+      machineGunUntil: 0,
       lastMachineGunShotAt: 0,
       laserCycle: 0,
       wingmenUntil: 0,
@@ -2362,12 +2364,13 @@
     star.machineGunActive = booster?.effect === "machine_gun";
     star.runStartedAt = Date.now();
     star.lastFrame = performance.now();
+    star.machineGunUntil = star.machineGunActive ? star.lastFrame + 30000 : 0;
     star.powerupSpawnAt = star.lastFrame + 5200;
     playTone("tap");
     playStarTheme("normal", { restart: true });
     starTimer = setInterval(tickStar, STAR_TICK_MS);
     renderStarStats();
-    if (star.machineGunActive) showToast("Machine Gun Armed", "Star Invaders auto-fire is active for this run.", "win");
+    if (star.machineGunActive) showToast("Machine Gun Armed", "30 seconds of Star Invaders auto-fire.", "win");
   }
 
   function restartStar() {
@@ -2717,6 +2720,11 @@
       star.lastFreefireShotAt = now;
       shootStar({ auto: true, freefire: true, quiet: true });
     }
+    if (star.machineGunActive && now >= star.machineGunUntil) {
+      star.machineGunActive = false;
+      star.machineGunUntil = 0;
+      showToast("Machine Gun Expired", "Manual shooting is back online.");
+    }
     if (star.machineGunActive && now >= star.freefireUntil && now - star.lastMachineGunShotAt >= 92) {
       star.lastMachineGunShotAt = now;
       shootStar({ auto: true, quiet: true });
@@ -2989,7 +2997,8 @@
       { name: "Satellite", color: "#ffd35a", until: star.damageBoostUntil },
       { name: "Wingmen", color: "#49f4ff", until: star.wingmenUntil },
       { name: "Rocket", color: "#ff2fad", until: star.rocketHelperUntil },
-      { name: "Freefire", color: "#ffd35a", until: star.freefireUntil }
+      { name: "Freefire", color: "#ffd35a", until: star.freefireUntil },
+      { name: "Machine Gun", color: "#57ff9a", until: star.machineGunUntil }
     ]
       .filter((item) => item.until > now)
       .map((item) => ({

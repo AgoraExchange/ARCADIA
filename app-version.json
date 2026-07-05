@@ -1,6 +1,7 @@
 {
-  "version": "13.7.5.26",
+  "version": "14.7.5.26",
   "patchNotes": [
+    "Machine Gun booster now lasts 30 seconds in Star Invaders before normal shooting returns.",
     "Rewards Store expanded with new nameplates, Star Invaders laser cosmetics, Machine Gun booster, and fixed Stack action button sizing.",
     "Star Invaders boss outlines removed, Freefire sped up, and rare powerup balance tuned.",
     "Star Invaders now shows active powerup countdowns on the top-right of the game screen.",
