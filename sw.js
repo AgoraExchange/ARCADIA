@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "5.7.4.26";
+const ARCADIA_VERSION = "6.7.5.26";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -7,9 +7,13 @@ const APP_SHELL = [
   "script.js",
   "manifest.webmanifest",
   "app-version.json",
+  "assets/images/games/stackgame.png",
   "assets/images/arcadia-logo-180.png",
   "assets/images/arcadia-logo-192.png",
-  "assets/images/arcadia-logo-512.png"
+  "assets/images/arcadia-logo-512.png",
+  "assets/themesong/games/stack.mp3",
+  "assets/themesong/games/stack-2.mp3",
+  "assets/themesong/games/stack-3.mp3"
 ];
 
 self.addEventListener("install", (event) => {

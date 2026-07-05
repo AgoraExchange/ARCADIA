@@ -1,6 +1,8 @@
 {
-  "version": "5.7.4.26",
+  "version": "6.7.5.26",
   "patchNotes": [
+    "Stack added as the fourth playable ARCADIA game.",
+    "Stack includes slicing, perfect placement combos, tower growth, speed scaling, and random soundtrack selection.",
     "Star Invaders blast sound effect added for every shot.",
     "Operator Gate now shakes and flashes red when the access code is wrong.",
     "Developer Operator Gate added with gated Dev Mode tools.",

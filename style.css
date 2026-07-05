@@ -440,6 +440,7 @@ input:focus {
 .canvas-shell,
 .block-stage,
 .star-stage,
+.stack-stage,
 .game-actions,
 .star-controls {
   user-select: none;
@@ -1362,6 +1363,14 @@ input:focus {
   overflow: hidden;
 }
 
+.stack-stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .game-hud,
 .reward-preview {
   display: grid;
@@ -1761,6 +1770,42 @@ input:focus {
   border-radius: 18px;
   border: 1px solid rgba(196, 113, 255, 0.26);
   background: #05030b;
+}
+
+.stack-canvas-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, calc(var(--app-height) - 320px), 520px);
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 47, 173, 0.24);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 47, 173, 0.18), transparent 32%),
+    radial-gradient(circle at 50% 80%, rgba(73, 244, 255, 0.1), transparent 30%),
+    rgba(5, 3, 11, 0.7);
+  box-shadow:
+    inset 0 0 30px rgba(255, 47, 173, 0.08),
+    0 0 34px rgba(138, 92, 255, 0.2);
+}
+
+#stackCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(196, 113, 255, 0.26);
+  background: #05030b;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .star-controls {

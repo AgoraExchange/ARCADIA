@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "5.7.4.26";
+  const APP_VERSION = "6.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Stack added as the fourth playable ARCADIA game.",
+    "Stack includes slicing, perfect placement combos, tower growth, and speed scaling.",
     "Star Invaders blast sound effect added for every shot.",
     "Operator Gate now shakes and flashes red when the access code is wrong.",
     "Developer Operator Gate added with gated Dev Mode tools.",
@@ -40,6 +42,7 @@
   const BLOCK_GRID_SIZE = 8;
   const GAME_TICK_MS = 112;
   const STAR_TICK_MS = 1000 / 60;
+  const STACK_TICK_MS = 1000 / 60;
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
   const BLOCK_START_SFX = "assets/audio/sfx/block-grid/start.mp3";
@@ -56,6 +59,11 @@
       snake: "assets/themesong/games/snake.mp3",
       block: "assets/themesong/games/block-grid.mp3",
       star: "assets/themesong/games/star-invaders.mp3",
+      stack: [
+        "assets/themesong/games/stack.mp3",
+        "assets/themesong/games/stack-2.mp3",
+        "assets/themesong/games/stack-3.mp3"
+      ],
       starBoss: "assets/themesong/games/star-invaders-boss.mp3"
     }
   };
@@ -95,7 +103,12 @@
       starXpEarned: 0,
       starTotalScore: 0,
       starKills: 0,
-      starBossKills: 0
+      starBossKills: 0,
+      stackRuns: 0,
+      stackBest: 0,
+      stackXpEarned: 0,
+      stackTotalScore: 0,
+      stackPerfects: 0
     },
     achievements: []
   };
@@ -135,9 +148,20 @@
       mark: "I"
     },
     {
+      id: "stack",
+      title: "Stack",
+      gameNo: "04",
+      tags: ["stack", "tower", "timing", "precision"],
+      description: "Time each slab, cut the overhang, and climb higher.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/stackgame.png",
+      mark: "K"
+    },
+    {
       id: "runner",
       title: "Turbo Tunnel",
-      gameNo: "04",
+      gameNo: "05",
       tags: ["runner", "speed", "reflex"],
       description: "A fast neon tunnel challenge built for streaks.",
       status: "Coming Soon",
@@ -154,6 +178,9 @@
     { id: "block_500", title: "Line Crusher", text: "Score 500 or higher in Block Grid." },
     { id: "star_first", title: "First Launch", text: "Complete your first Star Invaders run." },
     { id: "star_25", title: "Astro Ace", text: "Destroy 25 enemies in Star Invaders." },
+    { id: "stack_first", title: "Tower Drop", text: "Complete your first Stack run." },
+    { id: "stack_20", title: "Neon Highrise", text: "Score 20 or higher in Stack." },
+    { id: "stack_perfect_5", title: "Perfect Builder", text: "Land 5 perfect Stack placements in one run." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -210,6 +237,8 @@
   let block = createBlockState();
   let star = createStarState();
   let starTimer = null;
+  let stack = createStackState();
+  let stackTimer = null;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -233,6 +262,7 @@
     gameScreen: $("gameScreen"),
     blockScreen: $("blockScreen"),
     starScreen: $("starScreen"),
+    stackScreen: $("stackScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -307,6 +337,16 @@
     starShootBtn: $("starShootBtn"),
     startStarBtn: $("startStarBtn"),
     restartStarBtn: $("restartStarBtn"),
+    exitStackBtn: $("exitStackBtn"),
+    stackPauseBtn: $("stackPauseBtn"),
+    stackCanvas: $("stackCanvas"),
+    stackScore: $("stackScore"),
+    stackBest: $("stackBest"),
+    stackCombo: $("stackCombo"),
+    stackXpPreview: $("stackXpPreview"),
+    stackCoinPreview: $("stackCoinPreview"),
+    startStackBtn: $("startStackBtn"),
+    restartStackBtn: $("restartStackBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     connectionModal: $("connectionModal"),
@@ -502,13 +542,15 @@
     el.gameScreen.classList.toggle("hidden", name !== "game");
     el.blockScreen.classList.toggle("hidden", name !== "block");
     el.starScreen.classList.toggle("hidden", name !== "star");
+    el.stackScreen.classList.toggle("hidden", name !== "stack");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
+    if (name !== "stack") stopStack(false);
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star"].includes(previousScreen) });
-    } else if (["game", "block", "star"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -771,6 +813,11 @@
     return tracks[Math.floor(Math.random() * tracks.length)] || tracks[0];
   }
 
+  function pickThemeTrack(track) {
+    if (!Array.isArray(track)) return track;
+    return track[Math.floor(Math.random() * track.length)] || track[0];
+  }
+
   function playLobbyTheme(options = {}) {
     const audio = getThemeAudio();
     if (activeTheme.startsWith("lobby-") && !audio.paused) return;
@@ -784,7 +831,9 @@
   }
 
   function playGameTheme(gameId, options = {}) {
-    playTheme(THEME_SONGS.games[gameId], `game-${gameId}`, { transition: false, ...options });
+    const track = pickThemeTrack(THEME_SONGS.games[gameId]);
+    const key = Array.isArray(THEME_SONGS.games[gameId]) && options.restart ? `game-${gameId}-${Date.now()}` : `game-${gameId}`;
+    playTheme(track, key, { transition: false, ...options });
   }
 
   function playStarTheme(mode = "normal", options = {}) {
@@ -835,6 +884,7 @@
     }
     if (currentScreen === "game" && snake.running) playGameTheme("snake");
     if (currentScreen === "block" && block.running) playGameTheme("block");
+    if (currentScreen === "stack" && stack.running) playGameTheme("stack");
     if (currentScreen === "star" && star.running) {
       const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
       playStarTheme(bossOnScreen ? "boss" : "normal");
@@ -1008,6 +1058,7 @@
     renderSnakeStats();
     renderBlockStats();
     renderStarStats();
+    renderStackStats();
   }
 
   function progressForXp(totalXp) {
@@ -1129,6 +1180,7 @@
         if (game.id === "snake") openSnake();
         if (game.id === "breakout") openBlockGrid();
         if (game.id === "invaders") openStarInvaders();
+        if (game.id === "stack") openStack();
       });
       el.gameGrid.appendChild(card);
     });
@@ -1176,6 +1228,13 @@
         runs: Number(state.stats.starRuns) || 0,
         best: Number(state.stats.starBossKills) || 0,
         metricLabel: "Bosses"
+      },
+      {
+        title: "Stack",
+        xp: Number(state.stats.stackXpEarned) || 0,
+        runs: Number(state.stats.stackRuns) || 0,
+        best: Number(state.stats.stackBest) || 0,
+        metricLabel: "Best"
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -1251,6 +1310,13 @@
         runs: Number(state.stats.starRuns) || 0,
         xp: Number(state.stats.starXpEarned) || 0,
         best: Number(state.stats.starBest) || 0
+      },
+      {
+        id: "stack",
+        title: "Stack",
+        runs: Number(state.stats.stackRuns) || 0,
+        xp: Number(state.stats.stackXpEarned) || 0,
+        best: Number(state.stats.stackBest) || 0
       }
     ];
 
@@ -2625,6 +2691,413 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function createStackState() {
+    return {
+      running: false,
+      paused: false,
+      score: 0,
+      combo: 0,
+      bestCombo: 0,
+      perfects: 0,
+      speed: 190,
+      direction: 1,
+      axis: "x",
+      lastFrame: 0,
+      startedAt: 0,
+      glowUntil: 0,
+      cameraLevel: 0,
+      particles: [],
+      tower: [createStackBlock(0, 0, 230, 230, 0, "#7dffe8", true)],
+      active: null
+    };
+  }
+
+  function createStackBlock(x, z, w, d, level, color, perfect = false) {
+    return { x, z, w, d, level, color, perfect };
+  }
+
+  function stackColor(level) {
+    const hue = (level * 18 + 195) % 360;
+    return `hsl(${hue} 96% 62%)`;
+  }
+
+  function openStack() {
+    currentGame = "stack";
+    prepareGameTheme();
+    showScreen("stack");
+    resetStack();
+  }
+
+  function resetStack() {
+    stopStack(false);
+    stack = createStackState();
+    spawnStackBlock();
+    renderStackStats();
+    drawStack();
+  }
+
+  function startStack() {
+    resetStack();
+    stack.running = true;
+    stack.startedAt = Date.now();
+    stack.lastFrame = performance.now();
+    playTone("tap");
+    playGameTheme("stack", { restart: true });
+    stackTimer = setInterval(tickStack, STACK_TICK_MS);
+    renderStackStats();
+  }
+
+  function restartStack() {
+    startStack();
+  }
+
+  function stopStack(render = true) {
+    if (stackTimer) {
+      clearInterval(stackTimer);
+      stackTimer = null;
+    }
+    stack.running = false;
+    stack.paused = false;
+    if (render) {
+      renderStackStats();
+      drawStack();
+    }
+  }
+
+  function toggleStackPause() {
+    if (!stack.running) return;
+    stack.paused = !stack.paused;
+    stack.lastFrame = performance.now();
+    renderStackStats();
+    drawStack();
+  }
+
+  function handlePrimaryStackAction() {
+    if (stack.running) {
+      endStackRun("manual");
+      return;
+    }
+    startStack();
+  }
+
+  function stackElapsedSeconds() {
+    return stack.startedAt ? Math.floor((Date.now() - stack.startedAt) / 1000) : 0;
+  }
+
+  function spawnStackBlock() {
+    const base = stack.tower[stack.tower.length - 1];
+    stack.axis = stack.tower.length % 2 === 0 ? "z" : "x";
+    const travel = 330;
+    stack.direction = stack.tower.length % 2 === 0 ? -1 : 1;
+    stack.active = createStackBlock(
+      stack.axis === "x" ? -travel * stack.direction : base.x,
+      stack.axis === "z" ? -travel * stack.direction : base.z,
+      base.w,
+      base.d,
+      base.level + 1,
+      stackColor(base.level + 1)
+    );
+  }
+
+  function tickStack() {
+    if (!stack.running || stack.paused || !stack.active) return;
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - stack.lastFrame) / 1000 || 0.016);
+    stack.lastFrame = now;
+    const active = stack.active;
+    const travel = 340;
+    active[stack.axis] += stack.direction * stack.speed * dt;
+    if (active[stack.axis] > travel) {
+      active[stack.axis] = travel;
+      stack.direction = -1;
+    }
+    if (active[stack.axis] < -travel) {
+      active[stack.axis] = -travel;
+      stack.direction = 1;
+    }
+    drawStack();
+  }
+
+  function placeStackBlock() {
+    if (!stack.running || stack.paused || !stack.active) {
+      if (!stack.running) startStack();
+      return;
+    }
+    const active = stack.active;
+    const base = stack.tower[stack.tower.length - 1];
+    const sizeKey = stack.axis === "x" ? "w" : "d";
+    const centerKey = stack.axis;
+    const activeStart = active[centerKey] - active[sizeKey] / 2;
+    const activeEnd = active[centerKey] + active[sizeKey] / 2;
+    const baseStart = base[centerKey] - base[sizeKey] / 2;
+    const baseEnd = base[centerKey] + base[sizeKey] / 2;
+    let overlapStart = Math.max(activeStart, baseStart);
+    let overlapEnd = Math.min(activeEnd, baseEnd);
+    let overlap = overlapEnd - overlapStart;
+    const offset = active[centerKey] - base[centerKey];
+    const perfect = Math.abs(offset) <= 8;
+
+    if (perfect) {
+      stack.combo += 1;
+      stack.bestCombo = Math.max(stack.bestCombo, stack.combo);
+      stack.perfects += 1;
+      overlapStart = baseStart;
+      overlapEnd = baseEnd;
+      overlap = Math.min(base[sizeKey] + (stack.combo >= 3 ? 8 : 0), 230);
+      stack.glowUntil = performance.now() + 420;
+      playTone("level");
+    } else {
+      stack.combo = 0;
+      playTone("eat");
+    }
+
+    if (overlap <= 0) {
+      endStackRun("crash");
+      return;
+    }
+
+    const placed = { ...active, perfect };
+    placed[centerKey] = perfect ? base[centerKey] : (overlapStart + overlapEnd) / 2;
+    placed[sizeKey] = overlap;
+    if (stack.axis === "x") placed.z = base.z;
+    if (stack.axis === "z") placed.x = base.x;
+    stack.tower.push(placed);
+    stack.score += 1;
+    stack.speed = Math.min(520, 190 + stack.score * 8 + Math.floor(stack.score / 12) * 28);
+    stack.cameraLevel = Math.max(0, stack.tower.length - 14);
+    addStackParticles(placed, perfect ? 18 : 7, perfect ? "#ffffff" : placed.color);
+    spawnStackBlock();
+    renderStackStats();
+    drawStack();
+  }
+
+  function addStackParticles(block, count, color) {
+    for (let i = 0; i < count; i += 1) {
+      stack.particles.push({
+        x: block.x + (Math.random() - 0.5) * block.w,
+        z: block.z + (Math.random() - 0.5) * block.d,
+        level: block.level,
+        vx: (Math.random() - 0.5) * 80,
+        vz: (Math.random() - 0.5) * 80,
+        vy: -Math.random() * 28,
+        life: 24,
+        color
+      });
+    }
+  }
+
+  function calculateStackXp() {
+    const base = stack.score * 7;
+    const perfectBonus = stack.perfects * 8 + stack.bestCombo * 12;
+    const survival = Math.floor(stackElapsedSeconds() / 10);
+    const newBestBonus = stack.score > state.stats.stackBest ? 45 : 0;
+    return Math.max(2, base + perfectBonus + survival + newBestBonus);
+  }
+
+  function previewStackCoins(newBest = stack.score > state.stats.stackBest) {
+    let earned = Math.max(2, Math.floor(stack.score * 2.5) + stack.perfects * 3 + stack.bestCombo * 2);
+    if (newBest) earned += 20;
+    return applyRewardBooster(earned);
+  }
+
+  function renderStackStats() {
+    if (!el.stackScore) return;
+    el.stackScore.textContent = formatNumber(stack.score);
+    el.stackBest.textContent = formatNumber(Math.max(Number(state.stats.stackBest) || 0, stack.score));
+    el.stackCombo.textContent = formatNumber(stack.combo);
+    el.stackXpPreview.textContent = formatNumber(applyRewardBooster(calculateStackXp()));
+    el.stackCoinPreview.textContent = formatNumber(previewStackCoins());
+    el.startStackBtn.textContent = stack.running ? "End Game" : "Start Game";
+    el.stackPauseBtn.textContent = stack.paused ? "Resume" : "Pause";
+    el.stackPauseBtn.disabled = !stack.running;
+  }
+
+  function drawStack() {
+    if (!el.stackCanvas) return;
+    const ctx = el.stackCanvas.getContext("2d");
+    const width = el.stackCanvas.width;
+    const height = el.stackCanvas.height;
+    const now = performance.now();
+    ctx.clearRect(0, 0, width, height);
+    const bg = ctx.createLinearGradient(0, 0, 0, height);
+    bg.addColorStop(0, "#27105e");
+    bg.addColorStop(0.48, "#13072e");
+    bg.addColorStop(1, "#05030b");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    for (let i = 0; i < 60; i += 1) {
+      const x = (i * 97 + 43) % width;
+      const y = (i * 53 + Math.sin(now / 800 + i) * 8) % height;
+      ctx.globalAlpha = 0.16 + (i % 5) * 0.05;
+      ctx.fillStyle = i % 3 === 0 ? "#ff2fad" : "#49f4ff";
+      ctx.fillRect(x, y, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.font = "300 74px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.shadowBlur = 28;
+    ctx.shadowColor = "#ff2fad";
+    ctx.fillText(String(stack.score), width / 2, 96);
+    ctx.shadowBlur = 0;
+
+    const visible = [...stack.tower.slice(Math.max(0, stack.tower.length - 26)), stack.active].filter(Boolean);
+    visible.sort((a, b) => a.level - b.level).forEach((block) => drawStackBlock(ctx, block));
+    updateStackParticles(ctx);
+
+    if (now < stack.glowUntil) {
+      const top = stack.tower[stack.tower.length - 1];
+      ctx.save();
+      ctx.globalAlpha = (stack.glowUntil - now) / 420;
+      drawStackOutline(ctx, top);
+      ctx.restore();
+    }
+
+    if (stack.paused) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.68)";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 56px Arial Black";
+      ctx.fillText("PAUSED", width / 2, height / 2);
+    }
+    ctx.textAlign = "left";
+  }
+
+  function stackProject(x, z, level) {
+    return {
+      x: 360 + (x - z) * 0.54,
+      y: 720 - (level - stack.cameraLevel) * 24 + (x + z) * 0.15
+    };
+  }
+
+  function drawStackBlock(ctx, block) {
+    const h = 18;
+    const p1 = stackProject(block.x - block.w / 2, block.z - block.d / 2, block.level);
+    const p2 = stackProject(block.x + block.w / 2, block.z - block.d / 2, block.level);
+    const p3 = stackProject(block.x + block.w / 2, block.z + block.d / 2, block.level);
+    const p4 = stackProject(block.x - block.w / 2, block.z + block.d / 2, block.level);
+    const color = block.color;
+    ctx.save();
+    ctx.shadowBlur = block.perfect ? 22 : 12;
+    ctx.shadowColor = color;
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.lineWidth = 1.4;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    [p1, p2, p3, p4].forEach((p, index) => index ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(5,3,11,0.32)";
+    ctx.beginPath();
+    ctx.moveTo(p4.x, p4.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.lineTo(p3.x, p3.y + h);
+    ctx.lineTo(p4.x, p4.y + h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.beginPath();
+    ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.lineTo(p3.x, p3.y + h);
+    ctx.lineTo(p2.x, p2.y + h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawStackOutline(ctx, block) {
+    const corners = [
+      stackProject(block.x - block.w / 2, block.z - block.d / 2, block.level + 0.1),
+      stackProject(block.x + block.w / 2, block.z - block.d / 2, block.level + 0.1),
+      stackProject(block.x + block.w / 2, block.z + block.d / 2, block.level + 0.1),
+      stackProject(block.x - block.w / 2, block.z + block.d / 2, block.level + 0.1)
+    ];
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 5;
+    ctx.shadowBlur = 26;
+    ctx.shadowColor = "#ffffff";
+    ctx.beginPath();
+    corners.forEach((p, index) => index ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  function updateStackParticles(ctx) {
+    stack.particles = stack.particles.filter((p) => p.life > 0);
+    stack.particles.forEach((p) => {
+      p.x += p.vx * 0.016;
+      p.z += p.vz * 0.016;
+      p.level += p.vy * 0.001;
+      p.life -= 1;
+      const pos = stackProject(p.x, p.z, p.level);
+      ctx.globalAlpha = Math.max(0, p.life / 24);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(pos.x, pos.y, 3, 3);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function endStackRun(reason = "crash") {
+    if (!stack.running) return;
+    stopStack(false);
+    if (reason === "manual") playTone("tap");
+    else playGameOverSound();
+    stopGameTheme(reason === "crash" ? "death" : "stop");
+
+    const previousBest = Number(state.stats.stackBest) || 0;
+    const newBest = stack.score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem();
+    const earned = applyRewardBooster(calculateStackXp());
+    const coinsEarned = previewStackCoins(newBest);
+
+    state.stats.gamesPlayed += 1;
+    state.stats.stackRuns += 1;
+    state.stats.stackTotalScore += stack.score;
+    state.stats.stackBest = Math.max(previousBest, stack.score);
+    state.stats.stackPerfects = Math.max(Number(state.stats.stackPerfects) || 0, stack.bestCombo);
+
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+
+    state.xp += earned;
+    state.stats.stackXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "stack";
+    if (newBest) showToast("New High Score", `Stack best is now ${formatNumber(stack.score)}.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(stack.score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.stackBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = newBest
+      ? "New tower best. The stack keeps climbing."
+      : reason === "manual"
+        ? "Run ended. Your tower data has been saved."
+        : "Tower missed. Retry and tighten the timing.";
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function createSnakeState() {
     return {
       running: false,
@@ -2987,6 +3460,9 @@
       ["block_500", state.stats.blockBest >= 500],
       ["star_first", state.stats.starRuns >= 1],
       ["star_25", state.stats.starKills >= 25],
+      ["stack_first", state.stats.stackRuns >= 1],
+      ["stack_20", state.stats.stackBest >= 20],
+      ["stack_perfect_5", state.stats.stackPerfects >= 5],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -3327,6 +3803,8 @@
         startBlock();
       } else if (currentGame === "star") {
         startStar();
+      } else if (currentGame === "stack") {
+        startStack();
       } else {
         startSnake();
       }
@@ -3343,6 +3821,14 @@
     el.starPauseBtn.addEventListener("click", toggleStarPause);
     el.startStarBtn.addEventListener("click", handlePrimaryStarAction);
     el.restartStarBtn.addEventListener("click", restartStar);
+    el.exitStackBtn.addEventListener("click", () => showScreen("home"));
+    el.stackPauseBtn.addEventListener("click", toggleStackPause);
+    el.startStackBtn.addEventListener("click", handlePrimaryStackAction);
+    el.restartStackBtn.addEventListener("click", restartStack);
+    el.stackCanvas.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      placeStackBlock();
+    });
     el.starJoystick.addEventListener("pointerdown", startStarJoystick);
     el.starJoystick.addEventListener("pointermove", moveStarJoystick);
     el.starJoystick.addEventListener("pointerup", endStarJoystick);
@@ -3392,6 +3878,10 @@
         event.preventDefault();
         if (!star.running) startStar();
         else if (!star.paused) shootStar();
+      }
+      if (event.key === " " && currentScreen === "stack") {
+        event.preventDefault();
+        placeStackBlock();
       }
     });
 
