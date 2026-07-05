@@ -1,6 +1,7 @@
 {
-  "version": "16.7.5.26",
+  "version": "17.7.5.26",
   "patchNotes": [
+    "Crossy Road added as Game 06 with swipe controls, street ambience, crash death screen, and ARCADIA scoring.",
     "Flappy Bird countdown now uses the ARCADIA pixel number font.",
     "Flappy Bird added as Game 05 with pipe scoring, countdown start, XP scaling, and soundtrack.",
     "Machine Gun booster now lasts 30 seconds in Star Invaders before normal shooting returns.",

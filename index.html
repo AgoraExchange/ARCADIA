@@ -347,6 +347,40 @@
       </main>
     </section>
 
+    <section id="crossyScreen" class="screen game-screen crossy-screen hidden">
+      <header class="page-top">
+        <button id="exitCrossyBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Crossy Road</h1>
+        <button id="crossyPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content">
+        <section class="crossy-stage panel">
+          <div class="game-hud">
+            <div><span>Score</span><strong id="crossyScore">0</strong></div>
+            <div><span>Best</span><strong id="crossyBest">0</strong></div>
+            <div><span>Streak</span><strong id="crossyStreak">0</strong></div>
+          </div>
+
+          <div class="crossy-canvas-shell">
+            <canvas id="crossyCanvas" width="540" height="720" aria-label="Crossy Road game board"></canvas>
+          </div>
+
+          <div class="reward-preview">
+            <div><span>XP Preview</span><strong id="crossyXpPreview">0</strong></div>
+            <div><span>Coins</span><strong id="crossyCoinPreview">0</strong></div>
+          </div>
+
+          <div class="game-actions">
+            <button id="startCrossyBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="restartCrossyBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint">Swipe or use arrow keys to cross traffic. Keep moving forward to raise your score.</p>
+        </section>
+      </main>
+    </section>
+
     <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
     <div id="gameOverModal" class="modal hidden">
@@ -403,7 +437,7 @@
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
           <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 16.7.5.26</p>
+        <p id="appVersionText" class="app-version-text">Version 17.7.5.26</p>
       </div>
     </div>
 

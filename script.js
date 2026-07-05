@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "16.7.5.26";
+  const APP_VERSION = "17.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Crossy Road added as Game 06 with swipe controls, street ambience, crash death screen, and ARCADIA scoring.",
     "Flappy Bird countdown now uses the ARCADIA pixel number font.",
     "Flappy Bird added as Game 05 with pipe scoring, countdown start, XP scaling, and soundtrack.",
     "Machine Gun booster now lasts 30 seconds in Star Invaders before normal shooting returns.",
@@ -55,8 +56,10 @@
   const STAR_TICK_MS = 1000 / 60;
   const STACK_TICK_MS = 1000 / 60;
   const FLAPPY_TICK_MS = 1000 / 60;
+  const CROSSY_TICK_MS = 1000 / 60;
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
+  const CROSSY_CRASH_SFX = "assets/audio/sfx/crossy-road/crash.mp3";
   const BLOCK_START_SFX = "assets/audio/sfx/block-grid/start.mp3";
   const BLOCK_GRAB_SFX = "assets/audio/sfx/block-grid/grab.mp3";
   const BLOCK_PLACE_SFX = "assets/audio/sfx/block-grid/place.mp3";
@@ -76,6 +79,7 @@
         "assets/themesong/games/stack-3.mp3"
       ],
       flappy: "assets/themesong/games/flappy-bird.mp3",
+      crossy: "assets/themesong/games/crossy-road-street.mp3",
       starBoss: "assets/themesong/games/star-invaders-boss.mp3"
     }
   };
@@ -125,7 +129,11 @@
       flappyRuns: 0,
       flappyBest: 0,
       flappyXpEarned: 0,
-      flappyTotalScore: 0
+      flappyTotalScore: 0,
+      crossyRuns: 0,
+      crossyBest: 0,
+      crossyXpEarned: 0,
+      crossyTotalScore: 0
     },
     achievements: []
   };
@@ -185,6 +193,17 @@
       available: true,
       image: "assets/images/games/flappybird.png",
       mark: "F"
+    },
+    {
+      id: "crossy",
+      title: "Crossy Road",
+      gameNo: "06",
+      tags: ["crossy", "road", "traffic", "cars", "swipe", "classic"],
+      description: "Swipe through neon traffic and push your crossing streak.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/crossyroadpreview.png",
+      mark: "C"
     }
   ];
 
@@ -201,6 +220,8 @@
     { id: "stack_perfect_5", title: "Perfect Builder", text: "Land 5 perfect Stack placements in one run." },
     { id: "flappy_first", title: "First Flight", text: "Complete your first Flappy Bird run." },
     { id: "flappy_10", title: "Pipe Runner", text: "Clear 10 pipes in Flappy Bird." },
+    { id: "crossy_first", title: "Street Starter", text: "Complete your first Crossy Road run." },
+    { id: "crossy_10", title: "Traffic Dodger", text: "Reach score 10 in Crossy Road." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -362,6 +383,10 @@
   let stackTimer = null;
   let flappy = createFlappyState();
   let flappyTimer = null;
+  let crossy = createCrossyState();
+  let crossyTimer = null;
+  let crossyTouchStart = null;
+  let crossyCrashAudio = null;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -388,6 +413,7 @@
     starScreen: $("starScreen"),
     stackScreen: $("stackScreen"),
     flappyScreen: $("flappyScreen"),
+    crossyScreen: $("crossyScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -483,6 +509,16 @@
     flappyCoinPreview: $("flappyCoinPreview"),
     startFlappyBtn: $("startFlappyBtn"),
     restartFlappyBtn: $("restartFlappyBtn"),
+    exitCrossyBtn: $("exitCrossyBtn"),
+    crossyPauseBtn: $("crossyPauseBtn"),
+    crossyCanvas: $("crossyCanvas"),
+    crossyScore: $("crossyScore"),
+    crossyBest: $("crossyBest"),
+    crossyStreak: $("crossyStreak"),
+    crossyXpPreview: $("crossyXpPreview"),
+    crossyCoinPreview: $("crossyCoinPreview"),
+    startCrossyBtn: $("startCrossyBtn"),
+    restartCrossyBtn: $("restartCrossyBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     connectionModal: $("connectionModal"),
@@ -681,15 +717,17 @@
     el.starScreen.classList.toggle("hidden", name !== "star");
     el.stackScreen.classList.toggle("hidden", name !== "stack");
     el.flappyScreen.classList.toggle("hidden", name !== "flappy");
+    el.crossyScreen.classList.toggle("hidden", name !== "crossy");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
     if (name !== "stack") stopStack(false);
     if (name !== "flappy") stopFlappy(false);
+    if (name !== "crossy") stopCrossy(false);
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -962,7 +1000,7 @@
     }
 
     audio.loop = true;
-    audio.volume = 0.58;
+    audio.volume = options.volume ?? 0.58;
     if (!audio.src.endsWith(src)) {
       audio.src = src;
       audio.load();
@@ -1056,6 +1094,7 @@
     if (currentScreen === "block" && block.running) playGameTheme("block");
     if (currentScreen === "stack" && stack.running) playGameTheme("stack");
     if (currentScreen === "flappy" && flappy.running) playGameTheme("flappy");
+    if (currentScreen === "crossy" && crossy.running) playGameTheme("crossy", { volume: 0.4 });
     if (currentScreen === "star" && star.running) {
       const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
       playStarTheme(bossOnScreen ? "boss" : "normal");
@@ -1363,6 +1402,7 @@
         if (game.id === "invaders") openStarInvaders();
         if (game.id === "stack") openStack();
         if (game.id === "flappy") openFlappy();
+        if (game.id === "crossy") openCrossy();
       });
       el.gameGrid.appendChild(card);
     });
@@ -1424,6 +1464,13 @@
         runs: Number(state.stats.flappyRuns) || 0,
         best: Number(state.stats.flappyBest) || 0,
         metricLabel: "Pipes"
+      },
+      {
+        title: "Crossy Road",
+        xp: Number(state.stats.crossyXpEarned) || 0,
+        runs: Number(state.stats.crossyRuns) || 0,
+        best: Number(state.stats.crossyBest) || 0,
+        metricLabel: "Score"
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -1513,6 +1560,13 @@
         runs: Number(state.stats.flappyRuns) || 0,
         xp: Number(state.stats.flappyXpEarned) || 0,
         best: Number(state.stats.flappyBest) || 0
+      },
+      {
+        id: "crossy",
+        title: "Crossy Road",
+        runs: Number(state.stats.crossyRuns) || 0,
+        xp: Number(state.stats.crossyXpEarned) || 0,
+        best: Number(state.stats.crossyBest) || 0
       }
     ];
 
@@ -4474,6 +4528,473 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function createCrossyState() {
+    return {
+      running: false,
+      paused: false,
+      dying: false,
+      deathStartedAt: 0,
+      deathModalTimer: null,
+      score: 0,
+      section: 0,
+      bestLive: 0,
+      player: { col: 4, row: 9, x: 270, y: 612, targetX: 270, targetY: 612, size: 34 },
+      cars: [],
+      lanes: [],
+      particles: [],
+      lastFrame: 0,
+      startedAt: 0,
+      pausedAt: 0,
+      pausedMs: 0
+    };
+  }
+
+  function openCrossy() {
+    currentGame = "crossy";
+    prepareGameTheme();
+    showScreen("crossy");
+    resetCrossy();
+  }
+
+  function resetCrossy() {
+    stopCrossy(false);
+    crossy = createCrossyState();
+    seedCrossyLanes();
+    renderCrossyStats();
+    drawCrossy();
+  }
+
+  function seedCrossyLanes() {
+    const laneData = [
+      { type: "safe" },
+      { type: "road", speed: -128, color: "#ff5275", count: 2 },
+      { type: "road", speed: 142, color: "#49f4ff", count: 2 },
+      { type: "safe" },
+      { type: "road", speed: -178, color: "#ffd35a", count: 3 },
+      { type: "road", speed: 164, color: "#b071ff", count: 2 },
+      { type: "safe" },
+      { type: "road", speed: -210, color: "#57ff9a", count: 3 },
+      { type: "road", speed: 188, color: "#ff2fad", count: 2 },
+      { type: "safe" }
+    ];
+    crossy.lanes = laneData;
+    crossy.cars = [];
+    laneData.forEach((lane, row) => {
+      if (lane.type !== "road") return;
+      const spacing = 540 / lane.count;
+      for (let i = 0; i < lane.count; i += 1) {
+        crossy.cars.push({
+          row,
+          x: (i * spacing + Math.random() * 90) % 620 - 40,
+          width: 58 + Math.random() * 28,
+          speed: lane.speed,
+          color: lane.color
+        });
+      }
+    });
+  }
+
+  function startCrossy() {
+    resetCrossy();
+    crossy.running = true;
+    crossy.startedAt = Date.now();
+    crossy.lastFrame = performance.now();
+    playTone("tap");
+    playGameTheme("crossy", { restart: true, volume: 0.4 });
+    crossyTimer = setInterval(tickCrossy, CROSSY_TICK_MS);
+    renderCrossyStats();
+  }
+
+  function restartCrossy() {
+    startCrossy();
+  }
+
+  function stopCrossy(render = true) {
+    if (crossyTimer) {
+      clearInterval(crossyTimer);
+      crossyTimer = null;
+    }
+    if (crossy.deathModalTimer) {
+      clearTimeout(crossy.deathModalTimer);
+      crossy.deathModalTimer = null;
+    }
+    if (crossyCrashAudio && !render) {
+      crossyCrashAudio.pause();
+      crossyCrashAudio.currentTime = 0;
+    }
+    if (crossy.paused && crossy.pausedAt) {
+      crossy.pausedMs += Date.now() - crossy.pausedAt;
+      crossy.pausedAt = 0;
+    }
+    crossy.running = false;
+    crossy.paused = false;
+    if (render) {
+      renderCrossyStats();
+      drawCrossy();
+    }
+  }
+
+  function handlePrimaryCrossyAction() {
+    if (crossy.running) {
+      endCrossyRun("manual");
+      return;
+    }
+    startCrossy();
+  }
+
+  function toggleCrossyPause() {
+    if (!crossy.running || crossy.dying) return;
+    crossy.paused = !crossy.paused;
+    if (crossy.paused) {
+      crossy.pausedAt = Date.now();
+    } else {
+      if (crossy.pausedAt) {
+        crossy.pausedMs += Date.now() - crossy.pausedAt;
+        crossy.pausedAt = 0;
+      }
+      crossy.lastFrame = performance.now();
+    }
+    renderCrossyStats();
+    drawCrossy();
+  }
+
+  function moveCrossy(direction) {
+    if (!crossy.running || crossy.paused || crossy.dying) return;
+    const player = crossy.player;
+    const next = { col: player.col, row: player.row };
+    if (direction === "up") next.row -= 1;
+    if (direction === "down") next.row += 1;
+    if (direction === "left") next.col -= 1;
+    if (direction === "right") next.col += 1;
+    next.col = Math.max(0, Math.min(8, next.col));
+    next.row = Math.max(0, Math.min(9, next.row));
+    if (next.col === player.col && next.row === player.row) return;
+    player.col = next.col;
+    player.row = next.row;
+    player.targetX = 30 + player.col * 60;
+    player.targetY = 54 + player.row * 66;
+    if (direction === "up") {
+      crossy.score += 1;
+      crossy.bestLive = Math.max(Number(state.stats.crossyBest) || 0, crossy.score);
+      playTone("eat");
+      if (player.row <= 1) {
+        crossy.section += 1;
+        player.row = 6;
+        player.targetY = 54 + player.row * 66;
+        seedCrossyLanes();
+      }
+    }
+    renderCrossyStats();
+  }
+
+  function tickCrossy() {
+    if (!crossy.running || crossy.paused) return;
+    const now = performance.now();
+    const dt = Math.min(0.04, (now - crossy.lastFrame) / 1000 || 0.016);
+    crossy.lastFrame = now;
+
+    crossy.cars.forEach((car) => {
+      car.x += car.speed * dt;
+      if (car.speed > 0 && car.x > 590) car.x = -car.width - 60;
+      if (car.speed < 0 && car.x + car.width < -50) car.x = 590 + Math.random() * 80;
+    });
+    const p = crossy.player;
+    p.x += (p.targetX - p.x) * Math.min(1, dt * 16);
+    p.y += (p.targetY - p.y) * Math.min(1, dt * 16);
+    crossy.particles.forEach((part) => {
+      part.x += part.vx * dt;
+      part.y += part.vy * dt;
+      part.life -= 1;
+    });
+    crossy.particles = crossy.particles.filter((part) => part.life > 0);
+
+    if (!crossy.dying && crossyHit()) {
+      triggerCrossyDeath();
+      return;
+    }
+
+    renderCrossyStats();
+    drawCrossy();
+  }
+
+  function crossyHit() {
+    const p = crossy.player;
+    return crossy.cars.some((car) => {
+      if (car.row !== p.row) return false;
+      const carLeft = car.x;
+      const carRight = car.x + car.width;
+      const carTop = 54 + car.row * 66 - 22;
+      const carBottom = carTop + 44;
+      return p.x + p.size * 0.42 > carLeft
+        && p.x - p.size * 0.42 < carRight
+        && p.y + p.size * 0.42 > carTop
+        && p.y - p.size * 0.42 < carBottom;
+    });
+  }
+
+  function addCrossyCrashBurst(x, y) {
+    for (let i = 0; i < 28; i += 1) {
+      crossy.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 220,
+        vy: (Math.random() - 0.5) * 220,
+        life: 30,
+        color: i % 2 ? "#ff5275" : "#ffd35a"
+      });
+    }
+  }
+
+  async function playCrossyCrashSound(onDone) {
+    if (state.muteSfx) {
+      onDone?.();
+      return;
+    }
+    try {
+      if (!crossyCrashAudio) {
+        crossyCrashAudio = new Audio(CROSSY_CRASH_SFX);
+        crossyCrashAudio.preload = "auto";
+      }
+      crossyCrashAudio.pause();
+      crossyCrashAudio.currentTime = 0;
+      crossyCrashAudio.volume = 0.86;
+      crossyCrashAudio.onended = () => onDone?.();
+      await crossyCrashAudio.play();
+    } catch {
+      playGameOverSound();
+      setTimeout(() => onDone?.(), 1600);
+    }
+  }
+
+  function triggerCrossyDeath() {
+    crossy.dying = true;
+    crossy.deathStartedAt = performance.now();
+    addCrossyCrashBurst(crossy.player.x, crossy.player.y);
+    stopGameTheme("death");
+    const finishDeath = () => {
+      if (!crossy.running || !crossy.dying) return;
+      endCrossyRun("crash");
+    };
+    playCrossyCrashSound(finishDeath);
+    drawCrossy();
+    crossy.deathModalTimer = setTimeout(finishDeath, 3200);
+  }
+
+  function crossyRunMultiplier() {
+    return 1 + Math.max(0, crossy.score - 1) * 0.14;
+  }
+
+  function calculateCrossyXp() {
+    if (crossy.score <= 0) return 0;
+    const base = crossy.score * 17;
+    const streakBonus = Math.max(0, crossy.score - 4) * 8;
+    const newBestBonus = crossy.score > state.stats.crossyBest && crossy.score >= 5 ? 60 : 0;
+    return Math.round((base + streakBonus + newBestBonus) * crossyRunMultiplier());
+  }
+
+  function previewCrossyCoins(newBest = crossy.score > state.stats.crossyBest) {
+    if (crossy.score <= 0) return 0;
+    let earned = Math.floor(crossy.score * 4 + Math.max(0, crossy.score - 5) * 2);
+    if (newBest) earned += 25;
+    return applyRewardBooster(Math.max(1, earned));
+  }
+
+  function renderCrossyStats() {
+    if (!el.crossyScore) return;
+    const previousBest = Number(state.stats.crossyBest) || 0;
+    const liveBest = Math.max(previousBest, crossy.score);
+    el.crossyScore.textContent = formatNumber(crossy.score);
+    el.crossyBest.textContent = formatNumber(liveBest);
+    el.crossyStreak.textContent = crossy.score > previousBest && previousBest > 0 ? "BEST" : formatNumber(crossy.score);
+    el.crossyXpPreview.textContent = formatNumber(applyRewardBooster(calculateCrossyXp()));
+    el.crossyCoinPreview.textContent = formatNumber(previewCrossyCoins());
+    el.startCrossyBtn.textContent = crossy.running ? "End Game" : "Start Game";
+    el.crossyPauseBtn.textContent = crossy.paused ? "Resume" : "Pause";
+    el.crossyPauseBtn.disabled = !crossy.running || crossy.dying;
+  }
+
+  function drawCrossyPill(ctx, x, y, label, value, color) {
+    ctx.save();
+    ctx.fillStyle = "rgba(5, 3, 11, 0.74)";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, 146, 34, 12);
+    else ctx.rect(x, y, 146, 34);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = "900 9px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText(label, x + 12, y + 13);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 17px ByteBounce, Arial Black";
+    ctx.fillText(String(value), x + 12, y + 28);
+    ctx.restore();
+  }
+
+  function drawCrossy() {
+    if (!el.crossyCanvas) return;
+    const ctx = el.crossyCanvas.getContext("2d");
+    const w = el.crossyCanvas.width;
+    const h = el.crossyCanvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.fillStyle = "#05030b";
+    ctx.fillRect(0, 0, w, h);
+    crossy.lanes.forEach((lane, row) => {
+      const y = 22 + row * 66;
+      if (lane.type === "road") {
+        ctx.fillStyle = row % 2 ? "rgba(18, 18, 34, 0.94)" : "rgba(24, 20, 40, 0.94)";
+        ctx.fillRect(0, y, w, 66);
+        ctx.strokeStyle = "rgba(255, 211, 90, 0.36)";
+        ctx.setLineDash([18, 18]);
+        ctx.beginPath();
+        ctx.moveTo(0, y + 33);
+        ctx.lineTo(w, y + 33);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        ctx.fillStyle = "rgba(14, 52, 41, 0.88)";
+        ctx.fillRect(0, y, w, 66);
+        ctx.strokeStyle = "rgba(87, 255, 154, 0.16)";
+        ctx.strokeRect(0, y, w, 66);
+      }
+    });
+
+    crossy.cars.forEach((car) => {
+      const y = 54 + car.row * 66 - 18;
+      ctx.save();
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = car.color;
+      ctx.fillStyle = car.color;
+      ctx.fillRect(car.x, y, car.width, 36);
+      ctx.fillStyle = "rgba(5, 3, 11, 0.72)";
+      ctx.fillRect(car.x + 10, y + 7, car.width - 20, 10);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(car.speed > 0 ? car.x + car.width - 8 : car.x + 2, y + 4, 6, 8);
+      ctx.fillRect(car.speed > 0 ? car.x + car.width - 8 : car.x + 2, y + 24, 6, 8);
+      ctx.restore();
+    });
+
+    crossy.particles.forEach((p) => {
+      ctx.globalAlpha = Math.max(0, p.life / 30);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, 4, 4);
+    });
+    ctx.globalAlpha = 1;
+
+    const p = crossy.player;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "#ffd35a";
+    ctx.fillStyle = "#ffd35a";
+    ctx.fillRect(-17, -17, 34, 34);
+    ctx.fillStyle = "#49f4ff";
+    ctx.fillRect(-11, -25, 22, 10);
+    ctx.fillStyle = "#05030b";
+    ctx.fillRect(-8, -7, 5, 5);
+    ctx.fillRect(4, -7, 5, 5);
+    ctx.restore();
+
+    const previousBest = Number(state.stats.crossyBest) || 0;
+    const liveBest = Math.max(previousBest, crossy.score);
+    drawCrossyPill(ctx, 14, 14, "BEST", formatNumber(liveBest), crossy.score > previousBest ? "#ffd35a" : "#49f4ff");
+    if (crossy.score <= previousBest) {
+      drawCrossyPill(ctx, w - 160, 14, "SCORE", formatNumber(crossy.score), "#57ff9a");
+    }
+
+    if (crossy.paused) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.64)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 46px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText("PAUSED", w / 2, h / 2);
+    }
+
+    if (crossy.dying) {
+      const pct = Math.min(1, (performance.now() - crossy.deathStartedAt) / 360);
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.2 + pct * 0.8})`;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#ff5275";
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = "#ff5275";
+      ctx.font = "900 52px ByteBounce, Arial Black";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("YOU DIED", w / 2, h / 2);
+      ctx.textBaseline = "alphabetic";
+      ctx.shadowBlur = 0;
+    }
+
+    if (!crossy.running) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.42)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 24px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText("PRESS START", w / 2, h / 2);
+    }
+  }
+
+  function endCrossyRun(reason = "crash") {
+    if (!crossy.running) return;
+    const wasCrash = reason === "crash";
+    const previousBest = Number(state.stats.crossyBest) || 0;
+    const newBest = crossy.score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem();
+    const earned = applyRewardBooster(calculateCrossyXp());
+    const coinsEarned = previewCrossyCoins(newBest);
+    stopCrossy(false);
+    if (!wasCrash) {
+      playTone("tap");
+      stopGameTheme("stop");
+    }
+
+    state.stats.gamesPlayed += 1;
+    state.stats.crossyRuns += 1;
+    state.stats.crossyTotalScore += crossy.score;
+    state.stats.crossyBest = Math.max(previousBest, crossy.score);
+
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+
+    state.xp += earned;
+    state.stats.crossyXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "crossy";
+    if (newBest) showToast("New High Score", `Crossy Road best is now ${formatNumber(crossy.score)}.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(crossy.score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.crossyBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = newBest
+      ? "New street record. Keep dodging traffic."
+      : wasCrash
+        ? "Crash logged. Retry and cross farther."
+        : "Run ended. Your crossing score has been saved.";
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -4488,6 +5009,8 @@
       ["stack_perfect_5", state.stats.stackPerfects >= 5],
       ["flappy_first", state.stats.flappyRuns >= 1],
       ["flappy_10", state.stats.flappyBest >= 10],
+      ["crossy_first", state.stats.crossyRuns >= 1],
+      ["crossy_10", state.stats.crossyBest >= 10],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -4832,6 +5355,8 @@
         startStack();
       } else if (currentGame === "flappy") {
         startFlappy();
+      } else if (currentGame === "crossy") {
+        startCrossy();
       } else {
         startSnake();
       }
@@ -4856,9 +5381,34 @@
     el.flappyPauseBtn.addEventListener("click", toggleFlappyPause);
     el.startFlappyBtn.addEventListener("click", handlePrimaryFlappyAction);
     el.restartFlappyBtn.addEventListener("click", restartFlappy);
+    el.exitCrossyBtn.addEventListener("click", () => showScreen("home"));
+    el.crossyPauseBtn.addEventListener("click", toggleCrossyPause);
+    el.startCrossyBtn.addEventListener("click", handlePrimaryCrossyAction);
+    el.restartCrossyBtn.addEventListener("click", restartCrossy);
     el.flappyCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       flapBird();
+    });
+    el.crossyCanvas.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      crossyTouchStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+      el.crossyCanvas.setPointerCapture?.(event.pointerId);
+    });
+    el.crossyCanvas.addEventListener("pointerup", (event) => {
+      event.preventDefault();
+      if (!crossyTouchStart || crossyTouchStart.pointerId !== event.pointerId) return;
+      const dx = event.clientX - crossyTouchStart.x;
+      const dy = event.clientY - crossyTouchStart.y;
+      crossyTouchStart = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) {
+        moveCrossy("up");
+        return;
+      }
+      moveCrossy(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
+    });
+    el.crossyCanvas.addEventListener("pointercancel", (event) => {
+      event.preventDefault();
+      crossyTouchStart = null;
     });
     el.stackCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
@@ -4905,6 +5455,10 @@
         star.input.x = dir === "left" ? -1 : dir === "right" ? 1 : star.input.x;
         star.input.y = dir === "up" ? -1 : dir === "down" ? 1 : star.input.y;
       }
+      if (keyMap[event.key] && currentScreen === "crossy") {
+        event.preventDefault();
+        moveCrossy(keyMap[event.key]);
+      }
       if (event.key === " " && currentScreen === "game") {
         event.preventDefault();
         snake.running ? togglePause() : startSnake();
@@ -4922,6 +5476,11 @@
         event.preventDefault();
         if (!flappy.running) startFlappy();
         else flapBird();
+      }
+      if (event.key === " " && currentScreen === "crossy") {
+        event.preventDefault();
+        if (!crossy.running) startCrossy();
+        else moveCrossy("up");
       }
     });
 
