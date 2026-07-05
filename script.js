@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "11.7.5.26";
+  const APP_VERSION = "12.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders boss outlines removed, Freefire sped up, and rare powerup balance tuned.",
     "Star Invaders now shows active powerup countdowns on the top-right of the game screen.",
     "Star Invaders boss-best counter, Freefire, nuke powerup, and escalating boss visuals added.",
     "Star Invaders now uses a lightweight 8-bit blaster tone instead of MP3 rapid-fire audio.",
@@ -2364,7 +2365,7 @@
     if (!star.running || star.paused) return;
     const now = performance.now();
     if (!options.auto && now < star.freefireUntil) return;
-    const delay = options.auto ? 90 : 190;
+    const delay = options.auto ? 55 : 190;
     if (now - star.lastShotAt < delay) return;
     star.lastShotAt = now;
     star.shots += 1;
@@ -2384,12 +2385,12 @@
 
   function pickStarPowerupType() {
     const roll = Math.random();
-    if (roll < 0.32) return "health";
-    if (roll < 0.55) return "damage";
-    if (roll < 0.74) return "wingmen";
-    if (roll < 0.87) return "freefire";
-    if (roll < 0.95) return "nuke";
-    return "rocket";
+    if (roll < 0.36) return "health";
+    if (roll < 0.65) return "damage";
+    if (roll < 0.87) return "wingmen";
+    if (roll < 0.95) return "rocket";
+    if (roll < 0.99) return "freefire";
+    return "nuke";
   }
 
   function spawnStarPowerup() {
@@ -2568,9 +2569,9 @@
     star.player.x = Math.max(20, Math.min(700, star.player.x + star.input.x * 260 * dt));
     star.player.y = Math.max(80, Math.min(690, star.player.y + star.input.y * 260 * dt));
     if (star.shootHeld) shootStar();
-    if (now < star.freefireUntil && now - star.lastFreefireShotAt >= 250) {
+    if (now < star.freefireUntil && now - star.lastFreefireShotAt >= 62) {
       star.lastFreefireShotAt = now;
-      shootStar({ auto: true, freefire: true });
+      shootStar({ auto: true, freefire: true, quiet: true });
     }
 
     star.stars.forEach((s) => {
@@ -2765,11 +2766,6 @@
     ctx.translate(enemy.x, enemy.y);
     ctx.shadowBlur = boss ? 24 : 16;
     ctx.shadowColor = boss ? palette[2] : "#57ff9a";
-    if (boss) {
-      ctx.strokeStyle = palette[1];
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x0 - 6, y0 - 6, width + 12, height + 12);
-    }
     sprite.forEach((row, y) => {
       [...row].forEach((pixel, x) => {
         if (pixel !== "1") return;

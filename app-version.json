@@ -1,6 +1,7 @@
 {
-  "version": "11.7.5.26",
+  "version": "12.7.5.26",
   "patchNotes": [
+    "Star Invaders boss outlines removed, Freefire sped up, and rare powerup balance tuned.",
     "Star Invaders now shows active powerup countdowns on the top-right of the game screen.",
     "Star Invaders boss-best counter, Freefire, nuke powerup, and escalating boss visuals added.",
     "Star Invaders now uses a lightweight 8-bit blaster tone instead of MP3 rapid-fire audio.",
