@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "10.7.5.26";
+  const APP_VERSION = "11.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders now shows active powerup countdowns on the top-right of the game screen.",
     "Star Invaders boss-best counter, Freefire, nuke powerup, and escalating boss visuals added.",
     "Star Invaders now uses a lightweight 8-bit blaster tone instead of MP3 rapid-fire audio.",
     "Star Invaders powerups added with health, damage boosts, wingmen, and rare rocket support.",
@@ -2839,25 +2840,44 @@
     ctx.restore();
   }
 
+  function getActiveStarPowerups(now = performance.now()) {
+    return [
+      { name: "Satellite", color: "#ffd35a", until: star.damageBoostUntil },
+      { name: "Wingmen", color: "#49f4ff", until: star.wingmenUntil },
+      { name: "Rocket", color: "#ff2fad", until: star.rocketHelperUntil },
+      { name: "Freefire", color: "#ffd35a", until: star.freefireUntil }
+    ]
+      .filter((item) => item.until > now)
+      .map((item) => ({
+        ...item,
+        seconds: Math.max(1, Math.ceil((item.until - now) / 1000))
+      }));
+  }
+
+  function drawRoundedPanel(ctx, x, y, width, height, radius = 12) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }
+
   function drawStarOverlay(ctx) {
     const best = Math.max(Number(state.stats.starBest) || 0, star.bossKills);
+    const now = performance.now();
     ctx.save();
     ctx.fillStyle = "rgba(5, 3, 11, 0.72)";
     ctx.strokeStyle = star.bossKills > (Number(state.stats.starBest) || 0) ? "#ffd35a" : "rgba(73, 244, 255, 0.62)";
     ctx.lineWidth = 2;
     ctx.shadowBlur = 14;
     ctx.shadowColor = ctx.strokeStyle;
-    ctx.beginPath();
-    ctx.moveTo(26, 14);
-    ctx.lineTo(158, 14);
-    ctx.quadraticCurveTo(170, 14, 170, 26);
-    ctx.lineTo(170, 38);
-    ctx.quadraticCurveTo(170, 50, 158, 50);
-    ctx.lineTo(26, 50);
-    ctx.quadraticCurveTo(14, 50, 14, 38);
-    ctx.lineTo(14, 26);
-    ctx.quadraticCurveTo(14, 14, 26, 14);
-    ctx.closePath();
+    drawRoundedPanel(ctx, 14, 14, 156, 36, 12);
     ctx.fill();
     ctx.stroke();
     ctx.shadowBlur = 0;
@@ -2867,7 +2887,39 @@
     ctx.textBaseline = "middle";
     ctx.fillText(`Bosses: ${formatNumber(best)}`, 28, 32);
 
-    if (performance.now() < star.freefireUntil) {
+    const activePowerups = getActiveStarPowerups(now);
+    if (activePowerups.length) {
+      const panelWidth = 196;
+      const rowHeight = 24;
+      const panelHeight = 22 + activePowerups.length * rowHeight;
+      const x = 720 - panelWidth - 14;
+      const y = 14;
+      ctx.fillStyle = "rgba(5, 3, 11, 0.74)";
+      ctx.strokeStyle = "rgba(255, 211, 90, 0.68)";
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = "#ffd35a";
+      drawRoundedPanel(ctx, x, y, panelWidth, panelHeight, 12);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 10px Arial";
+      ctx.textAlign = "left";
+      ctx.fillText("POWER UP", x + 14, y + 13);
+      activePowerups.forEach((item, index) => {
+        const rowY = y + 32 + index * rowHeight;
+        ctx.fillStyle = item.color;
+        ctx.font = "900 14px Arial";
+        ctx.textAlign = "left";
+        ctx.fillText(item.name.toUpperCase(), x + 14, rowY);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(`${item.seconds}s`, x + panelWidth - 14, rowY);
+      });
+    }
+
+    if (now < star.freefireUntil) {
       ctx.textAlign = "center";
       ctx.fillStyle = "rgba(5, 3, 11, 0.52)";
       ctx.fillRect(210, 72, 300, 54);
