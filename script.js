@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "17.7.5.26";
+  const APP_VERSION = "18.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Crossy Road visuals rebuilt closer to the reference demo with bright lanes, blocky vehicles, trees, and a chunkier player.",
     "Crossy Road added as Game 06 with swipe controls, street ambience, crash death screen, and ARCADIA scoring.",
     "Flappy Bird countdown now uses the ARCADIA pixel number font.",
     "Flappy Bird added as Game 05 with pipe scoring, countdown start, XP scaling, and soundtrack.",
@@ -4536,11 +4537,13 @@
       deathStartedAt: 0,
       deathModalTimer: null,
       score: 0,
+      depth: 0,
       section: 0,
       bestLive: 0,
       player: { col: 4, row: 9, x: 270, y: 612, targetX: 270, targetY: 612, size: 34 },
       cars: [],
       lanes: [],
+      decor: [],
       particles: [],
       lastFrame: 0,
       startedAt: 0,
@@ -4565,20 +4568,22 @@
   }
 
   function seedCrossyLanes() {
+    const speedBoost = Math.min(70, crossy.section * 10);
     const laneData = [
-      { type: "safe" },
-      { type: "road", speed: -128, color: "#ff5275", count: 2 },
-      { type: "road", speed: 142, color: "#49f4ff", count: 2 },
-      { type: "safe" },
-      { type: "road", speed: -178, color: "#ffd35a", count: 3 },
-      { type: "road", speed: 164, color: "#b071ff", count: 2 },
-      { type: "safe" },
-      { type: "road", speed: -210, color: "#57ff9a", count: 3 },
-      { type: "road", speed: 188, color: "#ff2fad", count: 2 },
-      { type: "safe" }
+      { type: "grass" },
+      { type: "road", speed: -128 - speedBoost, color: "#d94b45", count: 2, vehicle: "car" },
+      { type: "road", speed: 142 + speedBoost, color: "#d7cf48", count: 2, vehicle: "car" },
+      { type: "forest" },
+      { type: "road", speed: -176 - speedBoost, color: "#78b14b", count: 3, vehicle: "truck" },
+      { type: "road", speed: 164 + speedBoost, color: "#4fb5ff", count: 2, vehicle: "car" },
+      { type: "grass" },
+      { type: "road", speed: -208 - speedBoost, color: "#ff8a35", count: 3, vehicle: "truck" },
+      { type: "road", speed: 188 + speedBoost, color: "#c46cff", count: 2, vehicle: "car" },
+      { type: "grass" }
     ];
     crossy.lanes = laneData;
     crossy.cars = [];
+    crossy.decor = [];
     laneData.forEach((lane, row) => {
       if (lane.type !== "road") return;
       const spacing = 540 / lane.count;
@@ -4586,9 +4591,25 @@
         crossy.cars.push({
           row,
           x: (i * spacing + Math.random() * 90) % 620 - 40,
-          width: 58 + Math.random() * 28,
+          width: lane.vehicle === "truck" ? 104 + Math.random() * 18 : 64 + Math.random() * 18,
           speed: lane.speed,
-          color: lane.color
+          color: lane.color,
+          vehicle: lane.vehicle
+        });
+      }
+    });
+    laneData.forEach((lane, row) => {
+      if (!["grass", "forest"].includes(lane.type)) return;
+      const blocked = row === crossy.player.row ? [crossy.player.col] : [];
+      const count = lane.type === "forest" ? 5 : 3;
+      for (let i = 0; i < count; i += 1) {
+        const col = Math.floor(Math.random() * 9);
+        if (blocked.includes(col) || (row === 9 && Math.abs(col - 4) <= 1)) continue;
+        crossy.decor.push({
+          row,
+          col,
+          kind: i % 3 === 0 ? "rock" : "tree",
+          scale: 0.86 + Math.random() * 0.28
         });
       }
     });
@@ -4674,16 +4695,19 @@
     player.targetX = 30 + player.col * 60;
     player.targetY = 54 + player.row * 66;
     if (direction === "up") {
-      crossy.score += 1;
+      crossy.depth += 1;
+      crossy.score = Math.max(crossy.score, crossy.depth);
       crossy.bestLive = Math.max(Number(state.stats.crossyBest) || 0, crossy.score);
       playTone("eat");
       if (player.row <= 1) {
         crossy.section += 1;
         player.row = 6;
+        player.y = 54 + player.row * 66;
         player.targetY = 54 + player.row * 66;
         seedCrossyLanes();
       }
     }
+    if (direction === "down") crossy.depth = Math.max(0, crossy.depth - 1);
     renderCrossyStats();
   }
 
@@ -4723,8 +4747,8 @@
       if (car.row !== p.row) return false;
       const carLeft = car.x;
       const carRight = car.x + car.width;
-      const carTop = 54 + car.row * 66 - 22;
-      const carBottom = carTop + 44;
+      const carTop = 54 + car.row * 66 - 24;
+      const carBottom = carTop + 48;
       return p.x + p.size * 0.42 > carLeft
         && p.x - p.size * 0.42 < carRight
         && p.y + p.size * 0.42 > carTop
@@ -4833,6 +4857,76 @@
     ctx.restore();
   }
 
+  function drawCrossyBlock(ctx, x, y, w, h, depth, color, side = "rgba(0, 0, 0, 0.22)") {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y - depth, w, h);
+    ctx.fillStyle = side;
+    ctx.fillRect(x, y + h - depth, w, depth);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.14)";
+    ctx.fillRect(x + 3, y - depth + 3, Math.max(0, w - 6), 4);
+  }
+
+  function drawCrossyTree(ctx, x, y, scale = 1) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    drawCrossyBlock(ctx, -7, -5, 14, 22, 4, "#7a4a26", "rgba(60, 28, 12, 0.55)");
+    drawCrossyBlock(ctx, -20, -34, 40, 30, 7, "#239d55", "rgba(13, 90, 45, 0.66)");
+    drawCrossyBlock(ctx, -14, -53, 28, 25, 6, "#36c56d", "rgba(13, 90, 45, 0.5)");
+    ctx.restore();
+  }
+
+  function drawCrossyRock(ctx, x, y, scale = 1) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    drawCrossyBlock(ctx, -15, -13, 30, 18, 5, "#b6c2cf", "rgba(54, 64, 82, 0.48)");
+    ctx.restore();
+  }
+
+  function drawCrossyVehicle(ctx, car) {
+    const y = 54 + car.row * 66;
+    const isTruck = car.vehicle === "truck";
+    const bodyH = isTruck ? 38 : 34;
+    ctx.save();
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.38)";
+    drawCrossyBlock(ctx, car.x, y - bodyH / 2 + 7, car.width, bodyH, 9, car.color, "rgba(0, 0, 0, 0.32)");
+    if (isTruck) {
+      const cabX = car.speed > 0 ? car.x + car.width - 34 : car.x + 8;
+      drawCrossyBlock(ctx, cabX, y - 21, 28, 32, 8, "#d9ecff", "rgba(39, 61, 88, 0.45)");
+    } else {
+      drawCrossyBlock(ctx, car.x + car.width * 0.36, y - 24, 28, 24, 7, "#d9ecff", "rgba(39, 61, 88, 0.45)");
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#20232d";
+    ctx.fillRect(car.x + 10, y + 14, 18, 8);
+    ctx.fillRect(car.x + car.width - 28, y + 14, 18, 8);
+    ctx.fillStyle = "#fff7b8";
+    const lightX = car.speed > 0 ? car.x + car.width - 6 : car.x + 2;
+    ctx.fillRect(lightX, y - 10, 5, 7);
+    ctx.fillRect(lightX, y + 5, 5, 7);
+    ctx.restore();
+  }
+
+  function drawCrossyPlayer(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = "#ffffff";
+    drawCrossyBlock(ctx, -16, -16, 32, 32, 8, "#f7f4df", "rgba(188, 180, 145, 0.58)");
+    drawCrossyBlock(ctx, -11, -35, 22, 20, 6, "#fff7d8", "rgba(188, 180, 145, 0.5)");
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ff6f2f";
+    ctx.fillRect(-5, -43, 10, 8);
+    ctx.fillStyle = "#111827";
+    ctx.fillRect(-7, -28, 4, 4);
+    ctx.fillRect(5, -28, 4, 4);
+    ctx.fillStyle = "#ffd35a";
+    ctx.fillRect(-5, -22, 10, 5);
+    ctx.restore();
+  }
+
   function drawCrossy() {
     if (!el.crossyCanvas) return;
     const ctx = el.crossyCanvas.getContext("2d");
@@ -4840,42 +4934,43 @@
     const h = el.crossyCanvas.height;
     ctx.clearRect(0, 0, w, h);
 
-    ctx.fillStyle = "#05030b";
+    ctx.fillStyle = "#6ecf52";
     ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+    for (let x = -40; x < w; x += 54) {
+      ctx.fillRect(x, 0, 3, h);
+    }
     crossy.lanes.forEach((lane, row) => {
       const y = 22 + row * 66;
       if (lane.type === "road") {
-        ctx.fillStyle = row % 2 ? "rgba(18, 18, 34, 0.94)" : "rgba(24, 20, 40, 0.94)";
+        ctx.fillStyle = row % 2 ? "#5f6475" : "#555b6b";
         ctx.fillRect(0, y, w, 66);
-        ctx.strokeStyle = "rgba(255, 211, 90, 0.36)";
-        ctx.setLineDash([18, 18]);
-        ctx.beginPath();
-        ctx.moveTo(0, y + 33);
-        ctx.lineTo(w, y + 33);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+        ctx.fillRect(0, y + 58, w, 8);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.82)";
+        for (let x = 10; x < w; x += 58) {
+          ctx.fillRect(x, y + 31, 28, 5);
+        }
       } else {
-        ctx.fillStyle = "rgba(14, 52, 41, 0.88)";
+        ctx.fillStyle = lane.type === "forest" ? "#5aba49" : "#76d65e";
         ctx.fillRect(0, y, w, 66);
-        ctx.strokeStyle = "rgba(87, 255, 154, 0.16)";
-        ctx.strokeRect(0, y, w, 66);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+        ctx.fillRect(0, y + 58, w, 8);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+        for (let x = 0; x < w; x += 34) {
+          ctx.fillRect(x + (row % 2 ? 16 : 0), y + 12, 12, 4);
+        }
       }
     });
 
-    crossy.cars.forEach((car) => {
-      const y = 54 + car.row * 66 - 18;
-      ctx.save();
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = car.color;
-      ctx.fillStyle = car.color;
-      ctx.fillRect(car.x, y, car.width, 36);
-      ctx.fillStyle = "rgba(5, 3, 11, 0.72)";
-      ctx.fillRect(car.x + 10, y + 7, car.width - 20, 10);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(car.speed > 0 ? car.x + car.width - 8 : car.x + 2, y + 4, 6, 8);
-      ctx.fillRect(car.speed > 0 ? car.x + car.width - 8 : car.x + 2, y + 24, 6, 8);
-      ctx.restore();
+    crossy.decor.forEach((item) => {
+      const x = 30 + item.col * 60;
+      const y = 54 + item.row * 66 + 16;
+      if (item.kind === "rock") drawCrossyRock(ctx, x, y, item.scale);
+      else drawCrossyTree(ctx, x, y, item.scale);
     });
+
+    crossy.cars.forEach((car) => drawCrossyVehicle(ctx, car));
 
     crossy.particles.forEach((p) => {
       ctx.globalAlpha = Math.max(0, p.life / 30);
@@ -4884,19 +4979,7 @@
     });
     ctx.globalAlpha = 1;
 
-    const p = crossy.player;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = "#ffd35a";
-    ctx.fillStyle = "#ffd35a";
-    ctx.fillRect(-17, -17, 34, 34);
-    ctx.fillStyle = "#49f4ff";
-    ctx.fillRect(-11, -25, 22, 10);
-    ctx.fillStyle = "#05030b";
-    ctx.fillRect(-8, -7, 5, 5);
-    ctx.fillRect(4, -7, 5, 5);
-    ctx.restore();
+    drawCrossyPlayer(ctx, crossy.player);
 
     const previousBest = Number(state.stats.crossyBest) || 0;
     const liveBest = Math.max(previousBest, crossy.score);
