@@ -505,6 +505,99 @@ input:focus {
     0 0 24px rgba(73, 244, 255, 0.28);
 }
 
+.player-strip.nameplate-blue,
+.profile-hero.nameplate-blue {
+  border-color: rgba(73, 244, 255, 0.66);
+  background:
+    linear-gradient(135deg, rgba(73, 244, 255, 0.18), rgba(41, 118, 255, 0.12), rgba(5, 3, 11, 0.34)),
+    rgba(5, 8, 24, 0.68);
+  box-shadow: 0 0 30px rgba(73, 244, 255, 0.28), inset 0 0 24px rgba(73, 244, 255, 0.12);
+}
+
+.player-strip.nameplate-blue strong,
+.profile-hero.nameplate-blue h2 {
+  color: var(--cyan);
+  text-shadow: 0 0 12px rgba(73, 244, 255, 0.78), 0 0 28px rgba(41, 118, 255, 0.36);
+}
+
+.player-strip.nameplate-black,
+.profile-hero.nameplate-black {
+  border-color: rgba(255, 255, 255, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(73, 244, 255, 0.05)),
+    rgba(0, 0, 0, 0.76);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.12), inset 0 0 22px rgba(73, 244, 255, 0.08);
+}
+
+.player-strip.nameplate-black strong,
+.profile-hero.nameplate-black h2 {
+  color: #f9fbff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.62), 0 0 22px rgba(73, 244, 255, 0.22);
+}
+
+.player-strip.nameplate-purple,
+.profile-hero.nameplate-purple {
+  border-color: rgba(176, 113, 255, 0.72);
+  background:
+    linear-gradient(135deg, rgba(176, 113, 255, 0.22), rgba(255, 47, 173, 0.1), rgba(5, 3, 11, 0.34)),
+    rgba(15, 5, 34, 0.68);
+  box-shadow: 0 0 32px rgba(176, 113, 255, 0.28), inset 0 0 24px rgba(176, 113, 255, 0.12);
+}
+
+.player-strip.nameplate-purple strong,
+.profile-hero.nameplate-purple h2 {
+  color: #d8b8ff;
+  text-shadow: 0 0 12px rgba(176, 113, 255, 0.84), 0 0 28px rgba(255, 47, 173, 0.28);
+}
+
+.player-strip.nameplate-rgb,
+.profile-hero.nameplate-rgb {
+  border-color: rgba(255, 255, 255, 0.38);
+  background:
+    linear-gradient(100deg, rgba(73, 244, 255, 0.16), rgba(255, 47, 173, 0.16), rgba(87, 255, 154, 0.14), rgba(255, 211, 90, 0.14)),
+    rgba(5, 3, 11, 0.68);
+  background-size: 220% 100%;
+  animation: rgbPlateShift 4s linear infinite;
+  box-shadow: 0 0 34px rgba(73, 244, 255, 0.18), 0 0 34px rgba(255, 47, 173, 0.16);
+}
+
+.player-strip.nameplate-rgb strong,
+.profile-hero.nameplate-rgb h2 {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.66), 0 0 22px rgba(255, 47, 173, 0.32), 0 0 30px rgba(73, 244, 255, 0.28);
+}
+
+.player-strip.nameplate-redline,
+.profile-hero.nameplate-redline {
+  position: relative;
+  border-color: rgba(255, 82, 117, 0.72);
+  background: linear-gradient(135deg, rgba(5, 3, 11, 0.88), rgba(22, 0, 5, 0.84));
+  box-shadow: 0 0 30px rgba(255, 82, 117, 0.26), inset 0 0 24px rgba(255, 82, 117, 0.1);
+  animation: redlinePlatePulse 2.4s ease-in-out infinite;
+}
+
+.player-strip.nameplate-redline strong,
+.profile-hero.nameplate-redline h2 {
+  color: #fff2f5;
+  text-shadow: 0 0 10px rgba(255, 82, 117, 0.82), 0 0 26px rgba(255, 0, 48, 0.34);
+}
+
+@keyframes rgbPlateShift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 220% 50%; }
+}
+
+@keyframes redlinePlatePulse {
+  0%, 100% {
+    border-color: rgba(255, 82, 117, 0.42);
+    box-shadow: 0 0 18px rgba(255, 82, 117, 0.18), inset 0 0 20px rgba(255, 82, 117, 0.08);
+  }
+  50% {
+    border-color: rgba(255, 22, 62, 0.94);
+    box-shadow: 0 0 34px rgba(255, 22, 62, 0.4), inset 0 0 26px rgba(255, 22, 62, 0.16);
+  }
+}
+
 .profile-avatar {
   display: grid;
   place-items: center;
@@ -1896,6 +1989,17 @@ input:focus {
   padding-right: 14px;
 }
 
+.stack-stage .game-actions {
+  align-self: end;
+  justify-self: center;
+  width: min(310px, 100%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stack-stage .game-actions .arcade-btn {
+  width: 100%;
+}
+
 .toast-stack {
   position: fixed;
   top: calc(16px + var(--safe-top));
@@ -2570,6 +2674,12 @@ input:focus {
     min-width: 0;
     width: 100%;
     min-height: 42px;
+  }
+
+  .stack-stage .game-actions {
+    width: min(310px, 100%);
+    justify-self: center;
+    align-self: end;
   }
 
   #pauseSnakeBtn {

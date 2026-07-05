@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "12.7.5.26";
+  const APP_VERSION = "13.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Rewards Store expanded with new nameplates, Star Invaders laser cosmetics, Machine Gun booster, and fixed Stack action button sizing.",
     "Star Invaders boss outlines removed, Freefire sped up, and rare powerup balance tuned.",
     "Star Invaders now shows active powerup countdowns on the top-right of the game screen.",
     "Star Invaders boss-best counter, Freefire, nuke powerup, and escalating boss visuals added.",
@@ -83,6 +84,7 @@
     level: 1,
     owned: [],
     equippedNameplate: null,
+    equippedLaser: null,
     equippedBooster: null,
     boosterCooldowns: {},
     boosterPurchases: 0,
@@ -209,6 +211,94 @@
       text: "Add a brighter glow to your player profile."
     },
     {
+      id: "blue_nameplate",
+      title: "Blue Nameplate",
+      category: "player",
+      type: "cosmetic",
+      slot: "nameplate",
+      level: 6,
+      cost: 520,
+      tags: ["nameplate", "profile", "player", "blue", "neon"],
+      text: "Wrap your player tag in a cold neon-blue arcade glow."
+    },
+    {
+      id: "black_nameplate",
+      title: "Black Nameplate",
+      category: "player",
+      type: "cosmetic",
+      slot: "nameplate",
+      level: 10,
+      cost: 980,
+      tags: ["nameplate", "profile", "player", "black", "neon"],
+      text: "A deep black glass plate with a tight neon edge."
+    },
+    {
+      id: "purple_nameplate",
+      title: "Purple Nameplate",
+      category: "player",
+      type: "cosmetic",
+      slot: "nameplate",
+      level: 15,
+      cost: 1650,
+      tags: ["nameplate", "profile", "player", "purple", "neon"],
+      text: "A rich violet glow for higher-ranked arcade players."
+    },
+    {
+      id: "rgb_nameplate",
+      title: "RGB Nameplate",
+      category: "player",
+      type: "cosmetic",
+      slot: "nameplate",
+      level: 20,
+      cost: 2600,
+      tags: ["nameplate", "profile", "player", "rgb", "rainbow"],
+      text: "A shifting RGB nameplate that cycles through arcade color."
+    },
+    {
+      id: "redline_nameplate",
+      title: "Redline Nameplate",
+      category: "player",
+      type: "cosmetic",
+      slot: "nameplate",
+      level: 25,
+      cost: 3900,
+      tags: ["nameplate", "profile", "player", "red", "black", "animated"],
+      text: "A black neon plate with red energy racing around the border."
+    },
+    {
+      id: "laser_yellow",
+      title: "Yellow Laser Beams",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 10,
+      cost: 900,
+      tags: ["star", "invaders", "laser", "yellow", "bullets"],
+      text: "Change Star Invaders shots into hot yellow arcade beams."
+    },
+    {
+      id: "laser_black",
+      title: "Black Laser Beams",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 15,
+      cost: 1550,
+      tags: ["star", "invaders", "laser", "black", "bullets"],
+      text: "Fire dark-core laser rounds with neon edge glow."
+    },
+    {
+      id: "laser_rgb",
+      title: "RGB Laser Beams",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 20,
+      cost: 2700,
+      tags: ["star", "invaders", "laser", "rgb", "bullets"],
+      text: "Cycle every Star Invaders shot through RGB colors."
+    },
+    {
       id: "xp_boost_2",
       title: "2X XP Booster",
       category: "boosters",
@@ -231,6 +321,19 @@
       cost: 1400,
       tags: ["booster", "xp", "coins", "3x"],
       text: "Triple XP and coins from your next completed run."
+    },
+    {
+      id: "machine_gun_star",
+      title: "Machine Gun",
+      category: "boosters",
+      type: "booster",
+      boost: "machine_gun_star",
+      effect: "machine_gun",
+      game: "star",
+      level: 12,
+      cost: 1250,
+      tags: ["booster", "star", "invaders", "machine", "gun", "autofire"],
+      text: "Auto-fire in your next Star Invaders run. No bonus damage, just pressure."
     }
   ];
 
@@ -469,6 +572,7 @@
       profileImage: typeof saved?.profileImage === "string" ? saved.profileImage : "",
       coins: legacyCoins,
       equippedNameplate: typeof saved?.equippedNameplate === "string" ? saved.equippedNameplate : null,
+      equippedLaser: typeof saved?.equippedLaser === "string" ? saved.equippedLaser : null,
       equippedBooster: typeof saved?.equippedBooster === "string"
         ? saved.equippedBooster
         : typeof saved?.activeBoost === "string"
@@ -1122,11 +1226,21 @@
     const target = progressForXp(state.xp);
     const from = progressForXp(headerSeenXp);
     const xpDelta = Math.max(0, (Number(state.xp) || 0) - headerSeenXp);
-    const neonNameplate = state.equippedNameplate === "neon_badge";
+    const nameplateClasses = ["nameplate-neon", "nameplate-blue", "nameplate-black", "nameplate-purple", "nameplate-rgb", "nameplate-redline"];
+    const activeNameplateClass = {
+      neon_badge: "nameplate-neon",
+      blue_nameplate: "nameplate-blue",
+      black_nameplate: "nameplate-black",
+      purple_nameplate: "nameplate-purple",
+      rgb_nameplate: "nameplate-rgb",
+      redline_nameplate: "nameplate-redline"
+    }[state.equippedNameplate] || "";
     el.playerHandle.textContent = name.toUpperCase();
     el.headerCoins.textContent = formatCompactNumber(state.coins);
-    el.openProfileBtn.classList.toggle("nameplate-neon", neonNameplate);
-    el.profileHero.classList.toggle("nameplate-neon", neonNameplate);
+    nameplateClasses.forEach((className) => {
+      el.openProfileBtn.classList.toggle(className, className === activeNameplateClass);
+      el.profileHero.classList.toggle(className, className === activeNameplateClass);
+    });
     el.profileAvatar.textContent = initial;
     el.profileAvatar.classList.toggle("has-image", Boolean(state.profileImage));
     el.profileAvatar.style.backgroundImage = state.profileImage ? `url("${state.profileImage}")` : "";
@@ -1455,13 +1569,13 @@
       const owned = state.owned.includes(item.id);
       const locked = state.level < item.level;
       const affordable = state.coins >= item.cost;
-      const equipped = item.slot === "nameplate" && state.equippedNameplate === item.id;
+      const equipped = isCosmeticEquipped(item);
       const boosterEquipped = item.type === "booster" && state.equippedBooster === item.boost;
       const cooldown = item.type === "booster" ? getBoosterCooldownRemaining(item) : 0;
       const card = document.createElement("div");
       card.className = `store-card ${locked ? "locked" : ""} ${equipped || boosterEquipped ? "equipped" : ""}`;
       card.innerHTML = `
-        <p class="system-line">${locked ? `Level ${item.level}` : item.type === "booster" ? cooldown ? `Cooldown ${formatCountdown(cooldown)}` : "Reusable Booster" : "Player Cosmetic"}</p>
+        <p class="system-line">${locked ? `Unlocked at Level ${item.level}` : item.type === "booster" ? cooldown ? `Cooldown ${formatCountdown(cooldown)}` : "Reusable Booster" : "Player Cosmetic"}</p>
         <h3>${item.title}</h3>
         <p>${item.text}</p>
         <div class="store-card-foot">
@@ -1476,7 +1590,7 @@
   }
 
   function renderStoreAction(item, status) {
-    if (status.locked) return `<button class="arcade-btn secondary" data-store-action type="button">Locked</button>`;
+    if (status.locked) return `<button class="arcade-btn secondary" data-store-action type="button">Level ${item.level}</button>`;
     if (item.type === "cosmetic" && status.owned) {
       return `
         <button class="equip-toggle ${status.equipped ? "on" : ""}" data-store-action type="button" aria-pressed="${status.equipped}">
@@ -1509,12 +1623,19 @@
     buyStoreItem(item);
   }
 
+  function isCosmeticEquipped(item) {
+    if (item.slot === "nameplate") return state.equippedNameplate === item.id;
+    if (item.slot === "laser") return state.equippedLaser === item.id;
+    return false;
+  }
+
   function toggleCosmetic(item) {
-    if (item.slot !== "nameplate") return;
-    state.equippedNameplate = state.equippedNameplate === item.id ? null : item.id;
+    if (item.slot === "nameplate") state.equippedNameplate = state.equippedNameplate === item.id ? null : item.id;
+    else if (item.slot === "laser") state.equippedLaser = state.equippedLaser === item.id ? null : item.id;
+    else return;
     saveState();
     renderAll();
-    showToast(state.equippedNameplate === item.id ? "Nameplate Equipped" : "Nameplate Removed", item.title, "win");
+    showToast(isCosmeticEquipped(item) ? "Reward Equipped" : "Reward Removed", item.title, "win");
   }
 
   function toggleBooster(item) {
@@ -1551,6 +1672,7 @@
     if (item.type === "cosmetic") {
       state.owned.push(item.id);
       if (item.slot === "nameplate") state.equippedNameplate = item.id;
+      if (item.slot === "laser") state.equippedLaser = item.id;
     }
     if (item.type === "booster") {
       state.owned.push(item.id);
@@ -2198,6 +2320,9 @@
       damageBoostUntil: 0,
       freefireUntil: 0,
       lastFreefireShotAt: 0,
+      machineGunActive: false,
+      lastMachineGunShotAt: 0,
+      laserCycle: 0,
       wingmenUntil: 0,
       rocketHelperUntil: 0,
       rocketLastShotAt: 0,
@@ -2232,7 +2357,9 @@
 
   function startStar() {
     resetStar();
+    const booster = getEquippedBoosterItem("star");
     star.running = true;
+    star.machineGunActive = booster?.effect === "machine_gun";
     star.runStartedAt = Date.now();
     star.lastFrame = performance.now();
     star.powerupSpawnAt = star.lastFrame + 5200;
@@ -2240,6 +2367,7 @@
     playStarTheme("normal", { restart: true });
     starTimer = setInterval(tickStar, STAR_TICK_MS);
     renderStarStats();
+    if (star.machineGunActive) showToast("Machine Gun Armed", "Star Invaders auto-fire is active for this run.", "win");
   }
 
   function restartStar() {
@@ -2349,7 +2477,22 @@
     return performance.now() < star.damageBoostUntil ? 1.5 : 1;
   }
 
+  function getStarLaserColor(options = {}) {
+    if (options.color) return options.color;
+    if (options.freefire) return "#ffd35a";
+    if (state.equippedLaser === "laser_yellow") return "#ffd35a";
+    if (state.equippedLaser === "laser_black") return "#05030b";
+    if (state.equippedLaser === "laser_rgb") {
+      const colors = ["#49f4ff", "#ff2fad", "#57ff9a", "#ffd35a", "#b071ff"];
+      const color = colors[star.laserCycle % colors.length];
+      star.laserCycle += 1;
+      return color;
+    }
+    return "#49f4ff";
+  }
+
   function fireStarBullet(x, y, options = {}) {
+    const color = getStarLaserColor(options);
     star.bullets.push({
       x,
       y,
@@ -2357,14 +2500,15 @@
       vy: options.vy || -520,
       r: options.r || 4,
       damage: options.damage || getStarDamage(options),
-      color: options.color || "#49f4ff"
+      color,
+      darkCore: state.equippedLaser === "laser_black" && !options.color
     });
   }
 
   function shootStar(options = {}) {
     if (!star.running || star.paused) return;
     const now = performance.now();
-    if (!options.auto && now < star.freefireUntil) return;
+    if (!options.auto && (now < star.freefireUntil || star.machineGunActive)) return;
     const delay = options.auto ? 55 : 190;
     if (now - star.lastShotAt < delay) return;
     star.lastShotAt = now;
@@ -2375,7 +2519,7 @@
       vy: freefire ? -640 : -520,
       r: freefire ? 5 : 4,
       damage: getStarDamage({ freefire }),
-      color: freefire ? "#ffd35a" : "#49f4ff"
+      color: freefire ? "#ffd35a" : undefined
     });
     if (now < star.wingmenUntil) {
       fireStarBullet(star.player.x - 26, star.player.y - 4, { vx: -28, vy: freefire ? -650 : -540, r: 3.5, damage: getStarDamage({ freefire }), color: "#57ff9a" });
@@ -2572,6 +2716,10 @@
     if (now < star.freefireUntil && now - star.lastFreefireShotAt >= 62) {
       star.lastFreefireShotAt = now;
       shootStar({ auto: true, freefire: true, quiet: true });
+    }
+    if (star.machineGunActive && now >= star.freefireUntil && now - star.lastMachineGunShotAt >= 92) {
+      star.lastMachineGunShotAt = now;
+      shootStar({ auto: true, quiet: true });
     }
 
     star.stars.forEach((s) => {
@@ -2982,6 +3130,13 @@
       ctx.shadowColor = b.color || "#49f4ff";
       ctx.fillStyle = b.color || "#49f4ff";
       ctx.fillRect(b.x - Math.max(2, b.r / 2), b.y - 12, Math.max(4, b.r), 18);
+      if (b.darkCore) {
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "#ff2fad";
+        ctx.strokeStyle = "#ff2fad";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(b.x - Math.max(2, b.r / 2), b.y - 12, Math.max(4, b.r), 18);
+      }
     });
     star.enemyBullets.forEach((b) => {
       ctx.shadowBlur = 14;
@@ -3031,7 +3186,7 @@
     const finalScore = Math.floor(star.score);
     const newBest = star.bossKills > previousBest;
     const oldAchievements = new Set(state.achievements);
-    const boosterUsed = getEquippedBoosterItem();
+    const boosterUsed = getEquippedBoosterItem("star");
     const earned = applyRewardBooster(calculateStarXp());
     const coinsEarned = previewStarCoins(newBest);
 
@@ -3665,10 +3820,11 @@
     return `${minutes}:${String(seconds).padStart(2, "0")}`;
   }
 
-  function getEquippedBoosterItem() {
+  function getEquippedBoosterItem(game = currentGame) {
     if (!state.equippedBooster) return null;
     const item = getStoreItem(state.equippedBooster);
     if (!item || getBoosterCooldownRemaining(item) > 0) return null;
+    if (item.game && item.game !== game) return null;
     return item;
   }
 
@@ -3686,7 +3842,7 @@
 
   function applyRewardBooster(value) {
     const booster = getEquippedBoosterItem();
-    return booster ? Math.round(value * booster.multiplier) : value;
+    return booster?.multiplier ? Math.round(value * booster.multiplier) : value;
   }
 
   function previewCoins(newBest = snake.score > state.stats.snakeBest) {

@@ -1,6 +1,7 @@
 {
-  "version": "12.7.5.26",
+  "version": "13.7.5.26",
   "patchNotes": [
+    "Rewards Store expanded with new nameplates, Star Invaders laser cosmetics, Machine Gun booster, and fixed Stack action button sizing.",
     "Star Invaders boss outlines removed, Freefire sped up, and rare powerup balance tuned.",
     "Star Invaders now shows active powerup countdowns on the top-right of the game screen.",
     "Star Invaders boss-best counter, Freefire, nuke powerup, and escalating boss visuals added.",
