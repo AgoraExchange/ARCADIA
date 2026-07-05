@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "7.7.5.26";
+  const APP_VERSION = "8.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders blast sound optimized for rapid-fire performance.",
     "Stack game card cover image updated.",
     "Stack added as the fourth playable ARCADIA game.",
     "Stack includes slicing, perfect placement combos, tower growth, and speed scaling.",
@@ -250,6 +251,7 @@
   let levelUpAudio = null;
   let activeTheme = "";
   let themeFadeTimer = null;
+  const sfxPools = new Map();
   const toastQueue = [];
   const activeToasts = new Set();
   const toastCooldowns = new Map();
@@ -680,6 +682,37 @@
       audio.play().catch(() => {});
     } catch {
       playTone("tap");
+    }
+  }
+
+  function playPooledSfx(src, volume = 0.75, poolSize = 4) {
+    if (state.muteSfx) return;
+    try {
+      let pool = sfxPools.get(src);
+      if (!pool) {
+        pool = {
+          index: 0,
+          lastPlayed: 0,
+          items: Array.from({ length: poolSize }, () => {
+            const audio = new Audio(src);
+            audio.preload = "auto";
+            audio.volume = volume;
+            return audio;
+          })
+        };
+        sfxPools.set(src, pool);
+      }
+      const now = performance.now();
+      if (now - pool.lastPlayed < 42) return;
+      pool.lastPlayed = now;
+      const audio = pool.items[pool.index];
+      pool.index = (pool.index + 1) % pool.items.length;
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = volume;
+      audio.play().catch(() => {});
+    } catch {
+      playToneAt(1120, 0.035, "square", 0.04);
     }
   }
 
@@ -2293,7 +2326,7 @@
     if (now - star.lastShotAt < 190) return;
     star.lastShotAt = now;
     star.shots += 1;
-    playOneShotSfx(STAR_BLAST_SFX, 0.72);
+    playPooledSfx(STAR_BLAST_SFX, 0.62, 3);
     star.bullets.push({ x: star.player.x, y: star.player.y - 18, vy: -520, r: 4 });
   }
 
