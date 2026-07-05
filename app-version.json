@@ -1,6 +1,7 @@
 {
-  "version": "6.7.5.26",
+  "version": "7.7.5.26",
   "patchNotes": [
+    "Stack game card cover image updated.",
     "Stack added as the fourth playable ARCADIA game.",
     "Stack includes slicing, perfect placement combos, tower growth, speed scaling, and random soundtrack selection.",
     "Star Invaders blast sound effect added for every shot.",

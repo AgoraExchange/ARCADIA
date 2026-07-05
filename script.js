@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "6.7.5.26";
+  const APP_VERSION = "7.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Stack game card cover image updated.",
     "Stack added as the fourth playable ARCADIA game.",
     "Stack includes slicing, perfect placement combos, tower growth, and speed scaling.",
     "Star Invaders blast sound effect added for every shot.",
@@ -155,7 +156,7 @@
       description: "Time each slab, cut the overhang, and climb higher.",
       status: "Play",
       available: true,
-      image: "assets/images/games/stackgame.png",
+      image: "assets/images/games/stack.png",
       mark: "K"
     },
     {
