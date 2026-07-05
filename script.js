@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "14.7.5.26";
+  const APP_VERSION = "15.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Flappy Bird added as Game 05 with pipe scoring, countdown start, XP scaling, and soundtrack.",
     "Machine Gun booster now lasts 30 seconds in Star Invaders before normal shooting returns.",
     "Rewards Store expanded with new nameplates, Star Invaders laser cosmetics, Machine Gun booster, and fixed Stack action button sizing.",
     "Star Invaders boss outlines removed, Freefire sped up, and rare powerup balance tuned.",
@@ -52,6 +53,7 @@
   const GAME_TICK_MS = 112;
   const STAR_TICK_MS = 1000 / 60;
   const STACK_TICK_MS = 1000 / 60;
+  const FLAPPY_TICK_MS = 1000 / 60;
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
   const BLOCK_START_SFX = "assets/audio/sfx/block-grid/start.mp3";
@@ -72,6 +74,7 @@
         "assets/themesong/games/stack-2.mp3",
         "assets/themesong/games/stack-3.mp3"
       ],
+      flappy: "assets/themesong/games/flappy-bird.mp3",
       starBoss: "assets/themesong/games/star-invaders-boss.mp3"
     }
   };
@@ -117,7 +120,11 @@
       stackBest: 0,
       stackXpEarned: 0,
       stackTotalScore: 0,
-      stackPerfects: 0
+      stackPerfects: 0,
+      flappyRuns: 0,
+      flappyBest: 0,
+      flappyXpEarned: 0,
+      flappyTotalScore: 0
     },
     achievements: []
   };
@@ -168,14 +175,15 @@
       mark: "K"
     },
     {
-      id: "runner",
-      title: "Turbo Tunnel",
+      id: "flappy",
+      title: "Flappy Bird",
       gameNo: "05",
-      tags: ["runner", "speed", "reflex"],
-      description: "A fast neon tunnel challenge built for streaks.",
-      status: "Coming Soon",
-      available: false,
-      mark: "T"
+      tags: ["flappy", "bird", "pipes", "reflex", "classic"],
+      description: "Tap to flap, thread pipes, and keep the streak alive.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/flappybird.png",
+      mark: "F"
     }
   ];
 
@@ -190,6 +198,8 @@
     { id: "stack_first", title: "Tower Drop", text: "Complete your first Stack run." },
     { id: "stack_20", title: "Neon Highrise", text: "Score 20 or higher in Stack." },
     { id: "stack_perfect_5", title: "Perfect Builder", text: "Land 5 perfect Stack placements in one run." },
+    { id: "flappy_first", title: "First Flight", text: "Complete your first Flappy Bird run." },
+    { id: "flappy_10", title: "Pipe Runner", text: "Clear 10 pipes in Flappy Bird." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -349,6 +359,8 @@
   let starTimer = null;
   let stack = createStackState();
   let stackTimer = null;
+  let flappy = createFlappyState();
+  let flappyTimer = null;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -374,6 +386,7 @@
     blockScreen: $("blockScreen"),
     starScreen: $("starScreen"),
     stackScreen: $("stackScreen"),
+    flappyScreen: $("flappyScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -459,6 +472,16 @@
     stackCoinPreview: $("stackCoinPreview"),
     startStackBtn: $("startStackBtn"),
     restartStackBtn: $("restartStackBtn"),
+    exitFlappyBtn: $("exitFlappyBtn"),
+    flappyPauseBtn: $("flappyPauseBtn"),
+    flappyCanvas: $("flappyCanvas"),
+    flappyScore: $("flappyScore"),
+    flappyBest: $("flappyBest"),
+    flappyStreak: $("flappyStreak"),
+    flappyXpPreview: $("flappyXpPreview"),
+    flappyCoinPreview: $("flappyCoinPreview"),
+    startFlappyBtn: $("startFlappyBtn"),
+    restartFlappyBtn: $("restartFlappyBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     connectionModal: $("connectionModal"),
@@ -656,14 +679,16 @@
     el.blockScreen.classList.toggle("hidden", name !== "block");
     el.starScreen.classList.toggle("hidden", name !== "star");
     el.stackScreen.classList.toggle("hidden", name !== "stack");
+    el.flappyScreen.classList.toggle("hidden", name !== "flappy");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
     if (name !== "stack") stopStack(false);
+    if (name !== "flappy") stopFlappy(false);
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -1029,6 +1054,7 @@
     if (currentScreen === "game" && snake.running) playGameTheme("snake");
     if (currentScreen === "block" && block.running) playGameTheme("block");
     if (currentScreen === "stack" && stack.running) playGameTheme("stack");
+    if (currentScreen === "flappy" && flappy.running) playGameTheme("flappy");
     if (currentScreen === "star" && star.running) {
       const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
       playStarTheme(bossOnScreen ? "boss" : "normal");
@@ -1335,6 +1361,7 @@
         if (game.id === "breakout") openBlockGrid();
         if (game.id === "invaders") openStarInvaders();
         if (game.id === "stack") openStack();
+        if (game.id === "flappy") openFlappy();
       });
       el.gameGrid.appendChild(card);
     });
@@ -1389,6 +1416,13 @@
         runs: Number(state.stats.stackRuns) || 0,
         best: Number(state.stats.stackBest) || 0,
         metricLabel: "Best"
+      },
+      {
+        title: "Flappy Bird",
+        xp: Number(state.stats.flappyXpEarned) || 0,
+        runs: Number(state.stats.flappyRuns) || 0,
+        best: Number(state.stats.flappyBest) || 0,
+        metricLabel: "Pipes"
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -1471,6 +1505,13 @@
         runs: Number(state.stats.stackRuns) || 0,
         xp: Number(state.stats.stackXpEarned) || 0,
         best: Number(state.stats.stackBest) || 0
+      },
+      {
+        id: "flappy",
+        title: "Flappy Bird",
+        runs: Number(state.stats.flappyRuns) || 0,
+        xp: Number(state.stats.flappyXpEarned) || 0,
+        best: Number(state.stats.flappyBest) || 0
       }
     ];
 
@@ -4003,6 +4044,433 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function createFlappyState() {
+    return {
+      running: false,
+      paused: false,
+      countdown: 0,
+      countdownStartedAt: 0,
+      lastFrame: 0,
+      score: 0,
+      bestLive: 0,
+      bird: { x: 142, y: 300, vy: 0, r: 17, rotation: 0, wing: 0 },
+      pipes: [],
+      particles: [],
+      spawnAt: 0,
+      groundX: 0,
+      startedAt: 0,
+      pausedAt: 0,
+      pausedMs: 0
+    };
+  }
+
+  function openFlappy() {
+    currentGame = "flappy";
+    prepareGameTheme();
+    showScreen("flappy");
+    resetFlappy();
+  }
+
+  function resetFlappy() {
+    stopFlappy(false);
+    flappy = createFlappyState();
+    renderFlappyStats();
+    drawFlappy();
+  }
+
+  function startFlappy() {
+    resetFlappy();
+    flappy.running = true;
+    flappy.countdown = 3;
+    flappy.countdownStartedAt = performance.now();
+    flappy.lastFrame = performance.now();
+    flappy.startedAt = Date.now();
+    flappy.spawnAt = flappy.lastFrame + 1900;
+    playTone("tap");
+    playGameTheme("flappy", { restart: true });
+    flappyTimer = setInterval(tickFlappy, FLAPPY_TICK_MS);
+    renderFlappyStats();
+    drawFlappy();
+  }
+
+  function restartFlappy() {
+    startFlappy();
+  }
+
+  function stopFlappy(render = true) {
+    if (flappyTimer) {
+      clearInterval(flappyTimer);
+      flappyTimer = null;
+    }
+    if (flappy.paused && flappy.pausedAt) {
+      flappy.pausedMs += Date.now() - flappy.pausedAt;
+      flappy.pausedAt = 0;
+    }
+    flappy.running = false;
+    flappy.paused = false;
+    if (render) {
+      renderFlappyStats();
+      drawFlappy();
+    }
+  }
+
+  function handlePrimaryFlappyAction() {
+    if (flappy.running) {
+      endFlappyRun("manual");
+      return;
+    }
+    startFlappy();
+  }
+
+  function toggleFlappyPause() {
+    if (!flappy.running || flappy.countdown > 0) return;
+    flappy.paused = !flappy.paused;
+    if (flappy.paused) {
+      flappy.pausedAt = Date.now();
+    } else {
+      if (flappy.pausedAt) {
+        flappy.pausedMs += Date.now() - flappy.pausedAt;
+        flappy.pausedAt = 0;
+      }
+      flappy.lastFrame = performance.now();
+    }
+    renderFlappyStats();
+    drawFlappy();
+  }
+
+  function flapBird() {
+    if (!flappy.running || flappy.paused || flappy.countdown > 0) return;
+    flappy.bird.vy = -7.2;
+    flappy.bird.wing = 8;
+    playToneAt(760, 0.035, "square", 0.035);
+  }
+
+  function spawnFlappyPipe(now) {
+    const gap = Math.max(148, 190 - Math.min(34, flappy.score * 1.25));
+    const margin = 92;
+    const center = margin + gap / 2 + Math.random() * (720 - margin * 2 - gap);
+    flappy.pipes.push({
+      x: 560,
+      width: 74,
+      gapTop: center - gap / 2,
+      gapBottom: center + gap / 2,
+      scored: false
+    });
+    flappy.spawnAt = now + Math.max(1180, 1640 - Math.min(320, flappy.score * 13));
+  }
+
+  function tickFlappy() {
+    if (!flappy.running || flappy.paused) return;
+    const now = performance.now();
+    const dt = Math.min(0.04, (now - flappy.lastFrame) / 1000 || 0.016);
+    flappy.lastFrame = now;
+
+    if (flappy.countdown > 0) {
+      const elapsed = now - flappy.countdownStartedAt;
+      flappy.countdown = Math.max(0, 3 - Math.floor(elapsed / 820));
+      if (flappy.countdown === 0) {
+        flappy.countdownStartedAt = 0;
+        flappy.bird.vy = -4.6;
+      }
+      drawFlappy();
+      return;
+    }
+
+    flappy.groundX = (flappy.groundX - 140 * dt) % 42;
+    flappy.bird.vy += 18.5 * dt;
+    flappy.bird.y += flappy.bird.vy;
+    flappy.bird.rotation = Math.max(-0.42, Math.min(1.25, flappy.bird.vy / 9));
+    flappy.bird.wing = Math.max(0, flappy.bird.wing - 1);
+
+    if (now >= flappy.spawnAt) spawnFlappyPipe(now);
+    const speed = 168 + Math.min(64, flappy.score * 3.6);
+    flappy.pipes.forEach((pipe) => {
+      pipe.x -= speed * dt;
+      if (!pipe.scored && pipe.x + pipe.width < flappy.bird.x) {
+        pipe.scored = true;
+        flappy.score += 1;
+        flappy.bestLive = Math.max(Number(state.stats.flappyBest) || 0, flappy.score);
+        playTone("win");
+        addFlappyBurst(flappy.bird.x, flappy.bird.y, "#ffd35a", 8);
+      }
+    });
+    flappy.pipes = flappy.pipes.filter((pipe) => pipe.x + pipe.width > -30);
+    flappy.particles.forEach((p) => {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= 1;
+    });
+    flappy.particles = flappy.particles.filter((p) => p.life > 0);
+
+    if (flappyHit()) {
+      addFlappyBurst(flappy.bird.x, flappy.bird.y, "#ff5275", 22);
+      endFlappyRun("crash");
+      return;
+    }
+
+    renderFlappyStats();
+    drawFlappy();
+  }
+
+  function addFlappyBurst(x, y, color, count) {
+    for (let i = 0; i < count; i += 1) {
+      flappy.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 160,
+        vy: (Math.random() - 0.5) * 160,
+        life: 24,
+        color
+      });
+    }
+  }
+
+  function flappyHit() {
+    const bird = flappy.bird;
+    if (bird.y - bird.r < 0 || bird.y + bird.r > 650) return true;
+    return flappy.pipes.some((pipe) => {
+      const withinX = bird.x + bird.r > pipe.x && bird.x - bird.r < pipe.x + pipe.width;
+      if (!withinX) return false;
+      return bird.y - bird.r < pipe.gapTop || bird.y + bird.r > pipe.gapBottom;
+    });
+  }
+
+  function flappyRunMultiplier() {
+    return 1 + Math.max(0, flappy.score - 1) * 0.16;
+  }
+
+  function calculateFlappyXp() {
+    if (flappy.score <= 0) return 0;
+    const base = flappy.score * 18;
+    const streakBonus = Math.max(0, flappy.score - 3) * 7;
+    const newBestBonus = flappy.score > state.stats.flappyBest && flappy.score >= 4 ? 55 : 0;
+    return Math.round((base + streakBonus + newBestBonus) * flappyRunMultiplier());
+  }
+
+  function previewFlappyCoins(newBest = flappy.score > state.stats.flappyBest) {
+    if (flappy.score <= 0) return 0;
+    let earned = Math.floor(flappy.score * 4 + Math.max(0, flappy.score - 4) * 2);
+    if (newBest) earned += 25;
+    return applyRewardBooster(Math.max(1, earned));
+  }
+
+  function renderFlappyStats() {
+    if (!el.flappyScore) return;
+    const previousBest = Number(state.stats.flappyBest) || 0;
+    const liveBest = Math.max(previousBest, flappy.score);
+    el.flappyScore.textContent = formatNumber(flappy.score);
+    el.flappyBest.textContent = formatNumber(liveBest);
+    el.flappyStreak.textContent = flappy.score >= previousBest && previousBest > 0 ? "BEST" : formatNumber(flappy.score);
+    el.flappyXpPreview.textContent = formatNumber(applyRewardBooster(calculateFlappyXp()));
+    el.flappyCoinPreview.textContent = formatNumber(previewFlappyCoins());
+    el.startFlappyBtn.textContent = flappy.running ? "End Game" : "Start Game";
+    el.flappyPauseBtn.textContent = flappy.paused ? "Resume" : "Pause";
+    el.flappyPauseBtn.disabled = !flappy.running || flappy.countdown > 0;
+  }
+
+  function drawFlappyPill(ctx, x, y, label, value, color) {
+    ctx.save();
+    ctx.fillStyle = "rgba(5, 3, 11, 0.72)";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect?.(x, y, 144, 34, 12);
+    if (!ctx.roundRect) {
+      ctx.rect(x, y, 144, 34);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = "900 9px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText(label, x + 12, y + 13);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 17px Arial";
+    ctx.fillText(String(value), x + 12, y + 28);
+    ctx.restore();
+  }
+
+  function drawFlappy() {
+    if (!el.flappyCanvas) return;
+    const ctx = el.flappyCanvas.getContext("2d");
+    const w = el.flappyCanvas.width;
+    const h = el.flappyCanvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, "#110529");
+    sky.addColorStop(0.48, "#17336b");
+    sky.addColorStop(1, "#080414");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.fillStyle = "rgba(255,255,255,0.64)";
+    for (let i = 0; i < 54; i += 1) {
+      const x = (i * 83 + Math.abs(flappy.groundX) * (i % 3 + 1)) % w;
+      const y = (i * 47) % 520;
+      ctx.fillRect(x, y, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+    }
+
+    flappy.pipes.forEach((pipe) => {
+      const grd = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipe.width, 0);
+      grd.addColorStop(0, "#57ff9a");
+      grd.addColorStop(0.55, "#49f4ff");
+      grd.addColorStop(1, "#b071ff");
+      ctx.fillStyle = grd;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "#49f4ff";
+      ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapTop);
+      ctx.fillRect(pipe.x, pipe.gapBottom, pipe.width, 650 - pipe.gapBottom);
+      ctx.fillStyle = "rgba(5,3,11,0.42)";
+      ctx.fillRect(pipe.x + 9, 0, 8, pipe.gapTop);
+      ctx.fillRect(pipe.x + 9, pipe.gapBottom, 8, 650 - pipe.gapBottom);
+      ctx.shadowBlur = 0;
+    });
+
+    ctx.fillStyle = "rgba(255, 211, 90, 0.22)";
+    for (let x = flappy.groundX; x < w + 42; x += 42) {
+      ctx.fillRect(x, 650, 22, 70);
+    }
+    ctx.fillStyle = "rgba(5, 3, 11, 0.78)";
+    ctx.fillRect(0, 650, w, 70);
+    ctx.strokeStyle = "#ffd35a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 650);
+    ctx.lineTo(w, 650);
+    ctx.stroke();
+
+    flappy.particles.forEach((p) => {
+      ctx.globalAlpha = Math.max(0, p.life / 24);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, 4, 4);
+    });
+    ctx.globalAlpha = 1;
+
+    const bird = flappy.bird;
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    ctx.rotate(bird.rotation);
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "#ffd35a";
+    ctx.fillStyle = "#ffd35a";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 23, 17, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ff2fad";
+    ctx.beginPath();
+    ctx.ellipse(-8, bird.wing > 0 ? 7 : 2, 11, 7, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(9, -6, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#05030b";
+    ctx.beginPath();
+    ctx.arc(10, -6, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ff8a3d";
+    ctx.beginPath();
+    ctx.moveTo(20, -2);
+    ctx.lineTo(34, 3);
+    ctx.lineTo(20, 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    const previousBest = Number(state.stats.flappyBest) || 0;
+    const liveBest = Math.max(previousBest, flappy.score);
+    drawFlappyPill(ctx, 14, 14, "BEST", formatNumber(liveBest), flappy.score > previousBest ? "#ffd35a" : "#49f4ff");
+    if (flappy.score <= previousBest) {
+      drawFlappyPill(ctx, w - 158, 14, "PIPES", formatNumber(flappy.score), "#57ff9a");
+    }
+
+    if (flappy.countdown > 0) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.46)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#ffd35a";
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = "#ffd35a";
+      ctx.font = "900 92px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText(String(flappy.countdown), w / 2, h / 2);
+      ctx.shadowBlur = 0;
+    }
+
+    if (flappy.paused) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.64)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 46px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText("PAUSED", w / 2, h / 2);
+    }
+
+    if (!flappy.running) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.42)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 24px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText("PRESS START", w / 2, h / 2);
+    }
+  }
+
+  function endFlappyRun(reason = "crash") {
+    if (!flappy.running) return;
+    stopFlappy(false);
+    if (reason === "manual") playTone("tap");
+    else playGameOverSound();
+    stopGameTheme(reason === "crash" ? "death" : "stop");
+
+    const previousBest = Number(state.stats.flappyBest) || 0;
+    const newBest = flappy.score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem();
+    const earned = applyRewardBooster(calculateFlappyXp());
+    const coinsEarned = previewFlappyCoins(newBest);
+
+    state.stats.gamesPlayed += 1;
+    state.stats.flappyRuns += 1;
+    state.stats.flappyTotalScore += flappy.score;
+    state.stats.flappyBest = Math.max(previousBest, flappy.score);
+
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+
+    state.xp += earned;
+    state.stats.flappyXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "flappy";
+    if (newBest) showToast("New High Score", `Flappy Bird best is now ${formatNumber(flappy.score)} pipes.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(flappy.score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = `${formatNumber(state.stats.flappyBest)} Pipes`;
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = newBest
+      ? "New pipe record. Keep the bird flying."
+      : reason === "manual"
+        ? "Flight ended. Your pipes have been saved."
+        : "Flight complete. Retry and thread more pipes.";
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -4015,6 +4483,8 @@
       ["stack_first", state.stats.stackRuns >= 1],
       ["stack_20", state.stats.stackBest >= 20],
       ["stack_perfect_5", state.stats.stackPerfects >= 5],
+      ["flappy_first", state.stats.flappyRuns >= 1],
+      ["flappy_10", state.stats.flappyBest >= 10],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -4357,6 +4827,8 @@
         startStar();
       } else if (currentGame === "stack") {
         startStack();
+      } else if (currentGame === "flappy") {
+        startFlappy();
       } else {
         startSnake();
       }
@@ -4377,6 +4849,14 @@
     el.stackPauseBtn.addEventListener("click", toggleStackPause);
     el.startStackBtn.addEventListener("click", handlePrimaryStackAction);
     el.restartStackBtn.addEventListener("click", restartStack);
+    el.exitFlappyBtn.addEventListener("click", () => showScreen("home"));
+    el.flappyPauseBtn.addEventListener("click", toggleFlappyPause);
+    el.startFlappyBtn.addEventListener("click", handlePrimaryFlappyAction);
+    el.restartFlappyBtn.addEventListener("click", restartFlappy);
+    el.flappyCanvas.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      flapBird();
+    });
     el.stackCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       placeStackBlock();
@@ -4434,6 +4914,11 @@
       if (event.key === " " && currentScreen === "stack") {
         event.preventDefault();
         placeStackBlock();
+      }
+      if ([" ", "ArrowUp", "w", "W"].includes(event.key) && currentScreen === "flappy") {
+        event.preventDefault();
+        if (!flappy.running) startFlappy();
+        else flapBird();
       }
     });
 

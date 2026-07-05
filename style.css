@@ -1464,6 +1464,14 @@ input:focus {
   overflow: hidden;
 }
 
+.flappy-stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .game-hud,
 .reward-preview {
   display: grid;
@@ -1895,6 +1903,42 @@ input:focus {
   border-radius: 18px;
   border: 1px solid rgba(196, 113, 255, 0.26);
   background: #05030b;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.flappy-canvas-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, calc((var(--app-height) - 320px) * 0.74), 430px);
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: 24px;
+  border: 1px solid rgba(73, 244, 255, 0.26);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(73, 244, 255, 0.18), transparent 32%),
+    radial-gradient(circle at 50% 82%, rgba(255, 211, 90, 0.12), transparent 30%),
+    rgba(5, 3, 11, 0.7);
+  box-shadow:
+    inset 0 0 30px rgba(73, 244, 255, 0.08),
+    0 0 34px rgba(138, 92, 255, 0.2);
+}
+
+#flappyCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(196, 113, 255, 0.26);
+  background: #110529;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -2591,6 +2635,19 @@ input:focus {
     overflow: hidden;
   }
 
+  .flappy-stage {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    align-content: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 26px 26px 0 0;
+    overflow: hidden;
+  }
+
   .game-hud,
   .reward-preview {
     display: none;
@@ -2625,6 +2682,17 @@ input:focus {
   }
 
   #starCanvas {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .flappy-canvas-shell {
+    width: min(100%, calc((var(--app-height) - 190px) * 0.72), 390px);
+    max-height: calc(var(--app-height) - 190px);
+    min-height: 0;
+  }
+
+  #flappyCanvas {
     height: 100%;
     aspect-ratio: auto;
   }
@@ -2677,6 +2745,12 @@ input:focus {
   }
 
   .stack-stage .game-actions {
+    width: min(310px, 100%);
+    justify-self: center;
+    align-self: end;
+  }
+
+  .flappy-stage .game-actions {
     width: min(310px, 100%);
     justify-self: center;
     align-self: end;
