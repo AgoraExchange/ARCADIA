@@ -1,6 +1,7 @@
 {
-  "version": "9.7.5.26",
+  "version": "10.7.5.26",
   "patchNotes": [
+    "Star Invaders boss-best counter, Freefire, nuke powerup, and escalating boss visuals added.",
     "Star Invaders now uses a lightweight 8-bit blaster tone instead of MP3 rapid-fire audio.",
     "Star Invaders powerups added with health, damage boosts, wingmen, and rare rocket support.",
     "Star Invaders blast sound optimized for rapid-fire performance.",

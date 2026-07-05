@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "9.7.5.26";
+  const APP_VERSION = "10.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders boss-best counter, Freefire, nuke powerup, and escalating boss visuals added.",
     "Star Invaders now uses a lightweight 8-bit blaster tone instead of MP3 rapid-fire audio.",
     "Star Invaders powerups added with health, damage boosts, wingmen, and rare rocket support.",
     "Star Invaders blast sound optimized for rapid-fire performance.",
@@ -2193,6 +2194,8 @@
       pausedAt: 0,
       pausedMs: 0,
       damageBoostUntil: 0,
+      freefireUntil: 0,
+      lastFreefireShotAt: 0,
       wingmenUntil: 0,
       rocketHelperUntil: 0,
       rocketLastShotAt: 0,
@@ -2303,6 +2306,7 @@
     const hp = isBoss ? Math.round(8 + difficulty * 3 + star.bossKills * 2) : Math.round(2 + difficulty);
     star.enemies.push({
       type,
+      bossTier: isBoss ? star.bossKills + 1 : 0,
       x: 45 + Math.random() * 630,
       y: -40,
       r: isBoss ? 28 : 17,
@@ -2338,7 +2342,8 @@
     window.setTimeout(() => playToneAt(860, 0.028, "square", 0.026), 24);
   }
 
-  function getStarDamage() {
+  function getStarDamage(options = {}) {
+    if (options.freefire) return 2.5;
     return performance.now() < star.damageBoostUntil ? 1.5 : 1;
   }
 
@@ -2349,30 +2354,40 @@
       vx: options.vx || 0,
       vy: options.vy || -520,
       r: options.r || 4,
-      damage: options.damage || getStarDamage(),
+      damage: options.damage || getStarDamage(options),
       color: options.color || "#49f4ff"
     });
   }
 
-  function shootStar() {
+  function shootStar(options = {}) {
     if (!star.running || star.paused) return;
     const now = performance.now();
-    if (now - star.lastShotAt < 190) return;
+    if (!options.auto && now < star.freefireUntil) return;
+    const delay = options.auto ? 90 : 190;
+    if (now - star.lastShotAt < delay) return;
     star.lastShotAt = now;
     star.shots += 1;
-    playStarBlasterTone();
-    fireStarBullet(star.player.x, star.player.y - 18);
+    if (!options.quiet) playStarBlasterTone();
+    const freefire = Boolean(options.freefire);
+    fireStarBullet(star.player.x, star.player.y - 18, {
+      vy: freefire ? -640 : -520,
+      r: freefire ? 5 : 4,
+      damage: getStarDamage({ freefire }),
+      color: freefire ? "#ffd35a" : "#49f4ff"
+    });
     if (now < star.wingmenUntil) {
-      fireStarBullet(star.player.x - 26, star.player.y - 4, { vx: -28, vy: -540, r: 3.5, damage: getStarDamage(), color: "#57ff9a" });
-      fireStarBullet(star.player.x + 26, star.player.y - 4, { vx: 28, vy: -540, r: 3.5, damage: getStarDamage(), color: "#57ff9a" });
+      fireStarBullet(star.player.x - 26, star.player.y - 4, { vx: -28, vy: freefire ? -650 : -540, r: 3.5, damage: getStarDamage({ freefire }), color: "#57ff9a" });
+      fireStarBullet(star.player.x + 26, star.player.y - 4, { vx: 28, vy: freefire ? -650 : -540, r: 3.5, damage: getStarDamage({ freefire }), color: "#57ff9a" });
     }
   }
 
   function pickStarPowerupType() {
     const roll = Math.random();
-    if (roll < 0.42) return "health";
-    if (roll < 0.7) return "damage";
-    if (roll < 0.92) return "wingmen";
+    if (roll < 0.32) return "health";
+    if (roll < 0.55) return "damage";
+    if (roll < 0.74) return "wingmen";
+    if (roll < 0.87) return "freefire";
+    if (roll < 0.95) return "nuke";
     return "rocket";
   }
 
@@ -2384,7 +2399,7 @@
       type,
       x: 48 + Math.random() * 624,
       y: -28,
-      r: type === "rocket" ? 21 : 18,
+      r: type === "rocket" || type === "nuke" ? 21 : 18,
       vy: 78 + difficulty * 14 + Math.random() * 22,
       spin: Math.random() * Math.PI
     });
@@ -2396,7 +2411,9 @@
       health: "Shield Restored",
       damage: "Satellite Boost",
       wingmen: "Wingmen Online",
-      rocket: "Rocket Support"
+      rocket: "Rocket Support",
+      freefire: "FREEFIRE!",
+      nuke: "RAD NUKE"
     };
     if (type === "health") {
       star.health = Math.min(star.maxHealth, star.health + 1);
@@ -2407,6 +2424,12 @@
     } else if (type === "rocket") {
       star.rocketHelperUntil = Math.max(star.rocketHelperUntil, now) + 8000;
       star.rocketLastShotAt = 0;
+    } else if (type === "freefire") {
+      star.freefireUntil = Math.max(star.freefireUntil, now) + 10000;
+      star.lastFreefireShotAt = 0;
+      star.lastShotAt = 0;
+    } else if (type === "nuke") {
+      triggerStarNuke();
     }
     playTone("win");
     showToast(labels[type] || "Power Up", type === "health" ? `${star.health}/${star.maxHealth} health.` : "Powerup active.", "win");
@@ -2441,6 +2464,27 @@
     playToneAt(540, 0.04, "sawtooth", 0.026);
   }
 
+  function triggerStarNuke() {
+    const targets = star.enemies.filter((enemy) => !enemy.dead && enemy.y > -70 && enemy.y < 760);
+    if (!targets.length) {
+      addStarExplosion(star.player.x, star.player.y - 60, "#ffd35a", 28);
+      return;
+    }
+    playToneAt(95, 0.16, "sawtooth", 0.09);
+    window.setTimeout(() => playToneAt(52, 0.22, "square", 0.07), 90);
+    targets.forEach((enemy, index) => {
+      const boss = enemy.type === "boss";
+      window.setTimeout(() => {
+        addStarExplosion(enemy.x, enemy.y, boss ? "#57ff9a" : "#ffd35a", boss ? 44 : 18);
+        if (boss) {
+          addStarExplosion(enemy.x, enemy.y, "#ff2fad", 36);
+          addStarExplosion(enemy.x, enemy.y, "#49f4ff", 32);
+        }
+        destroyStarEnemy(enemy, { quiet: true, nuke: true });
+      }, index * 18);
+    });
+  }
+
   function damageStarPlayer(amount = 1, x = star.player.x, y = star.player.y) {
     const now = performance.now();
     if (now < star.invulnerableUntil) return false;
@@ -2470,7 +2514,8 @@
     target.healthUntil = performance.now() + 1600;
   }
 
-  function destroyStarEnemy(enemy) {
+  function destroyStarEnemy(enemy, options = {}) {
+    if (enemy.dead) return;
     enemy.dead = true;
     const boss = enemy.type === "boss";
     star.kills += 1;
@@ -2479,8 +2524,8 @@
       star.multiplier += 0.55 + star.bossKills * 0.08;
     }
     star.score += Math.round((boss ? 420 : 75) * star.multiplier);
-    addStarExplosion(enemy.x, enemy.y, boss ? "#ffd35a" : "#ff2fad", boss ? 24 : 12);
-    playTone(boss ? "level" : "win");
+    addStarExplosion(enemy.x, enemy.y, boss ? (options.nuke ? "#57ff9a" : "#ffd35a") : "#ff2fad", boss ? 24 : 12);
+    if (!options.quiet) playTone(boss ? "level" : "win");
     if (boss && !star.enemies.some((item) => item !== enemy && item.type === "boss" && !item.dead)) {
       playStarTheme("normal", { restart: true });
     }
@@ -2522,6 +2567,10 @@
     star.player.x = Math.max(20, Math.min(700, star.player.x + star.input.x * 260 * dt));
     star.player.y = Math.max(80, Math.min(690, star.player.y + star.input.y * 260 * dt));
     if (star.shootHeld) shootStar();
+    if (now < star.freefireUntil && now - star.lastFreefireShotAt >= 250) {
+      star.lastFreefireShotAt = now;
+      shootStar({ auto: true, freefire: true });
+    }
 
     star.stars.forEach((s) => {
       s.y += s.speed * difficulty * dt;
@@ -2700,13 +2749,26 @@
     const height = sprite.length * scale;
     const x0 = -width / 2;
     const y0 = -height / 2;
-    const body = boss ? "#ffd35a" : "#57ff9a";
-    const shade = boss ? "#ff2fad" : "#49f4ff";
+    const bossPalette = [
+      ["#ffd35a", "#ff2fad", "#ffd35a"],
+      ["#ff5275", "#49f4ff", "#ff5275"],
+      ["#57ff9a", "#ffd35a", "#57ff9a"],
+      ["#b071ff", "#ffffff", "#b071ff"],
+      ["#ff8a3d", "#57ff9a", "#ff8a3d"]
+    ];
+    const palette = bossPalette[Math.max(0, (enemy.bossTier || 1) - 1) % bossPalette.length];
+    const body = boss ? palette[0] : "#57ff9a";
+    const shade = boss ? palette[1] : "#49f4ff";
 
     ctx.save();
     ctx.translate(enemy.x, enemy.y);
     ctx.shadowBlur = boss ? 24 : 16;
-    ctx.shadowColor = boss ? "#ffd35a" : "#57ff9a";
+    ctx.shadowColor = boss ? palette[2] : "#57ff9a";
+    if (boss) {
+      ctx.strokeStyle = palette[1];
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x0 - 6, y0 - 6, width + 12, height + 12);
+    }
     sprite.forEach((row, y) => {
       [...row].forEach((pixel, x) => {
         if (pixel !== "1") return;
@@ -2750,7 +2812,9 @@
       health: { symbol: "+", color: "#57ff9a", label: "HP" },
       damage: { symbol: "*", color: "#ffd35a", label: "1.5" },
       wingmen: { symbol: "A", color: "#49f4ff", label: "2X" },
-      rocket: { symbol: "R", color: "#ff2fad", label: "3.5" }
+      rocket: { symbol: "R", color: "#ff2fad", label: "3.5" },
+      freefire: { symbol: "⚡", color: "#ffd35a", label: "FREE" },
+      nuke: { symbol: "☢", color: "#57ff9a", label: "NUKE" }
     }[powerup.type] || { symbol: "?", color: "#ffffff", label: "" };
     ctx.save();
     ctx.translate(powerup.x, powerup.y);
@@ -2772,6 +2836,48 @@
     ctx.fillText(config.symbol, 0, -2);
     ctx.font = "800 8px Arial";
     ctx.fillText(config.label, 0, 10);
+    ctx.restore();
+  }
+
+  function drawStarOverlay(ctx) {
+    const best = Math.max(Number(state.stats.starBest) || 0, star.bossKills);
+    ctx.save();
+    ctx.fillStyle = "rgba(5, 3, 11, 0.72)";
+    ctx.strokeStyle = star.bossKills > (Number(state.stats.starBest) || 0) ? "#ffd35a" : "rgba(73, 244, 255, 0.62)";
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.beginPath();
+    ctx.moveTo(26, 14);
+    ctx.lineTo(158, 14);
+    ctx.quadraticCurveTo(170, 14, 170, 26);
+    ctx.lineTo(170, 38);
+    ctx.quadraticCurveTo(170, 50, 158, 50);
+    ctx.lineTo(26, 50);
+    ctx.quadraticCurveTo(14, 50, 14, 38);
+    ctx.lineTo(14, 26);
+    ctx.quadraticCurveTo(14, 14, 26, 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 14px Arial";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`Bosses: ${formatNumber(best)}`, 28, 32);
+
+    if (performance.now() < star.freefireUntil) {
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(5, 3, 11, 0.52)";
+      ctx.fillRect(210, 72, 300, 54);
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "#ffd35a";
+      ctx.fillStyle = "#ffd35a";
+      ctx.font = "900 34px Arial";
+      ctx.fillText("FREEFIRE!", 360, 100);
+      ctx.shadowBlur = 0;
+    }
     ctx.restore();
   }
 
@@ -2854,6 +2960,8 @@
     }
     const flash = now < star.invulnerableUntil && Math.floor(now / 90) % 2 === 0;
     if (!flash) drawStarShip(ctx, star.player.x, star.player.y, 1, "#49f4ff");
+
+    drawStarOverlay(ctx);
 
     if (!star.running) {
       ctx.fillStyle = "rgba(5, 3, 11, 0.44)";
