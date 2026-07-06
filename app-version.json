@@ -1,6 +1,7 @@
 {
-  "version": "18.7.5.26",
+  "version": "19.7.5.26",
   "patchNotes": [
+    "Crossy Road cover updated, trees and rocks now block movement, and rising screen pressure punishes idle runs.",
     "Crossy Road visuals rebuilt closer to the reference demo with bright lanes, blocky vehicles, trees, and a chunkier player.",
     "Crossy Road added as Game 06 with swipe controls, street ambience, crash death screen, and ARCADIA scoring.",
     "Flappy Bird countdown now uses the ARCADIA pixel number font.",

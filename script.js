@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "18.7.5.26";
+  const APP_VERSION = "19.7.5.26";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Crossy Road cover updated, trees and rocks now block movement, and rising screen pressure punishes idle runs.",
     "Crossy Road visuals rebuilt closer to the reference demo with bright lanes, blocky vehicles, trees, and a chunkier player.",
     "Crossy Road added as Game 06 with swipe controls, street ambience, crash death screen, and ARCADIA scoring.",
     "Flappy Bird countdown now uses the ARCADIA pixel number font.",
@@ -203,7 +204,7 @@
       description: "Swipe through neon traffic and push your crossing streak.",
       status: "Play",
       available: true,
-      image: "assets/images/games/crossyroadpreview.png",
+      image: "assets/images/games/crossyroad.png",
       mark: "C"
     }
   ];
@@ -4538,6 +4539,7 @@
       deathModalTimer: null,
       score: 0,
       depth: 0,
+      pressureDepth: -4,
       section: 0,
       bestLive: 0,
       player: { col: 4, row: 9, x: 270, y: 612, targetX: 270, targetY: 612, size: 34 },
@@ -4690,6 +4692,10 @@
     next.col = Math.max(0, Math.min(8, next.col));
     next.row = Math.max(0, Math.min(9, next.row));
     if (next.col === player.col && next.row === player.row) return;
+    if (isCrossyBlocked(next.row, next.col)) {
+      playTone("tap");
+      return;
+    }
     player.col = next.col;
     player.row = next.row;
     player.targetX = 30 + player.col * 60;
@@ -4722,6 +4728,8 @@
       if (car.speed > 0 && car.x > 590) car.x = -car.width - 60;
       if (car.speed < 0 && car.x + car.width < -50) car.x = 590 + Math.random() * 80;
     });
+    const pressureRate = Math.min(0.42, 0.2 + crossy.section * 0.025);
+    crossy.pressureDepth += pressureRate * dt;
     const p = crossy.player;
     p.x += (p.targetX - p.x) * Math.min(1, dt * 16);
     p.y += (p.targetY - p.y) * Math.min(1, dt * 16);
@@ -4732,7 +4740,7 @@
     });
     crossy.particles = crossy.particles.filter((part) => part.life > 0);
 
-    if (!crossy.dying && crossyHit()) {
+    if (!crossy.dying && (crossyHit() || crossyPressureCaught())) {
       triggerCrossyDeath();
       return;
     }
@@ -4754,6 +4762,14 @@
         && p.y + p.size * 0.42 > carTop
         && p.y - p.size * 0.42 < carBottom;
     });
+  }
+
+  function isCrossyBlocked(row, col) {
+    return crossy.decor.some((item) => item.row === row && item.col === col);
+  }
+
+  function crossyPressureCaught() {
+    return crossy.pressureDepth >= crossy.depth - 0.12;
   }
 
   function addCrossyCrashBurst(x, y) {
@@ -4971,6 +4987,24 @@
     });
 
     crossy.cars.forEach((car) => drawCrossyVehicle(ctx, car));
+
+    const pressureGap = Math.max(-0.2, crossy.depth - crossy.pressureDepth);
+    const dangerY = crossy.player.targetY + pressureGap * 66 + 34;
+    if (dangerY < h + 36) {
+      const alpha = Math.max(0.18, Math.min(0.78, 1 - (dangerY - crossy.player.targetY) / 360));
+      const gradient = ctx.createLinearGradient(0, dangerY - 44, 0, h);
+      gradient.addColorStop(0, `rgba(255, 82, 117, ${alpha * 0.08})`);
+      gradient.addColorStop(0.26, `rgba(255, 82, 117, ${alpha * 0.32})`);
+      gradient.addColorStop(1, `rgba(5, 3, 11, ${alpha})`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, Math.max(0, dangerY - 44), w, h);
+      ctx.fillStyle = `rgba(255, 82, 117, ${Math.min(0.92, alpha + 0.1)})`;
+      ctx.fillRect(0, dangerY, w, 5);
+      ctx.fillStyle = `rgba(255, 211, 90, ${Math.min(0.68, alpha)})`;
+      for (let x = 0; x < w; x += 34) {
+        ctx.fillRect(x, dangerY + 9, 18, 3);
+      }
+    }
 
     crossy.particles.forEach((p) => {
       ctx.globalAlpha = Math.max(0, p.life / 30);

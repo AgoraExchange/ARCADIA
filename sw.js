@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "18.7.5.26";
+const ARCADIA_VERSION = "19.7.5.26";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -9,7 +9,7 @@ const APP_SHELL = [
   "app-version.json",
   "assets/images/games/stack.png",
   "assets/images/games/flappybird.png",
-  "assets/images/games/crossyroadpreview.png",
+  "assets/images/games/crossyroad.png",
   "assets/images/arcadia-logo-180.png",
   "assets/images/arcadia-logo-192.png",
   "assets/images/arcadia-logo-512.png",
