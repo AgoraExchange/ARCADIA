@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.27";
+  const APP_VERSION = "19.7.5.28";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders controls now stay anchored left and right, while Gun refills follow a protected 2-4 minute survival timer.",
     "Star Invaders Machine Gun booster now appears as a mid-game button and only activates when tapped.",
     "Star Invaders floating Gun perk added to recharge Machine Gun or stack extra shot damage without it.",
     "Crossy Road cover updated, trees and rocks now block movement, and rising screen pressure punishes idle runs.",
@@ -2416,6 +2417,7 @@
       meteorSpawnAt: 0,
       bossSpawnAt: 0,
       powerupSpawnAt: 0,
+      gunPowerupSpawnAt: 0,
       runStartedAt: 0,
       pausedAt: 0,
       pausedMs: 0,
@@ -2474,6 +2476,7 @@
     star.lastFrame = performance.now();
     star.machineGunUntil = 0;
     star.powerupSpawnAt = star.lastFrame + 5200;
+    star.gunPowerupSpawnAt = randomStarGunPowerupTime();
     playTone("tap");
     playStarTheme("normal", { restart: true });
     starTimer = setInterval(tickStar, STAR_TICK_MS);
@@ -2532,7 +2535,7 @@
   }
 
   function activateStarMachineGun() {
-    if (!star.running || star.paused || !star.machineGunChargeReady) return;
+    if (!star.running || star.paused || star.machineGunActive || !star.machineGunChargeReady) return;
     const now = performance.now();
     star.machineGunChargeReady = false;
     star.machineGunActive = true;
@@ -2656,18 +2659,20 @@
 
   function pickStarPowerupType() {
     const roll = Math.random();
-    if (roll < 0.2) return "gun";
-    if (roll < 0.48) return "health";
-    if (roll < 0.7) return "damage";
-    if (roll < 0.88) return "wingmen";
-    if (roll < 0.95) return "rocket";
-    if (roll < 0.99) return "freefire";
+    if (roll < 0.35) return "health";
+    if (roll < 0.625) return "damage";
+    if (roll < 0.85) return "wingmen";
+    if (roll < 0.9375) return "rocket";
+    if (roll < 0.9875) return "freefire";
     return "nuke";
   }
 
-  function spawnStarPowerup() {
-    if (star.powerups.length >= 2) return;
-    const type = pickStarPowerupType();
+  function randomStarGunPowerupTime() {
+    return star.survivedMs + 120000 + Math.random() * 120000;
+  }
+
+  function spawnStarPowerup(type = pickStarPowerupType()) {
+    if (star.powerups.length >= 2) return false;
     const difficulty = starDifficulty();
     star.powerups.push({
       type,
@@ -2677,6 +2682,7 @@
       vy: 78 + difficulty * 14 + Math.random() * 22,
       spin: Math.random() * Math.PI
     });
+    return true;
   }
 
   function applyStarPowerup(type) {
@@ -2714,11 +2720,7 @@
 
   function applyStarGunPerk(now = performance.now()) {
     if (star.machineGunBoosterEquipped) {
-      if (star.machineGunActive) {
-        star.machineGunUntil = Math.max(star.machineGunUntil, now) + 30000;
-      } else {
-        star.machineGunChargeReady = true;
-      }
+      star.machineGunChargeReady = true;
       return;
     }
     star.gunDamageBonus = Math.min(3, (Number(star.gunDamageBonus) || 0) + 0.35);
@@ -2902,6 +2904,10 @@
       spawnStarPowerup();
       star.powerupSpawnAt = now + 6200 + Math.random() * 7200;
     }
+    const machineGunNeedsRefill = !star.machineGunBoosterEquipped || !star.machineGunChargeReady;
+    if (star.survivedMs >= star.gunPowerupSpawnAt && !star.machineGunActive && machineGunNeedsRefill) {
+      if (spawnStarPowerup("gun")) star.gunPowerupSpawnAt = randomStarGunPowerupTime();
+    }
     tickRocketHelper(now);
 
     star.bullets.forEach((b) => {
@@ -3017,9 +3023,14 @@
     if (el.starBoosterBtn) {
       const showButton = star.running && star.machineGunBoosterEquipped;
       el.starBoosterBtn.classList.toggle("hidden", !showButton);
-      el.starBoosterBtn.disabled = !showButton || star.paused || !star.machineGunChargeReady;
-      el.starBoosterBtn.textContent = star.machineGunChargeReady ? "MG" : star.machineGunActive ? "ON" : "--";
-      el.starBoosterBtn.setAttribute("aria-label", star.machineGunChargeReady ? "Activate machine gun booster" : "Machine gun booster unavailable");
+      el.starBoosterBtn.disabled = !showButton || star.paused || star.machineGunActive || !star.machineGunChargeReady;
+      el.starBoosterBtn.textContent = star.machineGunActive ? "ON" : star.machineGunChargeReady ? "MG" : "--";
+      const boosterLabel = star.machineGunActive
+        ? "Machine gun booster active"
+        : star.machineGunChargeReady
+          ? "Activate machine gun booster"
+          : "Machine gun booster unavailable";
+      el.starBoosterBtn.setAttribute("aria-label", boosterLabel);
     }
   }
 

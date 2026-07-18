@@ -1,6 +1,7 @@
 {
-  "version": "19.7.5.27",
+  "version": "19.7.5.28",
   "patchNotes": [
+    "Star Invaders controls now stay anchored left and right, while Gun refills follow a protected 2-4 minute survival timer.",
     "Star Invaders Machine Gun booster now appears as a mid-game button and only activates when tapped.",
     "Star Invaders floating Gun perk added to recharge Machine Gun or stack extra shot damage without it.",
     "Crossy Road cover updated, trees and rocks now block movement, and rising screen pressure punishes idle runs.",

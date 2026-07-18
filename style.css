@@ -1992,6 +1992,20 @@ input:focus {
   gap: 16px;
 }
 
+.star-controls > .arcade-joystick {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.star-controls > .star-booster-button {
+  grid-column: 2;
+}
+
+.star-controls > .shoot-button {
+  grid-column: 3;
+  justify-self: end;
+}
+
 .arcade-joystick {
   position: relative;
   width: 112px;
