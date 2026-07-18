@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.30";
+  const APP_VERSION = "19.7.5.31";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Solitaire now keeps all four compact action buttons in one bottom row on every screen size.",
     "Solitaire action buttons now keep Start and Restart together, with matching Undo and Hint controls, and use the new player-provided game icon.",
     "Klondike Solitaire added as Game 07 with touch card controls, Undo, Hint, rewards, achievements, and two random soundtracks.",
     "The dashboard now scrolls to the player header only when a pending level-up animation is about to play.",

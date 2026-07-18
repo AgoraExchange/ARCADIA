@@ -3258,8 +3258,8 @@ input:focus {
 .solitaire-actions .arcade-btn {
   min-width: 0;
   width: 100%;
-  min-height: 48px;
-  padding-inline: 10px;
+  min-height: 42px;
+  padding-inline: 8px;
 }
 
 @media (max-width: 700px) {
@@ -3282,7 +3282,6 @@ input:focus {
   }
 
   .solitaire-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 }
@@ -3313,6 +3312,15 @@ input:focus {
 
   .solitaire-tableau-pile {
     min-height: 320px;
+  }
+
+  .solitaire-actions {
+    gap: 5px;
+  }
+
+  .solitaire-actions .arcade-btn {
+    padding-inline: 4px;
+    font-size: 0.68rem;
   }
 }
 
