@@ -382,12 +382,56 @@
       </main>
     </section>
 
+    <section id="solitaireScreen" class="screen game-screen solitaire-screen hidden">
+      <header class="page-top">
+        <button id="exitSolitaireBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Solitaire</h1>
+        <button id="solitairePauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content">
+        <section class="solitaire-stage panel">
+          <div class="game-hud solitaire-hud">
+            <div><span>Score</span><strong id="solitaireScore">0</strong></div>
+            <div><span>Moves</span><strong id="solitaireMoves">0</strong></div>
+            <div><span>Time</span><strong id="solitaireTime">0:00</strong></div>
+            <div><span>Best</span><strong id="solitaireBest">0</strong></div>
+          </div>
+
+          <div id="solitaireBoard" class="solitaire-board" aria-label="Klondike Solitaire card table">
+            <div class="solitaire-top-row">
+              <button id="solitaireStock" class="solitaire-pile-slot" type="button" aria-label="Stock pile"></button>
+              <button id="solitaireWaste" class="solitaire-pile-slot" type="button" aria-label="Waste pile"></button>
+              <div class="solitaire-top-spacer" aria-hidden="true"></div>
+              <div id="solitaireFoundations" class="solitaire-foundations" aria-label="Foundation piles"></div>
+            </div>
+            <div id="solitaireTableau" class="solitaire-tableau" aria-label="Tableau columns"></div>
+            <div id="solitaireBoardOverlay" class="solitaire-board-overlay">Press Start</div>
+          </div>
+
+          <div class="reward-preview">
+            <div><span>XP Preview</span><strong id="solitaireXpPreview">0</strong></div>
+            <div><span>Coins</span><strong id="solitaireCoinPreview">0</strong></div>
+          </div>
+
+          <div class="solitaire-actions">
+            <button id="startSolitaireBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="undoSolitaireBtn" class="arcade-btn secondary" type="button" disabled>Undo</button>
+            <button id="hintSolitaireBtn" class="arcade-btn secondary" type="button" disabled>Hint</button>
+            <button id="restartSolitaireBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint">Tap a card, then tap its destination. Double-tap exposed cards to send them home.</p>
+        </section>
+      </main>
+    </section>
+
     <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
     <div id="gameOverModal" class="modal hidden">
       <div class="modal-card">
-        <p class="system-line">Classic Results</p>
-        <h2>Game Over</h2>
+        <p id="resultKicker" class="system-line">Classic Results</p>
+        <h2 id="resultTitle">Game Over</h2>
         <div id="newBestBadge" class="new-best hidden">New High Score</div>
         <div class="result-grid">
           <div><span>Score</span><strong id="resultScore">0</strong></div>
@@ -438,7 +482,7 @@
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
           <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 19.7.5.28</p>
+        <p id="appVersionText" class="app-version-text">Version 19.7.5.29</p>
       </div>
     </div>
 

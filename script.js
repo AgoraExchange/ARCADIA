@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.28";
+  const APP_VERSION = "19.7.5.29";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Klondike Solitaire added as Game 07 with touch card controls, Undo, Hint, rewards, achievements, and two random soundtracks.",
+    "The dashboard now scrolls to the player header only when a pending level-up animation is about to play.",
     "Star Invaders controls now stay anchored left and right, while Gun refills follow a protected 2-4 minute survival timer.",
     "Star Invaders Machine Gun booster now appears as a mid-game button and only activates when tapped.",
     "Star Invaders floating Gun perk added to recharge Machine Gun or stack extra shot damage without it.",
@@ -62,6 +64,13 @@
   const STACK_TICK_MS = 1000 / 60;
   const FLAPPY_TICK_MS = 1000 / 60;
   const CROSSY_TICK_MS = 1000 / 60;
+  const SOLITAIRE_SUITS = [
+    { id: "hearts", symbol: "♥", color: "red" },
+    { id: "diamonds", symbol: "♦", color: "red" },
+    { id: "clubs", symbol: "♣", color: "black" },
+    { id: "spades", symbol: "♠", color: "black" }
+  ];
+  const SOLITAIRE_RANKS = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
   const CROSSY_CRASH_SFX = "assets/audio/sfx/crossy-road/crash.mp3";
@@ -85,6 +94,10 @@
       ],
       flappy: "assets/themesong/games/flappy-bird.mp3",
       crossy: "assets/themesong/games/crossy-road-street.mp3",
+      solitaire: [
+        "assets/themesong/games/solitaire-1.mp3",
+        "assets/themesong/games/solitaire-2.mp3"
+      ],
       starBoss: "assets/themesong/games/star-invaders-boss.mp3"
     }
   };
@@ -138,7 +151,12 @@
       crossyRuns: 0,
       crossyBest: 0,
       crossyXpEarned: 0,
-      crossyTotalScore: 0
+      crossyTotalScore: 0,
+      solitaireRuns: 0,
+      solitaireWins: 0,
+      solitaireBest: 0,
+      solitaireXpEarned: 0,
+      solitaireTotalScore: 0
     },
     achievements: []
   };
@@ -209,6 +227,17 @@
       available: true,
       image: "assets/images/games/crossyroad.png",
       mark: "C"
+    },
+    {
+      id: "solitaire",
+      title: "Solitaire",
+      gameNo: "07",
+      tags: ["solitaire", "klondike", "cards", "classic", "puzzle", "single player"],
+      description: "Build four foundations and clear the classic card table.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/solitaire.png",
+      mark: "A"
     }
   ];
 
@@ -227,6 +256,8 @@
     { id: "flappy_10", title: "Pipe Runner", text: "Clear 10 pipes in Flappy Bird." },
     { id: "crossy_first", title: "Street Starter", text: "Complete your first Crossy Road run." },
     { id: "crossy_10", title: "Traffic Dodger", text: "Reach score 10 in Crossy Road." },
+    { id: "solitaire_first", title: "First Deal", text: "Complete your first Solitaire run." },
+    { id: "solitaire_win", title: "Card Sharp", text: "Win a game of Solitaire." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -392,6 +423,8 @@
   let crossyTimer = null;
   let crossyTouchStart = null;
   let crossyCrashAudio = null;
+  let solitaire = createSolitaireState();
+  let solitaireTimer = null;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -419,6 +452,7 @@
     stackScreen: $("stackScreen"),
     flappyScreen: $("flappyScreen"),
     crossyScreen: $("crossyScreen"),
+    solitaireScreen: $("solitaireScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -525,8 +559,28 @@
     crossyCoinPreview: $("crossyCoinPreview"),
     startCrossyBtn: $("startCrossyBtn"),
     restartCrossyBtn: $("restartCrossyBtn"),
+    exitSolitaireBtn: $("exitSolitaireBtn"),
+    solitairePauseBtn: $("solitairePauseBtn"),
+    solitaireBoard: $("solitaireBoard"),
+    solitaireStock: $("solitaireStock"),
+    solitaireWaste: $("solitaireWaste"),
+    solitaireFoundations: $("solitaireFoundations"),
+    solitaireTableau: $("solitaireTableau"),
+    solitaireBoardOverlay: $("solitaireBoardOverlay"),
+    solitaireScore: $("solitaireScore"),
+    solitaireMoves: $("solitaireMoves"),
+    solitaireTime: $("solitaireTime"),
+    solitaireBest: $("solitaireBest"),
+    solitaireXpPreview: $("solitaireXpPreview"),
+    solitaireCoinPreview: $("solitaireCoinPreview"),
+    startSolitaireBtn: $("startSolitaireBtn"),
+    undoSolitaireBtn: $("undoSolitaireBtn"),
+    hintSolitaireBtn: $("hintSolitaireBtn"),
+    restartSolitaireBtn: $("restartSolitaireBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
+    resultKicker: $("resultKicker"),
+    resultTitle: $("resultTitle"),
     connectionModal: $("connectionModal"),
     connectionKicker: $("connectionKicker"),
     connectionTitle: $("connectionTitle"),
@@ -724,16 +778,22 @@
     el.stackScreen.classList.toggle("hidden", name !== "stack");
     el.flappyScreen.classList.toggle("hidden", name !== "flappy");
     el.crossyScreen.classList.toggle("hidden", name !== "crossy");
+    el.solitaireScreen.classList.toggle("hidden", name !== "solitaire");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
     if (name !== "stack") stopStack(false);
     if (name !== "flappy") stopFlappy(false);
     if (name !== "crossy") stopCrossy(false);
+    if (name !== "solitaire") stopSolitaire(false);
+    if (name !== "solitaire") {
+      el.resultKicker.textContent = "Classic Results";
+      el.resultTitle.textContent = "Game Over";
+    }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -1101,6 +1161,7 @@
     if (currentScreen === "stack" && stack.running) playGameTheme("stack");
     if (currentScreen === "flappy" && flappy.running) playGameTheme("flappy");
     if (currentScreen === "crossy" && crossy.running) playGameTheme("crossy", { volume: 0.4 });
+    if (currentScreen === "solitaire" && solitaire.running) playGameTheme("solitaire", { volume: 0.52 });
     if (currentScreen === "star" && star.running) {
       const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
       playStarTheme(bossOnScreen ? "boss" : "normal");
@@ -1275,6 +1336,7 @@
     renderBlockStats();
     renderStarStats();
     renderStackStats();
+    renderSolitaireStats();
   }
 
   function progressForXp(totalXp) {
@@ -1320,10 +1382,16 @@
     el.profileName.textContent = name.toUpperCase();
 
     if (animateProgress && xpDelta > 0) {
+      const leveledUp = target.level > from.level;
       const strong = target.level > from.level || xpDelta >= target.needed * 0.35;
       const progressRatio = target.level > from.level ? 1 : xpDelta / Math.max(1, target.needed);
       const animationDuration = Math.round(520 + Math.min(1, progressRatio) * 1180 + (target.level > from.level ? 520 : 0));
       setHeaderProgress(from);
+      if (leveledUp) {
+        requestAnimationFrame(() => {
+          el.homeScreen.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
       dashboardRewardTimer = setTimeout(() => {
         if (currentScreen !== "home") return;
         el.headerXpTrack.classList.remove("xp-surge", "xp-surge-strong");
@@ -1409,6 +1477,7 @@
         if (game.id === "stack") openStack();
         if (game.id === "flappy") openFlappy();
         if (game.id === "crossy") openCrossy();
+        if (game.id === "solitaire") openSolitaire();
       });
       el.gameGrid.appendChild(card);
     });
@@ -1477,6 +1546,13 @@
         runs: Number(state.stats.crossyRuns) || 0,
         best: Number(state.stats.crossyBest) || 0,
         metricLabel: "Score"
+      },
+      {
+        title: "Solitaire",
+        xp: Number(state.stats.solitaireXpEarned) || 0,
+        runs: Number(state.stats.solitaireRuns) || 0,
+        best: Number(state.stats.solitaireBest) || 0,
+        metricLabel: "Best"
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -1573,6 +1649,13 @@
         runs: Number(state.stats.crossyRuns) || 0,
         xp: Number(state.stats.crossyXpEarned) || 0,
         best: Number(state.stats.crossyBest) || 0
+      },
+      {
+        id: "solitaire",
+        title: "Solitaire",
+        runs: Number(state.stats.solitaireRuns) || 0,
+        xp: Number(state.stats.solitaireXpEarned) || 0,
+        best: Number(state.stats.solitaireBest) || 0
       }
     ];
 
@@ -5187,6 +5270,582 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function createSolitaireState() {
+    return {
+      running: false,
+      paused: false,
+      stock: [],
+      waste: [],
+      foundations: { hearts: [], diamonds: [], clubs: [], spades: [] },
+      tableau: Array.from({ length: 7 }, () => []),
+      selected: null,
+      history: [],
+      score: 0,
+      moves: 0,
+      recycles: 0,
+      startedAt: 0,
+      pausedAt: 0,
+      pausedMs: 0,
+      won: false
+    };
+  }
+
+  function openSolitaire() {
+    currentGame = "solitaire";
+    prepareGameTheme();
+    showScreen("solitaire");
+    resetSolitaire();
+  }
+
+  function resetSolitaire() {
+    stopSolitaire(false);
+    solitaire = createSolitaireState();
+    renderSolitaireBoard();
+    renderSolitaireStats();
+  }
+
+  function createSolitaireDeck() {
+    const deck = [];
+    SOLITAIRE_SUITS.forEach((suit) => {
+      for (let rank = 1; rank <= 13; rank += 1) {
+        deck.push({ id: `${suit.id}-${rank}`, suit: suit.id, rank, faceUp: false });
+      }
+    });
+    for (let index = deck.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
+    }
+    return deck;
+  }
+
+  function startSolitaire() {
+    resetSolitaire();
+    const deck = createSolitaireDeck();
+    for (let column = 0; column < 7; column += 1) {
+      for (let row = 0; row <= column; row += 1) {
+        const card = deck.pop();
+        card.faceUp = row === column;
+        solitaire.tableau[column].push(card);
+      }
+    }
+    solitaire.stock = deck;
+    solitaire.running = true;
+    solitaire.startedAt = Date.now();
+    solitaireTimer = setInterval(renderSolitaireStats, 1000);
+    playTone("tap");
+    playGameTheme("solitaire", { restart: true, volume: 0.52 });
+    renderSolitaireBoard();
+    renderSolitaireStats();
+  }
+
+  function restartSolitaire() {
+    startSolitaire();
+  }
+
+  function stopSolitaire(render = true) {
+    if (solitaireTimer) {
+      clearInterval(solitaireTimer);
+      solitaireTimer = null;
+    }
+    if (solitaire.paused && solitaire.pausedAt) {
+      solitaire.pausedMs += Date.now() - solitaire.pausedAt;
+      solitaire.pausedAt = 0;
+    }
+    solitaire.running = false;
+    solitaire.paused = false;
+    solitaire.selected = null;
+    if (render) {
+      renderSolitaireBoard();
+      renderSolitaireStats();
+    }
+  }
+
+  function handlePrimarySolitaireAction() {
+    if (solitaire.running) {
+      endSolitaireRun("manual");
+      return;
+    }
+    startSolitaire();
+  }
+
+  function toggleSolitairePause() {
+    if (!solitaire.running) return;
+    solitaire.paused = !solitaire.paused;
+    solitaire.selected = null;
+    if (solitaire.paused) {
+      solitaire.pausedAt = Date.now();
+    } else if (solitaire.pausedAt) {
+      solitaire.pausedMs += Date.now() - solitaire.pausedAt;
+      solitaire.pausedAt = 0;
+    }
+    playTone("tap");
+    renderSolitaireBoard();
+    renderSolitaireStats();
+  }
+
+  function solitaireElapsedSeconds() {
+    if (!solitaire.startedAt) return 0;
+    const activePause = solitaire.paused && solitaire.pausedAt ? Date.now() - solitaire.pausedAt : 0;
+    return Math.max(0, Math.floor((Date.now() - solitaire.startedAt - solitaire.pausedMs - activePause) / 1000));
+  }
+
+  function formatSolitaireTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
+  }
+
+  function getSolitaireSuit(card) {
+    return SOLITAIRE_SUITS.find((suit) => suit.id === card?.suit) || SOLITAIRE_SUITS[0];
+  }
+
+  function solitaireCardLabel(card) {
+    if (!card) return "empty pile";
+    const suit = getSolitaireSuit(card);
+    return `${SOLITAIRE_RANKS[card.rank]} ${suit.id}`;
+  }
+
+  function solitaireCardMarkup(card) {
+    const suit = getSolitaireSuit(card);
+    return `
+      <span class="solitaire-card-rank">${SOLITAIRE_RANKS[card.rank]}</span>
+      <span class="solitaire-card-suit">${suit.symbol}</span>
+      <span class="solitaire-card-center">${suit.symbol}</span>
+    `;
+  }
+
+  function isSolitaireSelected(source, pile, cardIndex = null) {
+    if (!solitaire.selected || solitaire.selected.source !== source) return false;
+    if (solitaire.selected.pile !== pile) return false;
+    return cardIndex === null || solitaire.selected.cardIndex === cardIndex;
+  }
+
+  function getSolitaireCardWidth() {
+    const width = el.solitaireTableau?.clientWidth || Math.min(860, Math.max(300, window.innerWidth - 50));
+    const gap = width <= 520 ? 4 : Math.min(12, Math.max(4, width * 0.012));
+    return Math.max(34, (width - gap * 6) / 7);
+  }
+
+  function renderSolitairePileButton(button, card, action, options = {}) {
+    button.dataset.solitaireAction = action;
+    button.dataset.suit = options.suit || "";
+    if (!card) {
+      const suit = options.suit ? SOLITAIRE_SUITS.find((item) => item.id === options.suit) : null;
+      button.className = `solitaire-pile-slot ${options.foundation ? "solitaire-foundation-slot" : ""} ${suit ? `is-${suit.color}` : ""}`.trim();
+      button.innerHTML = suit ? suit.symbol : options.emptyText || "";
+      button.setAttribute("aria-label", options.ariaLabel || "Empty pile");
+      return;
+    }
+    const suit = getSolitaireSuit(card);
+    const selected = options.selected ? "selected" : "";
+    button.className = `solitaire-card is-${suit.color} ${card.faceUp ? "" : "face-down"} ${selected}`.trim();
+    button.innerHTML = card.faceUp ? solitaireCardMarkup(card) : (options.count ? `<span class="solitaire-stock-count">${options.count}</span>` : "");
+    button.setAttribute("aria-label", card.faceUp ? solitaireCardLabel(card) : `${options.count || 1} cards in stock`);
+  }
+
+  function renderSolitaireBoard() {
+    if (!el.solitaireBoard) return;
+    const stockTop = solitaire.stock[solitaire.stock.length - 1] || null;
+    renderSolitairePileButton(el.solitaireStock, stockTop, "stock", {
+      count: solitaire.stock.length,
+      emptyText: solitaire.waste.length ? "↻" : "",
+      ariaLabel: solitaire.stock.length ? `${solitaire.stock.length} cards in stock` : "Recycle waste into stock"
+    });
+
+    const wasteTop = solitaire.waste[solitaire.waste.length - 1] || null;
+    renderSolitairePileButton(el.solitaireWaste, wasteTop, "waste", {
+      selected: isSolitaireSelected("waste", "waste"),
+      ariaLabel: wasteTop ? solitaireCardLabel(wasteTop) : "Empty waste pile"
+    });
+
+    el.solitaireFoundations.innerHTML = SOLITAIRE_SUITS.map((suit) => {
+      const pile = solitaire.foundations[suit.id];
+      const card = pile[pile.length - 1] || null;
+      if (!card) {
+        return `<button class="solitaire-pile-slot solitaire-foundation-slot is-${suit.color}" type="button" data-solitaire-action="foundation" data-suit="${suit.id}" aria-label="Empty ${suit.id} foundation">${suit.symbol}</button>`;
+      }
+      return `<button class="solitaire-card is-${suit.color} ${isSolitaireSelected("foundation", suit.id) ? "selected" : ""}" type="button" data-solitaire-action="foundation" data-suit="${suit.id}" aria-label="${solitaireCardLabel(card)}">${solitaireCardMarkup(card)}</button>`;
+    }).join("");
+
+    const cardWidth = getSolitaireCardWidth();
+    const cardHeight = cardWidth * 1.4;
+    const downStep = Math.max(11, cardWidth * 0.28);
+    const upStep = Math.max(21, cardWidth * 0.52);
+    let maxTableauBottom = cardHeight;
+    el.solitaireTableau.innerHTML = solitaire.tableau.map((pile, column) => {
+      let top = 0;
+      const cards = pile.map((card, cardIndex) => {
+        const suit = getSolitaireSuit(card);
+        const selected = isSolitaireSelected("tableau", column, cardIndex) ? "selected" : "";
+        const html = `<button class="solitaire-card tableau-card is-${suit.color} ${card.faceUp ? "" : "face-down"} ${selected}" type="button" style="top:${Math.round(top)}px;z-index:${cardIndex + 1}" data-solitaire-action="tableau-card" data-column="${column}" data-index="${cardIndex}" aria-label="${card.faceUp ? solitaireCardLabel(card) : "Face-down card"}">${card.faceUp ? solitaireCardMarkup(card) : ""}</button>`;
+        maxTableauBottom = Math.max(maxTableauBottom, top + cardHeight);
+        top += card.faceUp ? upStep : downStep;
+        return html;
+      }).join("");
+      return `<div class="solitaire-tableau-pile" data-solitaire-action="tableau" data-column="${column}">${cards || `<button class="solitaire-pile-slot" type="button" data-solitaire-action="tableau" data-column="${column}" aria-label="Empty tableau column">K</button>`}</div>`;
+    }).join("");
+    const baseBoardHeight = window.innerWidth <= 700 ? 440 : 560;
+    el.solitaireBoard.style.minHeight = `${Math.ceil(Math.max(baseBoardHeight, cardHeight + maxTableauBottom + 60))}px`;
+
+    el.solitaireBoardOverlay.classList.toggle("hidden", solitaire.running && !solitaire.paused);
+    el.solitaireBoardOverlay.textContent = solitaire.paused ? "Paused" : "Press Start";
+    el.startSolitaireBtn.textContent = solitaire.running ? "End Game" : "Start Game";
+    el.solitairePauseBtn.textContent = solitaire.paused ? "Resume" : "Pause";
+    el.solitairePauseBtn.disabled = !solitaire.running;
+    el.undoSolitaireBtn.disabled = !solitaire.running || solitaire.paused || solitaire.history.length === 0;
+    el.hintSolitaireBtn.disabled = !solitaire.running || solitaire.paused;
+  }
+
+  function solitaireFoundationCount() {
+    return SOLITAIRE_SUITS.reduce((total, suit) => total + solitaire.foundations[suit.id].length, 0);
+  }
+
+  function calculateSolitaireXp(won = solitaire.won) {
+    if (solitaire.moves <= 0) return 0;
+    return Math.round(20 + solitaire.score * 0.55 + solitaireFoundationCount() * 5 + (won ? 300 : 0));
+  }
+
+  function previewSolitaireCoins(won = solitaire.won) {
+    if (solitaire.moves <= 0) return 0;
+    const base = 3 + Math.floor(solitaire.score / 35) + solitaireFoundationCount() * 2 + (won ? 100 : 0);
+    return applyRewardBooster(base);
+  }
+
+  function renderSolitaireStats() {
+    if (!el.solitaireScore) return;
+    el.solitaireScore.textContent = formatNumber(solitaire.score);
+    el.solitaireMoves.textContent = formatNumber(solitaire.moves);
+    el.solitaireTime.textContent = formatSolitaireTime(solitaireElapsedSeconds());
+    el.solitaireBest.textContent = formatNumber(Math.max(Number(state.stats.solitaireBest) || 0, solitaire.score));
+    el.solitaireXpPreview.textContent = formatNumber(applyRewardBooster(calculateSolitaireXp()));
+    el.solitaireCoinPreview.textContent = formatNumber(previewSolitaireCoins());
+  }
+
+  function saveSolitaireHistory() {
+    solitaire.history.push({
+      stock: clone(solitaire.stock),
+      waste: clone(solitaire.waste),
+      foundations: clone(solitaire.foundations),
+      tableau: clone(solitaire.tableau),
+      score: solitaire.score,
+      moves: solitaire.moves,
+      recycles: solitaire.recycles
+    });
+    if (solitaire.history.length > 80) solitaire.history.shift();
+  }
+
+  function undoSolitaireMove() {
+    if (!solitaire.running || solitaire.paused || !solitaire.history.length) return;
+    const previous = solitaire.history.pop();
+    solitaire.stock = previous.stock;
+    solitaire.waste = previous.waste;
+    solitaire.foundations = previous.foundations;
+    solitaire.tableau = previous.tableau;
+    solitaire.score = previous.score;
+    solitaire.moves = previous.moves;
+    solitaire.recycles = previous.recycles;
+    solitaire.selected = null;
+    playTone("tap");
+    renderSolitaireBoard();
+    renderSolitaireStats();
+  }
+
+  function drawSolitaireStock() {
+    if (!solitaire.running || solitaire.paused) return;
+    if (!solitaire.stock.length && !solitaire.waste.length) return;
+    saveSolitaireHistory();
+    solitaire.selected = null;
+    if (solitaire.stock.length) {
+      const card = solitaire.stock.pop();
+      card.faceUp = true;
+      solitaire.waste.push(card);
+    } else {
+      while (solitaire.waste.length) {
+        const card = solitaire.waste.pop();
+        card.faceUp = false;
+        solitaire.stock.push(card);
+      }
+      solitaire.recycles += 1;
+      solitaire.score = Math.max(0, solitaire.score - 5);
+    }
+    solitaire.moves += 1;
+    playTone("tap");
+    renderSolitaireBoard();
+    renderSolitaireStats();
+  }
+
+  function solitaireCardColor(card) {
+    return getSolitaireSuit(card).color;
+  }
+
+  function canPlaceSolitaireTableau(card, target) {
+    if (!target) return card.rank === 13;
+    return target.faceUp && target.rank === card.rank + 1 && solitaireCardColor(target) !== solitaireCardColor(card);
+  }
+
+  function canPlaceSolitaireFoundation(card, suitId) {
+    if (!card || card.suit !== suitId) return false;
+    const pile = solitaire.foundations[suitId];
+    const target = pile[pile.length - 1];
+    return target ? card.rank === target.rank + 1 : card.rank === 1;
+  }
+
+  function isValidSolitaireSequence(cards) {
+    if (!cards.length || cards.some((card) => !card.faceUp)) return false;
+    return cards.every((card, index) => {
+      if (index === cards.length - 1) return true;
+      const next = cards[index + 1];
+      return card.rank === next.rank + 1 && solitaireCardColor(card) !== solitaireCardColor(next);
+    });
+  }
+
+  function getSelectedSolitaireCards() {
+    const selected = solitaire.selected;
+    if (!selected) return [];
+    if (selected.source === "waste") {
+      const card = solitaire.waste[solitaire.waste.length - 1];
+      return card ? [card] : [];
+    }
+    if (selected.source === "foundation") {
+      const pile = solitaire.foundations[selected.pile];
+      const card = pile[pile.length - 1];
+      return card ? [card] : [];
+    }
+    return solitaire.tableau[selected.pile].slice(selected.cardIndex);
+  }
+
+  function removeSelectedSolitaireCards() {
+    const selected = solitaire.selected;
+    if (selected.source === "waste") return [solitaire.waste.pop()];
+    if (selected.source === "foundation") return [solitaire.foundations[selected.pile].pop()];
+    return solitaire.tableau[selected.pile].splice(selected.cardIndex);
+  }
+
+  function finishSolitaireMove(scoreDelta) {
+    solitaire.score = Math.max(0, solitaire.score + scoreDelta);
+    solitaire.moves += 1;
+    solitaire.selected = null;
+    playTone("tap");
+    renderSolitaireBoard();
+    renderSolitaireStats();
+    if (solitaireFoundationCount() === 52) {
+      solitaire.score += Math.max(100, 1200 - solitaireElapsedSeconds());
+      solitaire.won = true;
+      endSolitaireRun("win");
+    }
+  }
+
+  function moveSelectedSolitaireToTableau(column) {
+    const cards = getSelectedSolitaireCards();
+    if (!cards.length || !isValidSolitaireSequence(cards)) return false;
+    const targetPile = solitaire.tableau[column];
+    const target = targetPile[targetPile.length - 1] || null;
+    if (!canPlaceSolitaireTableau(cards[0], target)) return false;
+    if (solitaire.selected.source === "tableau" && solitaire.selected.pile === column) return false;
+    saveSolitaireHistory();
+    const fromFoundation = solitaire.selected.source === "foundation";
+    targetPile.push(...removeSelectedSolitaireCards());
+    finishSolitaireMove(fromFoundation ? -10 : 5);
+    return true;
+  }
+
+  function moveSelectedSolitaireToFoundation(suitId) {
+    const cards = getSelectedSolitaireCards();
+    if (cards.length !== 1 || !canPlaceSolitaireFoundation(cards[0], suitId)) return false;
+    if (solitaire.selected.source === "foundation") return false;
+    saveSolitaireHistory();
+    solitaire.foundations[suitId].push(...removeSelectedSolitaireCards());
+    finishSolitaireMove(10);
+    return true;
+  }
+
+  function flipSolitaireCard(column, cardIndex) {
+    const pile = solitaire.tableau[column];
+    const card = pile[cardIndex];
+    if (!card || card.faceUp || cardIndex !== pile.length - 1) return;
+    saveSolitaireHistory();
+    card.faceUp = true;
+    solitaire.moves += 1;
+    solitaire.score += 5;
+    solitaire.selected = null;
+    playTone("win");
+    renderSolitaireBoard();
+    renderSolitaireStats();
+  }
+
+  function selectSolitaireSource(source, pile, cardIndex = null) {
+    solitaire.selected = { source, pile, cardIndex };
+    renderSolitaireBoard();
+  }
+
+  function handleSolitaireBoardClick(event) {
+    if (!solitaire.running || solitaire.paused) return;
+    const target = event.target.closest("[data-solitaire-action]");
+    if (!target || !el.solitaireBoard.contains(target)) return;
+    const action = target.dataset.solitaireAction;
+    if (action === "stock") {
+      drawSolitaireStock();
+      return;
+    }
+    if (action === "waste") {
+      if (!solitaire.waste.length) return;
+      solitaire.selected = isSolitaireSelected("waste", "waste") ? null : { source: "waste", pile: "waste", cardIndex: solitaire.waste.length - 1 };
+      renderSolitaireBoard();
+      return;
+    }
+    if (action === "foundation") {
+      const suitId = target.dataset.suit;
+      if (solitaire.selected && moveSelectedSolitaireToFoundation(suitId)) return;
+      const pile = solitaire.foundations[suitId];
+      solitaire.selected = pile.length && !isSolitaireSelected("foundation", suitId)
+        ? { source: "foundation", pile: suitId, cardIndex: pile.length - 1 }
+        : null;
+      renderSolitaireBoard();
+      return;
+    }
+    const column = Number(target.dataset.column);
+    if (!Number.isInteger(column)) return;
+    if (solitaire.selected && moveSelectedSolitaireToTableau(column)) return;
+    if (action === "tableau-card") {
+      const cardIndex = Number(target.dataset.index);
+      const card = solitaire.tableau[column][cardIndex];
+      if (!card?.faceUp) {
+        flipSolitaireCard(column, cardIndex);
+        return;
+      }
+      if (!isValidSolitaireSequence(solitaire.tableau[column].slice(cardIndex))) return;
+      solitaire.selected = isSolitaireSelected("tableau", column, cardIndex)
+        ? null
+        : { source: "tableau", pile: column, cardIndex };
+      renderSolitaireBoard();
+      return;
+    }
+    solitaire.selected = null;
+    renderSolitaireBoard();
+  }
+
+  function autoMoveSolitaireCard(source, pile, cardIndex = null) {
+    if (!solitaire.running || solitaire.paused) return false;
+    selectSolitaireSource(source, pile, cardIndex);
+    const card = getSelectedSolitaireCards();
+    if (card.length === 1 && moveSelectedSolitaireToFoundation(card[0].suit)) return true;
+    solitaire.selected = null;
+    renderSolitaireBoard();
+    return false;
+  }
+
+  function handleSolitaireBoardDoubleClick(event) {
+    const target = event.target.closest("[data-solitaire-action]");
+    if (!target) return;
+    const action = target.dataset.solitaireAction;
+    if (action === "waste" && solitaire.waste.length) {
+      autoMoveSolitaireCard("waste", "waste", solitaire.waste.length - 1);
+      return;
+    }
+    if (action === "tableau-card") {
+      const column = Number(target.dataset.column);
+      const cardIndex = Number(target.dataset.index);
+      if (cardIndex === solitaire.tableau[column].length - 1) autoMoveSolitaireCard("tableau", column, cardIndex);
+    }
+  }
+
+  function showSolitaireHint() {
+    if (!solitaire.running || solitaire.paused) return;
+    const waste = solitaire.waste[solitaire.waste.length - 1];
+    if (waste && canPlaceSolitaireFoundation(waste, waste.suit)) {
+      selectSolitaireSource("waste", "waste", solitaire.waste.length - 1);
+      showToast("Hint", `Move ${solitaireCardLabel(waste)} to its foundation.`, "win");
+      return;
+    }
+    for (let column = 0; column < 7; column += 1) {
+      const pile = solitaire.tableau[column];
+      const card = pile[pile.length - 1];
+      if (card?.faceUp && canPlaceSolitaireFoundation(card, card.suit)) {
+        selectSolitaireSource("tableau", column, pile.length - 1);
+        showToast("Hint", `Move ${solitaireCardLabel(card)} to its foundation.`, "win");
+        return;
+      }
+    }
+    const sources = [];
+    if (waste) sources.push({ source: "waste", pile: "waste", cardIndex: solitaire.waste.length - 1, cards: [waste] });
+    solitaire.tableau.forEach((pile, column) => {
+      pile.forEach((card, cardIndex) => {
+        if (card.faceUp && isValidSolitaireSequence(pile.slice(cardIndex))) {
+          sources.push({ source: "tableau", pile: column, cardIndex, cards: pile.slice(cardIndex) });
+        }
+      });
+    });
+    for (const source of sources) {
+      for (let column = 0; column < 7; column += 1) {
+        if (source.source === "tableau" && source.pile === column) continue;
+        const targetPile = solitaire.tableau[column];
+        if (canPlaceSolitaireTableau(source.cards[0], targetPile[targetPile.length - 1] || null)) {
+          selectSolitaireSource(source.source, source.pile, source.cardIndex);
+          showToast("Hint", `Move ${solitaireCardLabel(source.cards[0])} to column ${column + 1}.`, "win");
+          return;
+        }
+      }
+    }
+    if (solitaire.stock.length || solitaire.waste.length) {
+      showToast("Hint", solitaire.stock.length ? "Draw the next stock card." : "Recycle the waste pile.", "win");
+      return;
+    }
+    showToast("No Move Found", "Undo a move or start a new deal.", "fail");
+  }
+
+  function endSolitaireRun(reason = "manual") {
+    if (!solitaire.running) return;
+    const won = reason === "win";
+    const previousBest = Number(state.stats.solitaireBest) || 0;
+    const newBest = solitaire.score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem();
+    const earned = applyRewardBooster(calculateSolitaireXp(won));
+    const coinsEarned = previewSolitaireCoins(won);
+    stopSolitaire(false);
+    stopGameTheme("stop");
+    if (won) playTone("win");
+    else playTone("tap");
+
+    state.stats.gamesPlayed += 1;
+    state.stats.solitaireRuns += 1;
+    state.stats.solitaireWins += won ? 1 : 0;
+    state.stats.solitaireTotalScore += solitaire.score;
+    state.stats.solitaireBest = Math.max(previousBest, solitaire.score);
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+    state.xp += earned;
+    state.stats.solitaireXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "solitaire";
+    el.resultKicker.textContent = "Solitaire Results";
+    el.resultTitle.textContent = won ? "Table Cleared" : "Deal Ended";
+    if (newBest) showToast("New High Score", `Solitaire best is now ${formatNumber(solitaire.score)}.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(solitaire.score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.solitaireBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = won
+      ? `Klondike cleared in ${formatSolitaireTime(solitaireElapsedSeconds())} with ${formatNumber(solitaire.moves)} moves.`
+      : "Deal saved. Try another shuffle and build all four foundations.";
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -5203,6 +5862,8 @@
       ["flappy_10", state.stats.flappyBest >= 10],
       ["crossy_first", state.stats.crossyRuns >= 1],
       ["crossy_10", state.stats.crossyBest >= 10],
+      ["solitaire_first", state.stats.solitaireRuns >= 1],
+      ["solitaire_win", state.stats.solitaireWins >= 1],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -5549,6 +6210,8 @@
         startFlappy();
       } else if (currentGame === "crossy") {
         startCrossy();
+      } else if (currentGame === "solitaire") {
+        startSolitaire();
       } else {
         startSnake();
       }
@@ -5577,6 +6240,14 @@
     el.crossyPauseBtn.addEventListener("click", toggleCrossyPause);
     el.startCrossyBtn.addEventListener("click", handlePrimaryCrossyAction);
     el.restartCrossyBtn.addEventListener("click", restartCrossy);
+    el.exitSolitaireBtn.addEventListener("click", () => showScreen("home"));
+    el.solitairePauseBtn.addEventListener("click", toggleSolitairePause);
+    el.startSolitaireBtn.addEventListener("click", handlePrimarySolitaireAction);
+    el.restartSolitaireBtn.addEventListener("click", restartSolitaire);
+    el.undoSolitaireBtn.addEventListener("click", undoSolitaireMove);
+    el.hintSolitaireBtn.addEventListener("click", showSolitaireHint);
+    el.solitaireBoard.addEventListener("click", handleSolitaireBoardClick);
+    el.solitaireBoard.addEventListener("dblclick", handleSolitaireBoardDoubleClick);
     el.flappyCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       flapBird();
@@ -5714,6 +6385,7 @@
     });
 
     window.addEventListener("resize", () => {
+      if (currentScreen === "solitaire") renderSolitaireBoard();
       if (!document.body.classList.contains("video-live")) return;
       startBackgroundVideo();
     });
@@ -5724,6 +6396,7 @@
     registerServiceWorker();
     localStorage.setItem(VERSION_KEY, APP_VERSION);
     drawSnake();
+    renderSolitaireBoard();
     setTimeout(() => {
       if (currentScreen === "boot") {
         showConnectionPrompt();
