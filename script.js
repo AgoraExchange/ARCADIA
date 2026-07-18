@@ -3,12 +3,13 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.32";
+  const APP_VERSION = "19.7.5.33";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Stack and Solitaire bottom controls now use the same full-width mobile button layout as Snake, Block Grid, and Star Invaders.",
     "Solitaire soundtrack selection now prevents the same song from playing on consecutive runs or restarts.",
-    "Solitaire now keeps all four compact action buttons in one bottom row on every screen size.",
+    "Solitaire now keeps all four action buttons together at the bottom of the game.",
     "Solitaire action buttons now keep Start and Restart together, with matching Undo and Hint controls, and use the new player-provided game icon.",
     "Klondike Solitaire added as Game 07 with touch card controls, Undo, Hint, rewards, achievements, and two random soundtracks.",
     "The dashboard now scrolls to the player header only when a pending level-up animation is about to play.",

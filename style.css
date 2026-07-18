@@ -2123,17 +2123,6 @@ input:focus {
   padding-right: 14px;
 }
 
-.stack-stage .game-actions {
-  align-self: end;
-  justify-self: center;
-  width: min(310px, 100%);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.stack-stage .game-actions .arcade-btn {
-  width: 100%;
-}
-
 .toast-stack {
   position: fixed;
   top: calc(16px + var(--safe-top));
@@ -2852,12 +2841,6 @@ input:focus {
     min-height: 42px;
   }
 
-  .stack-stage .game-actions {
-    width: min(310px, 100%);
-    justify-self: center;
-    align-self: end;
-  }
-
   .flappy-stage .game-actions,
   .crossy-stage .game-actions {
     width: min(310px, 100%);
@@ -3247,25 +3230,11 @@ input:focus {
   display: none;
 }
 
-.solitaire-actions {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  width: min(680px, 100%);
-  margin: 0 auto;
-}
-
-.solitaire-actions .arcade-btn {
-  min-width: 0;
-  width: 100%;
-  min-height: 42px;
-  padding-inline: 8px;
-}
-
 @media (max-width: 700px) {
   .solitaire-stage {
     padding: 10px;
     gap: 10px;
+    overflow-y: auto;
   }
 
   .solitaire-board {
@@ -3281,9 +3250,6 @@ input:focus {
     min-height: 360px;
   }
 
-  .solitaire-actions {
-    gap: 8px;
-  }
 }
 
 @media (max-width: 520px) {
@@ -3314,14 +3280,6 @@ input:focus {
     min-height: 320px;
   }
 
-  .solitaire-actions {
-    gap: 5px;
-  }
-
-  .solitaire-actions .arcade-btn {
-    padding-inline: 4px;
-    font-size: 0.68rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
