@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.26";
+  const APP_VERSION = "19.7.5.27";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders Machine Gun booster now appears as a mid-game button and only activates when tapped.",
+    "Star Invaders floating Gun perk added to recharge Machine Gun or stack extra shot damage without it.",
     "Crossy Road cover updated, trees and rocks now block movement, and rising screen pressure punishes idle runs.",
     "Crossy Road visuals rebuilt closer to the reference demo with bright lanes, blocky vehicles, trees, and a chunkier player.",
     "Crossy Road added as Game 06 with swipe controls, street ambience, crash death screen, and ARCADIA scoring.",
@@ -488,6 +490,7 @@
     starCoinPreview: $("starCoinPreview"),
     starJoystick: $("starJoystick"),
     starJoystickKnob: $("starJoystickKnob"),
+    starBoosterBtn: $("starBoosterBtn"),
     starShootBtn: $("starShootBtn"),
     startStarBtn: $("startStarBtn"),
     restartStarBtn: $("restartStarBtn"),
@@ -2420,8 +2423,12 @@
       freefireUntil: 0,
       lastFreefireShotAt: 0,
       machineGunActive: false,
+      machineGunChargeReady: false,
+      machineGunBoosterEquipped: false,
+      machineGunWasActivated: false,
       machineGunUntil: 0,
       lastMachineGunShotAt: 0,
+      gunDamageBonus: 0,
       laserCycle: 0,
       wingmenUntil: 0,
       rocketHelperUntil: 0,
@@ -2459,16 +2466,19 @@
     resetStar();
     const booster = getEquippedBoosterItem("star");
     star.running = true;
-    star.machineGunActive = booster?.effect === "machine_gun";
+    star.machineGunBoosterEquipped = booster?.effect === "machine_gun";
+    star.machineGunChargeReady = star.machineGunBoosterEquipped;
+    star.machineGunActive = false;
+    star.machineGunWasActivated = false;
     star.runStartedAt = Date.now();
     star.lastFrame = performance.now();
-    star.machineGunUntil = star.machineGunActive ? star.lastFrame + 30000 : 0;
+    star.machineGunUntil = 0;
     star.powerupSpawnAt = star.lastFrame + 5200;
     playTone("tap");
     playStarTheme("normal", { restart: true });
     starTimer = setInterval(tickStar, STAR_TICK_MS);
     renderStarStats();
-    if (star.machineGunActive) showToast("Machine Gun Armed", "30 seconds of Star Invaders auto-fire.", "win");
+    if (star.machineGunChargeReady) showToast("Machine Gun Armed", "Tap MG when you want 30 seconds of auto-fire.", "win");
   }
 
   function restartStar() {
@@ -2519,6 +2529,20 @@
     }
     renderStarStats();
     drawStar();
+  }
+
+  function activateStarMachineGun() {
+    if (!star.running || star.paused || !star.machineGunChargeReady) return;
+    const now = performance.now();
+    star.machineGunChargeReady = false;
+    star.machineGunActive = true;
+    star.machineGunWasActivated = true;
+    star.machineGunUntil = now + 30000;
+    star.lastMachineGunShotAt = 0;
+    star.lastShotAt = 0;
+    playTone("win");
+    showToast("Machine Gun Active", "30 seconds of Star Invaders auto-fire.", "win");
+    renderStarStats();
   }
 
   function starElapsedSeconds() {
@@ -2574,8 +2598,10 @@
   }
 
   function getStarDamage(options = {}) {
-    if (options.freefire) return 2.5;
-    return performance.now() < star.damageBoostUntil ? 1.5 : 1;
+    const gunBonus = Number(star.gunDamageBonus) || 0;
+    if (options.freefire) return 2.5 + gunBonus;
+    const boostDamage = performance.now() < star.damageBoostUntil ? 1.5 : 1;
+    return boostDamage + gunBonus;
   }
 
   function getStarLaserColor(options = {}) {
@@ -2630,9 +2656,10 @@
 
   function pickStarPowerupType() {
     const roll = Math.random();
-    if (roll < 0.36) return "health";
-    if (roll < 0.65) return "damage";
-    if (roll < 0.87) return "wingmen";
+    if (roll < 0.2) return "gun";
+    if (roll < 0.48) return "health";
+    if (roll < 0.7) return "damage";
+    if (roll < 0.88) return "wingmen";
     if (roll < 0.95) return "rocket";
     if (roll < 0.99) return "freefire";
     return "nuke";
@@ -2646,7 +2673,7 @@
       type,
       x: 48 + Math.random() * 624,
       y: -28,
-      r: type === "rocket" || type === "nuke" ? 21 : 18,
+      r: type === "rocket" || type === "nuke" || type === "gun" ? 21 : 18,
       vy: 78 + difficulty * 14 + Math.random() * 22,
       spin: Math.random() * Math.PI
     });
@@ -2660,7 +2687,8 @@
       wingmen: "Wingmen Online",
       rocket: "Rocket Support",
       freefire: "FREEFIRE!",
-      nuke: "RAD NUKE"
+      nuke: "RAD NUKE",
+      gun: "Gun Perk"
     };
     if (type === "health") {
       star.health = Math.min(star.maxHealth, star.health + 1);
@@ -2677,9 +2705,31 @@
       star.lastShotAt = 0;
     } else if (type === "nuke") {
       triggerStarNuke();
+    } else if (type === "gun") {
+      applyStarGunPerk(now);
     }
     playTone("win");
-    showToast(labels[type] || "Power Up", type === "health" ? `${star.health}/${star.maxHealth} health.` : "Powerup active.", "win");
+    showToast(labels[type] || "Power Up", starPowerupMessage(type), "win");
+  }
+
+  function applyStarGunPerk(now = performance.now()) {
+    if (star.machineGunBoosterEquipped) {
+      if (star.machineGunActive) {
+        star.machineGunUntil = Math.max(star.machineGunUntil, now) + 30000;
+      } else {
+        star.machineGunChargeReady = true;
+      }
+      return;
+    }
+    star.gunDamageBonus = Math.min(3, (Number(star.gunDamageBonus) || 0) + 0.35);
+    star.damageBoostUntil = Math.max(star.damageBoostUntil, now) + 12000;
+  }
+
+  function starPowerupMessage(type) {
+    if (type === "health") return `${star.health}/${star.maxHealth} health.`;
+    if (type === "gun" && star.machineGunBoosterEquipped) return "Machine Gun charge refilled.";
+    if (type === "gun") return `Shot damage upgraded to ${getStarDamage().toFixed(2)}.`;
+    return "Powerup active.";
   }
 
   function getRocketTarget() {
@@ -2964,6 +3014,13 @@
     el.startStarBtn.textContent = star.running ? "End Game" : "Start Game";
     el.starPauseBtn.textContent = star.paused ? "Resume" : "Pause";
     el.starPauseBtn.disabled = !star.running;
+    if (el.starBoosterBtn) {
+      const showButton = star.running && star.machineGunBoosterEquipped;
+      el.starBoosterBtn.classList.toggle("hidden", !showButton);
+      el.starBoosterBtn.disabled = !showButton || star.paused || !star.machineGunChargeReady;
+      el.starBoosterBtn.textContent = star.machineGunChargeReady ? "MG" : star.machineGunActive ? "ON" : "--";
+      el.starBoosterBtn.setAttribute("aria-label", star.machineGunChargeReady ? "Activate machine gun booster" : "Machine gun booster unavailable");
+    }
   }
 
   function drawStarHealthBar(ctx, entity, yOffset) {
@@ -3061,6 +3118,7 @@
   function drawStarPowerup(ctx, powerup) {
     const config = {
       health: { symbol: "+", color: "#57ff9a", label: "HP" },
+      gun: { symbol: "MG", color: "#57ff9a", label: "GUN" },
       damage: { symbol: "*", color: "#ffd35a", label: "1.5" },
       wingmen: { symbol: "A", color: "#49f4ff", label: "2X" },
       rocket: { symbol: "R", color: "#ff2fad", label: "3.5" },
@@ -3096,12 +3154,17 @@
       { name: "Wingmen", color: "#49f4ff", until: star.wingmenUntil },
       { name: "Rocket", color: "#ff2fad", until: star.rocketHelperUntil },
       { name: "Freefire", color: "#ffd35a", until: star.freefireUntil },
-      { name: "Machine Gun", color: "#57ff9a", until: star.machineGunUntil }
+      { name: "Machine Gun", color: "#57ff9a", until: star.machineGunUntil },
+      {
+        name: `Gun DMG +${(Number(star.gunDamageBonus) || 0).toFixed(2)}`,
+        color: "#57ff9a",
+        until: star.gunDamageBonus > 0 ? Number.POSITIVE_INFINITY : 0
+      }
     ]
       .filter((item) => item.until > now)
       .map((item) => ({
         ...item,
-        seconds: Math.max(1, Math.ceil((item.until - now) / 1000))
+        seconds: Number.isFinite(item.until) ? Math.max(1, Math.ceil((item.until - now) / 1000)) : null
       }));
   }
 
@@ -3166,7 +3229,7 @@
         ctx.fillText(item.name.toUpperCase(), x + 14, rowY);
         ctx.textAlign = "right";
         ctx.fillStyle = "#ffffff";
-        ctx.fillText(`${item.seconds}s`, x + panelWidth - 14, rowY);
+        ctx.fillText(item.seconds ? `${item.seconds}s` : "RUN", x + panelWidth - 14, rowY);
       });
     }
 
@@ -3304,7 +3367,8 @@
     state.stats.starKills += star.kills;
     state.stats.starBossKills += star.bossKills;
 
-    if (boosterUsed) {
+    const shouldConsumeBooster = boosterUsed && (boosterUsed.effect !== "machine_gun" || star.machineGunWasActivated);
+    if (shouldConsumeBooster) {
       state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
       state.equippedBooster = null;
       state.boosterUses += 1;
@@ -3317,7 +3381,7 @@
     state.coins += coinsEarned;
     state.level = deriveLevel(state.xp);
     unlockEarnedAchievements();
-    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    if (shouldConsumeBooster && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
     saveState();
     renderAll();
 
@@ -5543,6 +5607,10 @@
     });
     el.starShootBtn.addEventListener("pointerup", () => { star.shootHeld = false; });
     el.starShootBtn.addEventListener("pointercancel", () => { star.shootHeld = false; });
+    el.starBoosterBtn?.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      activateStarMachineGun();
+    });
     document.addEventListener("pointermove", moveBlockDrag);
     document.addEventListener("pointerup", endBlockDrag);
     document.addEventListener("pointercancel", () => cleanupBlockDrag(true));

@@ -1984,7 +1984,7 @@ input:focus {
 
 .star-controls {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr);
+  grid-template-columns: minmax(120px, 1fr) minmax(54px, auto) minmax(120px, 1fr);
   align-items: center;
   justify-items: center;
   width: 100%;
@@ -2054,6 +2054,45 @@ input:focus {
     0 3px 0 #430016,
     0 8px 18px rgba(0, 0, 0, 0.32),
     0 0 24px rgba(255, 47, 173, 0.24);
+}
+
+.star-booster-button {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  border: 1px solid rgba(87, 255, 154, 0.72);
+  color: #05030b;
+  background:
+    radial-gradient(circle at 35% 22%, rgba(255, 255, 255, 0.8), transparent 22%),
+    linear-gradient(180deg, #b7ffd1, #57ff9a 58%, #16a85f);
+  box-shadow:
+    inset 0 5px 10px rgba(255, 255, 255, 0.28),
+    inset 0 -7px 12px rgba(0, 80, 42, 0.38),
+    0 7px 0 #07552f,
+    0 12px 20px rgba(0, 0, 0, 0.32),
+    0 0 24px rgba(87, 255, 154, 0.34);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.star-booster-button:active {
+  transform: translateY(5px);
+  box-shadow:
+    inset 0 4px 10px rgba(255, 255, 255, 0.22),
+    inset 0 -6px 12px rgba(0, 80, 42, 0.44),
+    0 2px 0 #07552f,
+    0 7px 16px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(87, 255, 154, 0.26);
+}
+
+.star-booster-button:disabled {
+  cursor: default;
+  filter: grayscale(0.6);
+  opacity: 0.58;
+  transform: none;
 }
 
 .game-actions {
@@ -2747,7 +2786,7 @@ input:focus {
   }
 
   .star-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(42px, auto) minmax(0, 1fr);
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -2771,6 +2810,12 @@ input:focus {
     width: clamp(76px, 28vw, 96px);
     height: clamp(60px, 21vw, 74px);
     font-size: clamp(0.82rem, 4.2vw, 1.05rem);
+  }
+
+  .star-booster-button {
+    width: clamp(42px, 14vw, 50px);
+    height: clamp(42px, 14vw, 50px);
+    font-size: clamp(0.72rem, 3.2vw, 0.9rem);
   }
 
   .canvas-score-pill {
