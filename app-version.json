@@ -1,6 +1,7 @@
 {
-  "version": "19.7.5.29",
+  "version": "19.7.5.30",
   "patchNotes": [
+    "Solitaire action buttons now keep Start and Restart together, with matching Undo and Hint controls, and use the new player-provided game icon.",
     "Klondike Solitaire added as Game 07 with touch card controls, Undo, Hint, rewards, achievements, and two random soundtracks.",
     "The dashboard now scrolls to the player header only when a pending level-up animation is about to play.",
     "Star Invaders controls now stay anchored left and right, while Gun refills follow a protected 2-4 minute survival timer.",
