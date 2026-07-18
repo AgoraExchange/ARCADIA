@@ -1,6 +1,7 @@
 {
-  "version": "19.7.5.31",
+  "version": "19.7.5.32",
   "patchNotes": [
+    "Solitaire soundtrack selection now prevents the same song from playing on consecutive runs or restarts.",
     "Solitaire now keeps all four compact action buttons in one bottom row on every screen size.",
     "Solitaire action buttons now keep Start and Restart together, with matching Undo and Hint controls, and use the new player-provided game icon.",
     "Klondike Solitaire added as Game 07 with touch card controls, Undo, Hint, rewards, achievements, and two random soundtracks.",

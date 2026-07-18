@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.31";
+  const APP_VERSION = "19.7.5.32";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Solitaire soundtrack selection now prevents the same song from playing on consecutive runs or restarts.",
     "Solitaire now keeps all four compact action buttons in one bottom row on every screen size.",
     "Solitaire action buttons now keep Start and Restart together, with matching Undo and Hint controls, and use the new player-provided game icon.",
     "Klondike Solitaire added as Game 07 with touch card controls, Undo, Hint, rewards, achievements, and two random soundtracks.",
@@ -437,6 +438,7 @@
   let levelUpAudio = null;
   let activeTheme = "";
   let themeFadeTimer = null;
+  const lastGameThemeTracks = new Map();
   const sfxPools = new Map();
   const toastQueue = [];
   const activeToasts = new Set();
@@ -1089,9 +1091,12 @@
     return tracks[Math.floor(Math.random() * tracks.length)] || tracks[0];
   }
 
-  function pickThemeTrack(track) {
+  function pickThemeTrack(track, previousTrack = "") {
     if (!Array.isArray(track)) return track;
-    return track[Math.floor(Math.random() * track.length)] || track[0];
+    const availableTracks = track.length > 1
+      ? track.filter((candidate) => candidate !== previousTrack)
+      : track;
+    return availableTracks[Math.floor(Math.random() * availableTracks.length)] || track[0];
   }
 
   function playLobbyTheme(options = {}) {
@@ -1107,8 +1112,10 @@
   }
 
   function playGameTheme(gameId, options = {}) {
-    const track = pickThemeTrack(THEME_SONGS.games[gameId]);
-    const key = Array.isArray(THEME_SONGS.games[gameId]) && options.restart ? `game-${gameId}-${Date.now()}` : `game-${gameId}`;
+    const gameTracks = THEME_SONGS.games[gameId];
+    const track = pickThemeTrack(gameTracks, lastGameThemeTracks.get(gameId));
+    if (Array.isArray(gameTracks) && track) lastGameThemeTracks.set(gameId, track);
+    const key = Array.isArray(gameTracks) && options.restart ? `game-${gameId}-${Date.now()}` : `game-${gameId}`;
     playTheme(track, key, { transition: false, ...options });
   }
 
