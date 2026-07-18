@@ -3,11 +3,13 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.33";
+  const APP_VERSION = "19.7.5.34";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
-    "Stack and Solitaire bottom controls now use the same full-width mobile button layout as Snake, Block Grid, and Star Invaders.",
+    "Block Grid invalid drops now keep dragged pieces visible and outline only conflicting placed blocks in red.",
+    "Stack now keeps its vertical mobile controls at the same compact width as the other two-button games.",
+    "Stack and Solitaire bottom controls now use the same stacked mobile button layout as Snake, Block Grid, and Star Invaders.",
     "Solitaire soundtrack selection now prevents the same song from playing on consecutive runs or restarts.",
     "Solitaire now keeps all four action buttons together at the bottom of the game.",
     "Solitaire action buttons now keep Start and Restart together, with matching Undo and Hint controls, and use the new player-provided game icon.",
@@ -2215,11 +2217,15 @@
     if (!block.preview || block.selected === null) return cells;
     const piece = block.pieces[block.selected];
     if (!piece) return cells;
-    const type = block.preview.valid ? `valid ${piece.color}` : "invalid";
     blockCells(piece).forEach(({ x, y }) => {
       const r = block.preview.row + y;
       const c = block.preview.col + x;
-      if (r >= 0 && c >= 0 && r < BLOCK_GRID_SIZE && c < BLOCK_GRID_SIZE) cells.set(`${r}:${c}`, type);
+      if (r < 0 || c < 0 || r >= BLOCK_GRID_SIZE || c >= BLOCK_GRID_SIZE) return;
+      if (block.preview.valid) {
+        cells.set(`${r}:${c}`, `valid ${piece.color}`);
+      } else if (block.board[r][c]) {
+        cells.set(`${r}:${c}`, "conflict");
+      }
     });
     return cells;
   }
@@ -2298,6 +2304,7 @@
     block.preview = cell && piece
       ? { row, col, valid: canPlaceBlock(piece, row, col) }
       : null;
+    block.ghost?.classList.toggle("invalid-drop", Boolean(block.preview && !block.preview.valid));
     renderBlockBoard();
   }
 

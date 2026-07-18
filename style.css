@@ -1610,12 +1610,13 @@ input:focus {
   box-shadow: inset 0 0 0 2px rgba(138, 92, 255, 0.52), 0 0 18px rgba(138, 92, 255, 0.34);
 }
 
-.block-cell.preview.invalid {
-  background: rgba(255, 82, 117, 0.1);
-  border-color: rgba(255, 82, 117, 0.76);
+.block-cell.preview.conflict {
+  border-color: #ff345d;
+  outline: 3px solid rgba(255, 52, 93, 0.92);
+  outline-offset: -3px;
   box-shadow:
-    inset 0 0 0 2px rgba(255, 82, 117, 0.5),
-    0 0 18px rgba(255, 82, 117, 0.28);
+    inset 0 0 0 2px rgba(255, 255, 255, 0.24),
+    0 0 20px rgba(255, 52, 93, 0.58);
 }
 
 .block-cell.filled,
@@ -1799,7 +1800,7 @@ input:focus {
   pointer-events: none;
   transform: scale(1.05);
   transform-origin: top left;
-  opacity: 0.92;
+  opacity: 1;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -1807,6 +1808,14 @@ input:focus {
 .block-drag-ghost .mini-block {
   width: 22px;
   height: 22px;
+}
+
+.block-drag-ghost.invalid-drop .mini-block:not(.empty) {
+  outline: 2px solid #ff345d;
+  outline-offset: 1px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 0 16px rgba(255, 52, 93, 0.72);
 }
 
 .canvas-score-pill {
@@ -2839,6 +2848,12 @@ input:focus {
     min-width: 0;
     width: 100%;
     min-height: 42px;
+  }
+
+  .stack-stage .game-actions {
+    width: min(310px, 100%);
+    justify-self: center;
+    align-self: end;
   }
 
   .flappy-stage .game-actions,
