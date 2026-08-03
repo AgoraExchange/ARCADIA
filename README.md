@@ -34,6 +34,7 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
 - Fruit Blend game page
   - Physics-based fruit drops and same-tier merging
   - Twelve fruit sizes with mixed weighted drops, including banana and pineapple
+  - Upcoming-fruit card with a scaled preview and the fruit name
   - Maximum-fruit clears that disappear for escalating high-score bonuses
   - Overflow danger line, high scores, XP, coins, and achievements
   - Mouse, keyboard, and touch controls with rotating music

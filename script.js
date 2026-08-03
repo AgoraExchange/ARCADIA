@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.0.0";
+  const APP_VERSION = "19.9.0.2";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Fruit Blend's strawberry now has a tapered berry silhouette, leafy crown, and visible seeds.",
+    "Fruit Blend's Next card now shows the upcoming fruit name beneath its preview.",
     "The Player Store adds six permanent Snake color skins, including an animated Rainbow Snake unlocked at level 35.",
     "Block Grid adds the Earthquake booster: it clears and scores every placed block once during the opening 15-45 seconds, then rearms after every five skill-cleared lines.",
     "Fruit Blend now uses its dedicated neon fruit-merging artwork on the ARCADIA dashboard.",
@@ -6669,16 +6671,38 @@
       drawFruitSprite(ctx, preview, 0.92);
     }
 
-    ctx.fillStyle = "rgba(5, 3, 11, 0.72)";
-    ctx.roundRect(width - 82, 18, 64, 82, 14);
+    const nextCardX = width - 124;
+    const nextCardCenter = width - 71;
+    const nextType = FRUIT_TYPES[fruit.nextTier];
+    ctx.fillStyle = "rgba(5, 3, 11, 0.78)";
+    ctx.beginPath();
+    ctx.roundRect(nextCardX, 14, 106, 108, 14);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(73, 244, 255, 0.2)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    const nextScale = Math.min(0.72, 30 / nextType.radius);
+    const nextPreview = createFruitBody(fruit.nextTier, nextCardCenter, 65, { spin: 0, spawnedAt: now });
+    fruitSerial -= 1;
+    drawFruitSprite(ctx, nextPreview, 1, nextScale);
+    ctx.fillStyle = "rgba(5, 3, 11, 0.86)";
+    ctx.beginPath();
+    ctx.roundRect(nextCardX + 7, 20, 38, 17, 5);
     ctx.fill();
     ctx.fillStyle = "#b8add1";
-    ctx.font = "800 11px Arial";
+    ctx.font = "800 9px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("NEXT", width - 50, 35);
-    const nextPreview = createFruitBody(fruit.nextTier, width - 50, 67, { spin: 0, spawnedAt: now });
-    fruitSerial -= 1;
-    drawFruitSprite(ctx, nextPreview, 1, 0.62);
+    ctx.fillText("NEXT", nextCardX + 26, 32);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.beginPath();
+    ctx.moveTo(nextCardX + 10, 98);
+    ctx.lineTo(nextCardX + 96, 98);
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `900 ${nextType.name.length > 10 ? 8 : 9}px Arial Black`;
+    ctx.textBaseline = "middle";
+    ctx.fillText(nextType.name.toUpperCase(), nextCardCenter, 110, 92);
+    ctx.textBaseline = "alphabetic";
 
     fruit.fruits.forEach((body) => drawFruitSprite(ctx, body));
     fruit.particles.forEach((particle) => {
@@ -6743,7 +6767,14 @@
     gradient.addColorStop(1, "#3f173d");
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    if (body.tier === 7) {
+    if (body.tier === 1) {
+      ctx.moveTo(0, radius * 0.96);
+      ctx.bezierCurveTo(-radius * 0.2, radius * 0.78, -radius * 0.78, radius * 0.42, -radius * 0.8, -radius * 0.18);
+      ctx.bezierCurveTo(-radius * 0.82, -radius * 0.6, -radius * 0.38, -radius * 0.84, 0, -radius * 0.58);
+      ctx.bezierCurveTo(radius * 0.38, -radius * 0.84, radius * 0.82, -radius * 0.6, radius * 0.8, -radius * 0.18);
+      ctx.bezierCurveTo(radius * 0.78, radius * 0.42, radius * 0.2, radius * 0.78, 0, radius * 0.96);
+      ctx.closePath();
+    } else if (body.tier === 7) {
       ctx.moveTo(-radius * 0.88, -radius * 0.34);
       ctx.bezierCurveTo(-radius * 0.68, radius * 0.58, radius * 0.3, radius * 0.82, radius * 0.9, -radius * 0.08);
       ctx.bezierCurveTo(radius * 0.58, radius * 0.22, radius * 0.02, radius * 0.34, -radius * 0.58, -radius * 0.3);
@@ -6760,7 +6791,7 @@
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    if ([0, 1, 3, 4, 5, 6].includes(body.tier)) {
+    if ([0, 3, 4, 5, 6].includes(body.tier)) {
       ctx.strokeStyle = "#6e3d25";
       ctx.lineWidth = Math.max(2, radius * 0.08);
       ctx.beginPath();
@@ -6771,6 +6802,37 @@
       ctx.beginPath();
       ctx.ellipse(radius * 0.28, -radius * 1.12, radius * 0.28, radius * 0.12, -0.35, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    if (body.tier === 1) {
+      ctx.fillStyle = "#57ff9a";
+      for (let leaf = -2; leaf <= 2; leaf += 1) {
+        ctx.save();
+        ctx.translate(0, -radius * 0.58);
+        ctx.rotate(leaf * 0.34);
+        ctx.beginPath();
+        ctx.ellipse(0, -radius * 0.16, radius * 0.16, radius * 0.38, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.strokeStyle = "#4c7c2a";
+      ctx.lineWidth = Math.max(1.5, radius * 0.07);
+      ctx.beginPath();
+      ctx.moveTo(0, -radius * 0.72);
+      ctx.quadraticCurveTo(radius * 0.02, -radius * 1.02, radius * 0.14, -radius * 1.1);
+      ctx.stroke();
+
+      const seeds = [
+        [-0.42, -0.26], [0, -0.34], [0.42, -0.26],
+        [-0.56, 0.08], [-0.2, 0.04], [0.22, 0.04], [0.56, 0.08],
+        [-0.38, 0.4], [0, 0.34], [0.38, 0.4], [0, 0.68]
+      ];
+      ctx.fillStyle = "#ffe58a";
+      seeds.forEach(([seedX, seedY]) => {
+        ctx.beginPath();
+        ctx.ellipse(seedX * radius, seedY * radius, Math.max(0.9, radius * 0.045), Math.max(1.4, radius * 0.075), seedX * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      });
     }
 
     if (body.tier === 7) {
@@ -6864,7 +6926,7 @@
       }
     }
 
-    const faceOffsetY = body.tier === 7 ? radius * 0.35 : 0;
+    const faceOffsetY = body.tier === 7 ? radius * 0.35 : body.tier === 1 ? radius * 0.08 : 0;
     const eyeY = faceOffsetY - radius * 0.08;
     const eyeX = radius * 0.28;
     ctx.fillStyle = "#100817";

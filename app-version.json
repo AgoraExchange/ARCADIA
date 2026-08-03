@@ -1,6 +1,8 @@
 {
-  "version": "19.9.0.0",
+  "version": "19.9.0.2",
   "patchNotes": [
+    "Fruit Blend's strawberry now has a tapered berry silhouette, leafy crown, and visible seeds.",
+    "Fruit Blend's Next card now shows the upcoming fruit name beneath its preview.",
     "The Player Store adds six permanent Snake color skins, including an animated Rainbow Snake unlocked at level 35.",
     "Block Grid adds the Earthquake booster: it clears and scores every placed block once during the opening 15-45 seconds, then rearms after every five skill-cleared lines.",
     "Fruit Blend now uses its dedicated neon fruit-merging artwork on the ARCADIA dashboard.",
