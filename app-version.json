@@ -1,6 +1,17 @@
 {
-  "version": "19.7.5.34",
+  "version": "19.9.0.0",
   "patchNotes": [
+    "The Player Store adds six permanent Snake color skins, including an animated Rainbow Snake unlocked at level 35.",
+    "Block Grid adds the Earthquake booster: it clears and scores every placed block once during the opening 15-45 seconds, then rearms after every five skill-cleared lines.",
+    "Fruit Blend now uses its dedicated neon fruit-merging artwork on the ARCADIA dashboard.",
+    "Fruit Blend overflow now ends decisively after the dropped-fruit entry grace period and opens the shared Retry and Dashboard results without a flickering warning.",
+    "Fruit Blend bananas now use a curved compound collider, while stronger settling and pineapple spin damping keep fruit stacks natural.",
+    "Fruit Blend adds a crescent-shaped banana and expands direct drops through banana and pineapple with mixed weighted sizes.",
+    "Fruit Blend high scores now center on clearing paired maximum fruits for large escalating bonuses instead of ordinary merges alone.",
+    "Fruit Blend pineapple upgraded with a tall pineapple silhouette, diamond rind texture, and full leafy crown.",
+    "Fruit Blend fruit sizes increased across all 11 tiers and the five droppable tiers are now balanced so space management begins sooner.",
+    "Fruit Blend added as Game 08 with physics-based drops, 11 fruit tiers, chain merging, danger-line overflow, rewards, and achievements.",
+    "Fruit Blend includes two rotating soundtracks that switch automatically without repeating the previous song.",
     "Block Grid invalid drops now keep dragged pieces visible and outline only conflicting placed blocks in red.",
     "Stack now keeps its vertical mobile controls at the same compact width as the other two-button games.",
     "Stack and Solitaire bottom controls now use the same stacked mobile button layout as Snake, Block Grid, and Star Invaders.",

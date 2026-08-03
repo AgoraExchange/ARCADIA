@@ -1,6 +1,6 @@
 # ARCADIA
 
-ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play Snake, earn XP, collect coins, unlock achievements, and track progress from their player profile.
+ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play eight arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
 If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
 
@@ -19,13 +19,24 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Coins, games played, Snake best, favorite game, badges
   - Achievements
   - Leaderboard preview
-  - Rewards Store
+  - Rewards Store with permanent player cosmetics and reusable game boosters
 - Snake game page
   - Neon framed board
   - Score, best, streak
   - XP and coin preview
   - Start, pause, restart, exit
   - Keyboard, swipe, and mobile controls
+  - Six purchasable color skins, including the level-35 animated Rainbow Snake
+- Block Grid game page
+  - Eight-by-eight placement board with row and column clears
+  - Earthquake booster that clears and scores the board during the opening 15-45 seconds
+  - Skill recharge after every five player-cleared lines
+- Fruit Blend game page
+  - Physics-based fruit drops and same-tier merging
+  - Twelve fruit sizes with mixed weighted drops, including banana and pineapple
+  - Maximum-fruit clears that disappear for escalating high-score bonuses
+  - Overflow danger line, high scores, XP, coins, and achievements
+  - Mouse, keyboard, and touch controls with rotating music
 
 ## Visual Direction
 

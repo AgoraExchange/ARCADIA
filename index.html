@@ -212,6 +212,10 @@
 
       <main class="game-content">
         <section class="block-stage panel">
+          <div id="blockEarthquakeBanner" class="block-earthquake-banner" aria-hidden="true">
+            <strong>EARTHQUAKE</strong>
+            <span>BOARD BREAKER</span>
+          </div>
           <div class="game-hud">
             <div><span>Score</span><strong id="blockScore">0</strong></div>
             <div><span>Best</span><strong id="blockBest">0</strong></div>
@@ -232,7 +236,7 @@
             <button id="restartBlockBtn" class="arcade-btn secondary" type="button">Restart</button>
           </div>
 
-          <p class="hint">Tap a piece, then tap the board. Fill rows or columns to clear space.</p>
+          <p id="blockHint" class="hint">Tap a piece, then tap the board. Fill rows or columns to clear space.</p>
         </section>
       </main>
     </section>
@@ -426,6 +430,40 @@
       </main>
     </section>
 
+    <section id="fruitScreen" class="screen game-screen fruit-screen hidden">
+      <header class="page-top">
+        <button id="exitFruitBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Fruit Blend</h1>
+        <button id="fruitPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content">
+        <section class="fruit-stage panel">
+          <div class="game-hud fruit-hud">
+            <div><span>Score</span><strong id="fruitScore">0</strong></div>
+            <div><span>Best</span><strong id="fruitBest">0</strong></div>
+            <div><span>Clears</span><strong id="fruitClears">0</strong></div>
+          </div>
+
+          <div class="fruit-canvas-shell">
+            <canvas id="fruitCanvas" width="540" height="720" aria-label="Fruit Blend game board. Move to aim and tap to drop matching fruit."></canvas>
+          </div>
+
+          <div class="reward-preview">
+            <div><span>XP Preview</span><strong id="fruitXpPreview">0</strong></div>
+            <div><span>Coins</span><strong id="fruitCoinPreview">0</strong></div>
+          </div>
+
+          <div class="game-actions">
+            <button id="startFruitBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="restartFruitBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint">Match identical fruit. Clear two maximum fruits for huge score bonuses before the container overflows.</p>
+        </section>
+      </main>
+    </section>
+
     <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
     <div id="gameOverModal" class="modal hidden">
@@ -482,7 +520,7 @@
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
           <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 19.7.5.34</p>
+        <p id="appVersionText" class="app-version-text">Version 19.9.0.0</p>
       </div>
     </div>
 

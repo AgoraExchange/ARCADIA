@@ -1228,6 +1228,11 @@ input:focus {
 #snakeStreak,
 #snakeXpPreview,
 #snakeCoinPreview,
+#fruitScore,
+#fruitBest,
+#fruitClears,
+#fruitXpPreview,
+#fruitCoinPreview,
 #resultScore,
 #resultXp,
 #resultCoins,
@@ -1296,6 +1301,69 @@ input:focus {
 .store-card.equipped {
   border-color: rgba(87, 255, 154, 0.42);
   box-shadow: inset 0 0 22px rgba(87, 255, 154, 0.08), 0 0 22px rgba(87, 255, 154, 0.12);
+}
+
+.snake-skin-preview {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  margin: 4px 0 8px;
+  padding-left: 8px;
+}
+
+.snake-skin-preview span {
+  width: 27px;
+  height: 27px;
+  margin-left: -5px;
+  border: 2px solid rgba(255, 255, 255, 0.34);
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--skin-a), var(--skin-b) 52%, var(--skin-c));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--skin-b) 68%, transparent);
+}
+
+.snake-skin-preview span:first-child {
+  width: 33px;
+  height: 33px;
+  margin-left: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.snake-skin-preview.rainbow span {
+  background: linear-gradient(135deg, #ff3e79, #ffd83d, #55ff96, #49f4ff, #9a55ff, #ff3e79);
+  background-size: 280% 280%;
+  animation: snakeStoreRainbow 2.8s linear infinite;
+}
+
+.snake-skin-preview.rainbow span:nth-child(2) { animation-delay: -0.35s; }
+.snake-skin-preview.rainbow span:nth-child(3) { animation-delay: -0.7s; }
+.snake-skin-preview.rainbow span:nth-child(4) { animation-delay: -1.05s; }
+
+.earthquake-store-preview {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  margin: 4px 0 9px;
+  color: #ffd35a;
+  font-family: var(--font-player);
+  letter-spacing: 0.11em;
+  text-shadow: 0 0 12px rgba(255, 47, 173, 0.76);
+}
+
+.earthquake-store-preview span {
+  width: 20px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ff2fad);
+  clip-path: polygon(0 35%, 38% 35%, 48% 0, 62% 100%, 74% 35%, 100% 35%, 100% 65%, 78% 65%, 62% 100%, 48% 0, 42% 65%, 0 65%);
+}
+
+.earthquake-store-preview span:last-child {
+  transform: scaleX(-1);
+}
+
+@keyframes snakeStoreRainbow {
+  to { background-position: 280% 50%; }
 }
 
 .achievement-card.unlocked {
@@ -1443,9 +1511,55 @@ input:focus {
 }
 
 .block-stage {
+  position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto auto;
   gap: 14px;
+}
+
+.block-earthquake-banner {
+  position: absolute;
+  z-index: 12;
+  top: 42%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  min-width: min(82%, 410px);
+  padding: 14px 24px;
+  border: 2px solid rgba(255, 211, 90, 0.9);
+  border-radius: 10px;
+  color: #ffffff;
+  background: linear-gradient(90deg, rgba(92, 9, 36, 0.94), rgba(20, 7, 42, 0.96), rgba(92, 9, 36, 0.94));
+  box-shadow: 0 0 35px rgba(255, 47, 173, 0.62), inset 0 0 20px rgba(255, 211, 90, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.72) rotate(-2deg);
+}
+
+.block-earthquake-banner strong {
+  color: #ffd35a;
+  font-family: var(--font-player);
+  font-size: clamp(1.7rem, 7vw, 3.2rem);
+  letter-spacing: 0.06em;
+  text-shadow: 3px 3px 0 #ff2fad, 0 0 18px rgba(255, 211, 90, 0.84);
+}
+
+.block-earthquake-banner span {
+  margin-top: 3px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+}
+
+.block-screen.earthquake-active .block-stage {
+  animation: blockEarthquakeShake 0.82s linear both;
+}
+
+.block-screen.earthquake-active .block-earthquake-banner {
+  visibility: visible;
+  animation: blockEarthquakeBanner 0.96s cubic-bezier(0.18, 0.86, 0.25, 1) both;
 }
 
 .star-stage {
@@ -1580,6 +1694,14 @@ input:focus {
   opacity: 0;
   pointer-events: none;
   animation: blockClearSparks 0.46s ease var(--clear-delay) both;
+}
+
+.block-cell.earthquake-fall {
+  position: relative;
+  z-index: 4;
+  pointer-events: none;
+  animation: blockEarthquakeFall 0.86s cubic-bezier(0.42, 0, 0.8, 0.28) var(--quake-delay) both;
+  will-change: transform, opacity, filter;
 }
 
 .block-cell.preview {
@@ -1785,6 +1907,42 @@ input:focus {
   }
 }
 
+@keyframes blockEarthquakeShake {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0); }
+  8% { transform: translate3d(-9px, 4px, 0) rotate(-0.55deg); }
+  16% { transform: translate3d(11px, -5px, 0) rotate(0.65deg); }
+  24% { transform: translate3d(-12px, -2px, 0) rotate(-0.7deg); }
+  32% { transform: translate3d(10px, 6px, 0) rotate(0.52deg); }
+  42% { transform: translate3d(-8px, -5px, 0) rotate(-0.42deg); }
+  54% { transform: translate3d(7px, 4px, 0) rotate(0.36deg); }
+  68% { transform: translate3d(-5px, -3px, 0) rotate(-0.22deg); }
+  82% { transform: translate3d(3px, 2px, 0) rotate(0.12deg); }
+}
+
+@keyframes blockEarthquakeBanner {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.55) rotate(-5deg); filter: blur(4px); }
+  16% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(2deg); filter: blur(0); }
+  68% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-1deg); }
+  100% { opacity: 0; transform: translate(-50%, -54%) scale(1.12) rotate(1deg); }
+}
+
+@keyframes blockEarthquakeFall {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0) scale(1); filter: brightness(1); }
+  14% { transform: translate3d(-4px, -8px, 0) rotate(-5deg) scale(1.05); filter: brightness(1.8); }
+  34% { opacity: 1; transform: translate3d(5px, 24px, 0) rotate(12deg) scale(0.96); }
+  100% { opacity: 0; transform: translate3d(-3px, 310px, 0) rotate(46deg) scale(0.48); filter: brightness(0.7) blur(2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block-screen.earthquake-active .block-stage {
+    animation: none;
+  }
+
+  .block-cell.earthquake-fall {
+    animation-duration: 0.24s;
+  }
+}
+
 .block-drag-ghost {
   position: fixed;
   z-index: 80;
@@ -1974,6 +2132,54 @@ input:focus {
   box-shadow:
     inset 0 0 30px rgba(255, 211, 90, 0.08),
     0 0 34px rgba(73, 244, 255, 0.18);
+}
+
+.fruit-stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fruit-hud {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fruit-canvas-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, calc((var(--app-height) - 320px) * 0.75), 430px);
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 47, 173, 0.3);
+  background:
+    radial-gradient(circle at 50% 10%, rgba(255, 47, 173, 0.22), transparent 34%),
+    radial-gradient(circle at 50% 88%, rgba(73, 244, 255, 0.13), transparent 32%),
+    rgba(5, 3, 11, 0.74);
+  box-shadow:
+    inset 0 0 32px rgba(255, 47, 173, 0.09),
+    0 0 36px rgba(138, 92, 255, 0.22);
+}
+
+#fruitCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(73, 244, 255, 0.28);
+  background: #09051a;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #crossyCanvas {
@@ -2724,7 +2930,8 @@ input:focus {
   }
 
   .flappy-stage,
-  .crossy-stage {
+  .crossy-stage,
+  .fruit-stage {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -2792,6 +2999,17 @@ input:focus {
     min-height: 0;
   }
 
+  .fruit-canvas-shell {
+    width: min(100%, calc((var(--app-height) - 190px) * 0.72), 390px);
+    max-height: calc(var(--app-height) - 190px);
+    min-height: 0;
+  }
+
+  #fruitCanvas {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
   #crossyCanvas {
     height: 100%;
     aspect-ratio: auto;
@@ -2857,7 +3075,8 @@ input:focus {
   }
 
   .flappy-stage .game-actions,
-  .crossy-stage .game-actions {
+  .crossy-stage .game-actions,
+  .fruit-stage .game-actions {
     width: min(310px, 100%);
     justify-self: center;
     align-self: end;

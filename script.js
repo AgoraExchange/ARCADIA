@@ -3,10 +3,21 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.7.5.34";
+  const APP_VERSION = "19.9.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "The Player Store adds six permanent Snake color skins, including an animated Rainbow Snake unlocked at level 35.",
+    "Block Grid adds the Earthquake booster: it clears and scores every placed block once during the opening 15-45 seconds, then rearms after every five skill-cleared lines.",
+    "Fruit Blend now uses its dedicated neon fruit-merging artwork on the ARCADIA dashboard.",
+    "Fruit Blend overflow now ends decisively after the dropped-fruit entry grace period and opens the shared Retry and Dashboard results without a flickering warning.",
+    "Fruit Blend bananas now use a curved compound collider, while stronger settling and pineapple spin damping keep fruit stacks natural.",
+    "Fruit Blend adds a crescent-shaped banana and expands direct drops through banana and pineapple with mixed weighted sizes.",
+    "Fruit Blend high scores now center on clearing paired maximum fruits for large escalating bonuses instead of ordinary merges alone.",
+    "Fruit Blend pineapple upgraded with a tall pineapple silhouette, diamond rind texture, and full leafy crown.",
+    "Fruit Blend fruit sizes increased across all 11 tiers and the five droppable tiers are now balanced so space management begins sooner.",
+    "Fruit Blend added as Game 08 with physics-based drops, 11 fruit tiers, chain merging, danger-line overflow, rewards, and achievements.",
+    "Fruit Blend includes two rotating soundtracks that switch automatically without repeating the previous song.",
     "Block Grid invalid drops now keep dragged pieces visible and outline only conflicting placed blocks in red.",
     "Stack now keeps its vertical mobile controls at the same compact width as the other two-button games.",
     "Stack and Solitaire bottom controls now use the same stacked mobile button layout as Snake, Block Grid, and Star Invaders.",
@@ -70,6 +81,7 @@
   const STACK_TICK_MS = 1000 / 60;
   const FLAPPY_TICK_MS = 1000 / 60;
   const CROSSY_TICK_MS = 1000 / 60;
+  const FRUIT_TICK_MS = 1000 / 60;
   const SOLITAIRE_SUITS = [
     { id: "hearts", symbol: "♥", color: "red" },
     { id: "diamonds", symbol: "♦", color: "red" },
@@ -77,6 +89,24 @@
     { id: "spades", symbol: "♠", color: "black" }
   ];
   const SOLITAIRE_RANKS = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+  const FRUIT_TYPES = [
+    { name: "Cherry", radius: 17, color: "#ff3f75", accent: "#ffb3ca", points: 2 },
+    { name: "Strawberry", radius: 22, color: "#ff416c", accent: "#ffd35a", points: 5 },
+    { name: "Grape", radius: 28, color: "#8b5cff", accent: "#d7b5ff", points: 10 },
+    { name: "Tangerine", radius: 35, color: "#ff8a3d", accent: "#ffd35a", points: 18 },
+    { name: "Apple", radius: 43, color: "#78df52", accent: "#d9ff8c", points: 30 },
+    { name: "Pear", radius: 52, color: "#cbe944", accent: "#f3ff9a", points: 48 },
+    { name: "Peach", radius: 62, color: "#ff8ca1", accent: "#ffd1bf", points: 75 },
+    { name: "Banana", radius: 70, color: "#ffe14c", accent: "#fff6a0", points: 105 },
+    { name: "Pineapple", radius: 79, color: "#ffc83d", accent: "#fff19a", points: 145 },
+    { name: "Coconut", radius: 89, color: "#7c4b37", accent: "#e8c89f", points: 200 },
+    { name: "Dragon Fruit", radius: 99, color: "#ff2f8c", accent: "#ff9fce", points: 280 },
+    { name: "Watermelon", radius: 110, color: "#54cb62", accent: "#b8ff8c", points: 400 }
+  ];
+  const FRUIT_DROP_WEIGHTS = [18, 16, 14, 12, 10, 8, 7, 8, 7];
+  const FRUIT_BANANA_TIER = 7;
+  const FRUIT_PINEAPPLE_TIER = 8;
+  const FRUIT_BOUNDS = { left: 48, right: 492, top: 126, bottom: 680, danger: 154 };
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
   const CROSSY_CRASH_SFX = "assets/audio/sfx/crossy-road/crash.mp3";
@@ -104,6 +134,10 @@
         "assets/themesong/games/solitaire-1.mp3",
         "assets/themesong/games/solitaire-2.mp3"
       ],
+      fruit: [
+        "assets/themesong/games/fruit-blend-1.mp3",
+        "assets/themesong/games/fruit-blend-2.mp3"
+      ],
       starBoss: "assets/themesong/games/star-invaders-boss.mp3"
     }
   };
@@ -118,6 +152,7 @@
     owned: [],
     equippedNameplate: null,
     equippedLaser: null,
+    equippedSnakeSkin: null,
     equippedBooster: null,
     boosterCooldowns: {},
     boosterPurchases: 0,
@@ -162,7 +197,14 @@
       solitaireWins: 0,
       solitaireBest: 0,
       solitaireXpEarned: 0,
-      solitaireTotalScore: 0
+      solitaireTotalScore: 0,
+      fruitRuns: 0,
+      fruitBest: 0,
+      fruitXpEarned: 0,
+      fruitTotalScore: 0,
+      fruitMerges: 0,
+      fruitLargest: 0,
+      fruitClears: 0
     },
     achievements: []
   };
@@ -244,6 +286,17 @@
       available: true,
       image: "assets/images/games/solitaire.png",
       mark: "A"
+    },
+    {
+      id: "fruit",
+      title: "Fruit Blend",
+      gameNo: "08",
+      tags: ["fruit", "blend", "merge", "match", "physics", "puzzle", "watermelon"],
+      description: "Mix small and large drops, then clear maximum fruit for huge scores.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/fruitblend.png",
+      mark: "F"
     }
   ];
 
@@ -264,6 +317,10 @@
     { id: "crossy_10", title: "Traffic Dodger", text: "Reach score 10 in Crossy Road." },
     { id: "solitaire_first", title: "First Deal", text: "Complete your first Solitaire run." },
     { id: "solitaire_win", title: "Card Sharp", text: "Win a game of Solitaire." },
+    { id: "fruit_first", title: "Fresh Squeeze", text: "Complete your first Fruit Blend run." },
+    { id: "fruit_500", title: "Blend Master", text: "Score 500 or higher in Fruit Blend." },
+    { id: "fruit_melon", title: "Melon Royalty", text: "Create a watermelon in Fruit Blend." },
+    { id: "fruit_clear", title: "Clean Blend", text: "Clear two maximum fruits in Fruit Blend." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -374,6 +431,78 @@
       text: "Cycle every Star Invaders shot through RGB colors."
     },
     {
+      id: "snake_cyber_blue",
+      title: "Cyber Blue Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 2,
+      cost: 260,
+      colors: ["#8cf7ff", "#168cff", "#0647c8"],
+      tags: ["snake", "skin", "color", "blue", "cyber"],
+      text: "Turn Snake into a bright electric-blue arcade trail."
+    },
+    {
+      id: "snake_toxic_green",
+      title: "Toxic Green Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 6,
+      cost: 580,
+      colors: ["#dfff65", "#59ff75", "#0fa849"],
+      tags: ["snake", "skin", "color", "green", "toxic"],
+      text: "Give every segment a radioactive green glow."
+    },
+    {
+      id: "snake_plasma_pink",
+      title: "Plasma Pink Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 10,
+      cost: 980,
+      colors: ["#fff0fb", "#ff4fc8", "#b20b82"],
+      tags: ["snake", "skin", "color", "pink", "plasma"],
+      text: "Run the board with a hot plasma-pink snake."
+    },
+    {
+      id: "snake_solar_gold",
+      title: "Solar Gold Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 15,
+      cost: 1680,
+      colors: ["#fff7ad", "#ffd13d", "#ff7a18"],
+      tags: ["snake", "skin", "color", "gold", "yellow", "solar"],
+      text: "Light up Snake with a molten gold finish."
+    },
+    {
+      id: "snake_void_purple",
+      title: "Void Purple Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 22,
+      cost: 2850,
+      colors: ["#e4c6ff", "#9c50ff", "#4a0ca8"],
+      tags: ["snake", "skin", "color", "purple", "void"],
+      text: "Wrap the snake in deep violet void energy."
+    },
+    {
+      id: "snake_rainbow",
+      title: "Rainbow Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 35,
+      cost: 6000,
+      rainbow: true,
+      tags: ["snake", "skin", "color", "rainbow", "rgb", "animated"],
+      text: "Cycle every snake segment through a living rainbow."
+    },
+    {
       id: "xp_boost_2",
       title: "2X XP Booster",
       category: "boosters",
@@ -409,6 +538,19 @@
       cost: 1250,
       tags: ["booster", "star", "invaders", "machine", "gun", "autofire"],
       text: "Auto-fire in your next Star Invaders run. No bonus damage, just pressure."
+    },
+    {
+      id: "earthquake_block",
+      title: "Earthquake",
+      category: "boosters",
+      type: "booster",
+      boost: "earthquake_block",
+      effect: "earthquake",
+      game: "block",
+      level: 14,
+      cost: 1750,
+      tags: ["booster", "block", "grid", "earthquake", "clear", "shake"],
+      text: "Shake every placed block off the board in your next Block Grid run. Clear five lines to trigger it again."
     }
   ];
 
@@ -419,6 +561,7 @@
   let snakeTimer = null;
   let snake = createSnakeState();
   let block = createBlockState();
+  let blockEarthquakeTimer = null;
   let star = createStarState();
   let starTimer = null;
   let stack = createStackState();
@@ -431,6 +574,9 @@
   let crossyCrashAudio = null;
   let solitaire = createSolitaireState();
   let solitaireTimer = null;
+  let fruit = createFruitState();
+  let fruitTimer = null;
+  let fruitPointerId = null;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -460,6 +606,7 @@
     flappyScreen: $("flappyScreen"),
     crossyScreen: $("crossyScreen"),
     solitaireScreen: $("solitaireScreen"),
+    fruitScreen: $("fruitScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -513,12 +660,14 @@
     exitBlockBtn: $("exitBlockBtn"),
     blockPauseBtn: $("blockPauseBtn"),
     blockBoard: $("blockBoard"),
+    blockEarthquakeBanner: $("blockEarthquakeBanner"),
     blockTray: $("blockTray"),
     blockScore: $("blockScore"),
     blockBest: $("blockBest"),
     blockLines: $("blockLines"),
     blockXpPreview: $("blockXpPreview"),
     blockCoinPreview: $("blockCoinPreview"),
+    blockHint: $("blockHint"),
     startBlockBtn: $("startBlockBtn"),
     restartBlockBtn: $("restartBlockBtn"),
     exitStarBtn: $("exitStarBtn"),
@@ -584,6 +733,16 @@
     undoSolitaireBtn: $("undoSolitaireBtn"),
     hintSolitaireBtn: $("hintSolitaireBtn"),
     restartSolitaireBtn: $("restartSolitaireBtn"),
+    exitFruitBtn: $("exitFruitBtn"),
+    fruitPauseBtn: $("fruitPauseBtn"),
+    fruitCanvas: $("fruitCanvas"),
+    fruitScore: $("fruitScore"),
+    fruitBest: $("fruitBest"),
+    fruitClears: $("fruitClears"),
+    fruitXpPreview: $("fruitXpPreview"),
+    fruitCoinPreview: $("fruitCoinPreview"),
+    startFruitBtn: $("startFruitBtn"),
+    restartFruitBtn: $("restartFruitBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -701,6 +860,7 @@
       coins: legacyCoins,
       equippedNameplate: typeof saved?.equippedNameplate === "string" ? saved.equippedNameplate : null,
       equippedLaser: typeof saved?.equippedLaser === "string" ? saved.equippedLaser : null,
+      equippedSnakeSkin: typeof saved?.equippedSnakeSkin === "string" ? saved.equippedSnakeSkin : null,
       equippedBooster: typeof saved?.equippedBooster === "string"
         ? saved.equippedBooster
         : typeof saved?.activeBoost === "string"
@@ -786,6 +946,7 @@
     el.flappyScreen.classList.toggle("hidden", name !== "flappy");
     el.crossyScreen.classList.toggle("hidden", name !== "crossy");
     el.solitaireScreen.classList.toggle("hidden", name !== "solitaire");
+    el.fruitScreen.classList.toggle("hidden", name !== "fruit");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -793,14 +954,15 @@
     if (name !== "flappy") stopFlappy(false);
     if (name !== "crossy") stopCrossy(false);
     if (name !== "solitaire") stopSolitaire(false);
+    if (name !== "fruit") stopFruit(false);
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -1072,7 +1234,8 @@
       themeFadeTimer = null;
     }
 
-    audio.loop = true;
+    audio.loop = !options.onended;
+    audio.onended = typeof options.onended === "function" ? options.onended : null;
     audio.volume = options.volume ?? 0.58;
     if (!audio.src.endsWith(src)) {
       audio.src = src;
@@ -1119,7 +1282,14 @@
     const track = pickThemeTrack(gameTracks, lastGameThemeTracks.get(gameId));
     if (Array.isArray(gameTracks) && track) lastGameThemeTracks.set(gameId, track);
     const key = Array.isArray(gameTracks) && options.restart ? `game-${gameId}-${Date.now()}` : `game-${gameId}`;
-    playTheme(track, key, { transition: false, ...options });
+    const continuousPlaylist = Boolean(options.playlist && Array.isArray(gameTracks));
+    const onended = continuousPlaylist
+      ? () => {
+          if (currentScreen !== gameId || !fruit.running) return;
+          playGameTheme(gameId, { ...options, restart: true });
+        }
+      : null;
+    playTheme(track, key, { transition: false, ...options, onended });
   }
 
   function playStarTheme(mode = "normal", options = {}) {
@@ -1174,6 +1344,7 @@
     if (currentScreen === "flappy" && flappy.running) playGameTheme("flappy");
     if (currentScreen === "crossy" && crossy.running) playGameTheme("crossy", { volume: 0.4 });
     if (currentScreen === "solitaire" && solitaire.running) playGameTheme("solitaire", { volume: 0.52 });
+    if (currentScreen === "fruit" && fruit.running) playGameTheme("fruit", { playlist: true, volume: 0.5 });
     if (currentScreen === "star" && star.running) {
       const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
       playStarTheme(bossOnScreen ? "boss" : "normal");
@@ -1490,6 +1661,7 @@
         if (game.id === "flappy") openFlappy();
         if (game.id === "crossy") openCrossy();
         if (game.id === "solitaire") openSolitaire();
+        if (game.id === "fruit") openFruit();
       });
       el.gameGrid.appendChild(card);
     });
@@ -1564,6 +1736,13 @@
         xp: Number(state.stats.solitaireXpEarned) || 0,
         runs: Number(state.stats.solitaireRuns) || 0,
         best: Number(state.stats.solitaireBest) || 0,
+        metricLabel: "Best"
+      },
+      {
+        title: "Fruit Blend",
+        xp: Number(state.stats.fruitXpEarned) || 0,
+        runs: Number(state.stats.fruitRuns) || 0,
+        best: Number(state.stats.fruitBest) || 0,
         metricLabel: "Best"
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
@@ -1668,6 +1847,13 @@
         runs: Number(state.stats.solitaireRuns) || 0,
         xp: Number(state.stats.solitaireXpEarned) || 0,
         best: Number(state.stats.solitaireBest) || 0
+      },
+      {
+        id: "fruit",
+        title: "Fruit Blend",
+        runs: Number(state.stats.fruitRuns) || 0,
+        xp: Number(state.stats.fruitXpEarned) || 0,
+        best: Number(state.stats.fruitBest) || 0
       }
     ];
 
@@ -1775,6 +1961,7 @@
       card.innerHTML = `
         <p class="system-line">${locked ? `Unlocked at Level ${item.level}` : item.type === "booster" ? cooldown ? `Cooldown ${formatCountdown(cooldown)}` : "Reusable Booster" : "Player Cosmetic"}</p>
         <h3>${item.title}</h3>
+        ${renderStoreItemPreview(item)}
         <p>${item.text}</p>
         <div class="store-card-foot">
           <span>${owned ? item.type === "booster" ? cooldown ? formatCountdown(cooldown) : "Ready" : "Owned" : `${formatNumber(item.cost)} Coins`}</span>
@@ -1785,6 +1972,22 @@
       if (action) action.addEventListener("click", () => handleStoreAction(item));
       el.storeGrid.appendChild(card);
     });
+  }
+
+  function renderStoreItemPreview(item) {
+    if (item.slot === "snake_skin") {
+      const colors = item.colors || ["#ff4fc8", "#8a5cff", "#49f4ff"];
+      const style = `--skin-a:${colors[0]};--skin-b:${colors[1]};--skin-c:${colors[2]}`;
+      return `
+        <div class="snake-skin-preview ${item.rainbow ? "rainbow" : ""}" style="${style}" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      `;
+    }
+    if (item.effect === "earthquake") {
+      return `<div class="earthquake-store-preview" aria-hidden="true"><span></span><strong>QUAKE</strong><span></span></div>`;
+    }
+    return "";
   }
 
   function renderStoreAction(item, status) {
@@ -1824,12 +2027,14 @@
   function isCosmeticEquipped(item) {
     if (item.slot === "nameplate") return state.equippedNameplate === item.id;
     if (item.slot === "laser") return state.equippedLaser === item.id;
+    if (item.slot === "snake_skin") return state.equippedSnakeSkin === item.id;
     return false;
   }
 
   function toggleCosmetic(item) {
     if (item.slot === "nameplate") state.equippedNameplate = state.equippedNameplate === item.id ? null : item.id;
     else if (item.slot === "laser") state.equippedLaser = state.equippedLaser === item.id ? null : item.id;
+    else if (item.slot === "snake_skin") state.equippedSnakeSkin = state.equippedSnakeSkin === item.id ? null : item.id;
     else return;
     saveState();
     renderAll();
@@ -1871,6 +2076,7 @@
       state.owned.push(item.id);
       if (item.slot === "nameplate") state.equippedNameplate = item.id;
       if (item.slot === "laser") state.equippedLaser = item.id;
+      if (item.slot === "snake_skin") state.equippedSnakeSkin = item.id;
     }
     if (item.type === "booster") {
       state.owned.push(item.id);
@@ -1922,6 +2128,7 @@
       bestClear: 0,
       multiplier: 1,
       lastPieceShapeIds: [],
+      runId: 0,
       runStartedAt: 0,
       pausedAt: 0,
       pausedMs: 0,
@@ -1931,7 +2138,15 @@
       dragOffset: { x: 0, y: 0 },
       preview: null,
       clearing: [],
-      ghost: null
+      ghost: null,
+      earthquakeBoosterEquipped: false,
+      earthquakeActive: false,
+      earthquakeQueued: false,
+      earthquakeCells: [],
+      earthquakeCount: 0,
+      earthquakeScore: 0,
+      linesSinceEarthquake: 0,
+      earthquakeTriggerAt: 0
     };
   }
 
@@ -1994,7 +2209,69 @@
     resetBlock();
   }
 
+  function clearBlockEarthquakeTimer() {
+    if (!blockEarthquakeTimer) return;
+    clearTimeout(blockEarthquakeTimer);
+    blockEarthquakeTimer = null;
+  }
+
+  function scheduleBlockEarthquake(delayMs) {
+    clearBlockEarthquakeTimer();
+    block.earthquakeTriggerAt = Date.now() + delayMs;
+    blockEarthquakeTimer = setTimeout(() => {
+      blockEarthquakeTimer = null;
+      if (currentScreen !== "block" || !block.running || !block.earthquakeBoosterEquipped) return;
+      if (block.paused || block.starting || block.clearing.length || block.earthquakeActive) {
+        scheduleBlockEarthquake(350);
+        return;
+      }
+      triggerBlockEarthquake();
+    }, delayMs);
+  }
+
+  function triggerBlockEarthquake() {
+    if (!block.running || !block.earthquakeBoosterEquipped || block.earthquakeActive) return;
+    cleanupBlockDrag();
+    const cells = [];
+    for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+      for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+        if (block.board[row][col]) cells.push({ row, col, color: block.board[row][col] });
+      }
+    }
+    block.earthquakeActive = true;
+    block.earthquakeQueued = false;
+    block.earthquakeCells = cells;
+    block.earthquakeScore = cells.length * 12;
+    block.selected = null;
+    playTone("fail");
+    showToast("EARTHQUAKE", cells.length ? `${cells.length} blocks are falling.` : "The board shook clean.", "win", 2200);
+    renderBlock();
+    clearBlockEarthquakeTimer();
+    blockEarthquakeTimer = setTimeout(finishBlockEarthquake, 1050);
+  }
+
+  function finishBlockEarthquake() {
+    blockEarthquakeTimer = null;
+    if (!block.running || !block.earthquakeActive) return;
+    block.earthquakeCells.forEach(({ row, col }) => {
+      block.board[row][col] = 0;
+    });
+    const points = block.earthquakeScore;
+    block.score += points;
+    block.earthquakeCount += 1;
+    block.linesSinceEarthquake = 0;
+    block.earthquakeTriggerAt = 0;
+    block.earthquakeActive = false;
+    block.earthquakeCells = [];
+    block.earthquakeScore = 0;
+    if (block.pieces.every((pieceItem) => pieceItem.used)) refillBlockPieces();
+    playTone("win");
+    showToast("Board Cleared", `Earthquake awarded +${formatNumber(points)} points. Clear 5 lines to recharge it.`, "win", 3200);
+    renderBlock();
+  }
+
   function resetBlock(fillTray = false) {
+    clearBlockEarthquakeTimer();
     const lastPieceShapeIds = block.lastPieceShapeIds || [];
     block = createBlockState();
     block.lastPieceShapeIds = lastPieceShapeIds;
@@ -2006,12 +2283,19 @@
     resetBlock(false);
     block.running = true;
     block.starting = true;
+    block.runId = Date.now() + Math.random();
     block.runStartedAt = Date.now();
+    const equippedBooster = getEquippedBoosterItem("block");
+    block.earthquakeBoosterEquipped = equippedBooster?.effect === "earthquake";
+    if (block.earthquakeBoosterEquipped) {
+      scheduleBlockEarthquake(15000 + Math.floor(Math.random() * 30001));
+    }
     playBlockSfx("start");
     playGameTheme("block", { restart: true });
     renderBlock();
+    const runId = block.runId;
     setTimeout(() => {
-      if (currentScreen !== "block" || !block.running || !block.starting) return;
+      if (currentScreen !== "block" || !block.running || !block.starting || block.runId !== runId) return;
       block.starting = false;
       refillBlockPieces();
       renderBlock();
@@ -2032,7 +2316,7 @@
   }
 
   function toggleBlockPause() {
-    if (!block.running || block.starting) return;
+    if (!block.running || block.starting || block.earthquakeActive || block.earthquakeQueued) return;
     block.paused = !block.paused;
     if (block.paused) {
       block.pausedAt = Date.now();
@@ -2046,7 +2330,7 @@
   }
 
   function blockCanInteract() {
-    return block.running && !block.paused && !block.starting && !block.clearing.length;
+    return block.running && !block.paused && !block.starting && !block.clearing.length && !block.earthquakeActive && !block.earthquakeQueued;
   }
 
   function blockIntroColor(row, col) {
@@ -2059,14 +2343,20 @@
   }
 
   function stopBlock(render = true) {
+    clearBlockEarthquakeTimer();
     if (block.paused && block.pausedAt) {
       block.pausedMs += Date.now() - block.pausedAt;
       block.pausedAt = 0;
     }
     block.running = false;
     block.paused = false;
+    block.earthquakeActive = false;
+    block.earthquakeQueued = false;
+    block.earthquakeCells = [];
     block.selected = null;
     cleanupBlockDrag();
+    el.blockScreen?.classList.remove("earthquake-active");
+    el.blockEarthquakeBanner?.setAttribute("aria-hidden", "true");
     if (render) renderBlock();
   }
 
@@ -2130,6 +2420,10 @@
       block.multiplier += 0.14 * cleared + Math.max(0, cleared - 1) * 0.18;
       block.score += cleared * 80 + Math.max(0, cleared - 1) * 70;
       block.clearing = lineClearCells(fullRows, fullCols);
+      if (block.earthquakeBoosterEquipped && block.earthquakeCount > 0) {
+        block.linesSinceEarthquake += cleared;
+        if (block.linesSinceEarthquake >= 5) block.earthquakeQueued = true;
+      }
       playTone("win");
     }
     return { cleared, fullRows, fullCols };
@@ -2145,6 +2439,10 @@
     block.clearing = [];
     if (block.pieces.every((pieceItem) => pieceItem.used)) refillBlockPieces();
     renderBlock();
+    if (block.earthquakeQueued) {
+      scheduleBlockEarthquake(160);
+      return;
+    }
     if (!anyBlockFits()) endBlockRun("crash");
   }
 
@@ -2170,7 +2468,11 @@
     block.selected = null;
     renderBlock();
     if (clearResult.cleared) {
-      setTimeout(() => finishBlockLineClear(clearResult.fullRows, clearResult.fullCols), 460);
+      const runId = block.runId;
+      setTimeout(() => {
+        if (!block.running || block.runId !== runId) return;
+        finishBlockLineClear(clearResult.fullRows, clearResult.fullCols);
+      }, 460);
       return;
     }
     if (block.pieces.every((pieceItem) => pieceItem.used)) refillBlockPieces();
@@ -2209,7 +2511,18 @@
     el.blockCoinPreview.textContent = formatNumber(previewBlockCoins());
     el.startBlockBtn.textContent = block.running ? "End Game" : "Start Game";
     el.blockPauseBtn.textContent = block.paused ? "Resume" : "Pause";
-    el.blockPauseBtn.disabled = !block.running || block.starting;
+    el.blockPauseBtn.disabled = !block.running || block.starting || block.earthquakeActive || block.earthquakeQueued;
+    if (el.blockHint) {
+      if (block.earthquakeActive) {
+        el.blockHint.textContent = "EARTHQUAKE ACTIVE - every placed block is falling for points.";
+      } else if (block.earthquakeBoosterEquipped && block.earthquakeCount === 0) {
+        el.blockHint.textContent = "Earthquake armed - the opening strike will hit between 15 and 45 seconds.";
+      } else if (block.earthquakeBoosterEquipped) {
+        el.blockHint.textContent = `Earthquake recharge: ${Math.min(5, block.linesSinceEarthquake)} / 5 skill-cleared lines.`;
+      } else {
+        el.blockHint.textContent = "Tap a piece, then tap the board. Fill rows or columns to clear space.";
+      }
+    }
   }
 
   function getBlockPreviewCells() {
@@ -2235,6 +2548,12 @@
     block.clearing.forEach((cell, index) => {
       cells.set(`${cell.row}:${cell.col}`, { ...cell, index });
     });
+    return cells;
+  }
+
+  function getEarthquakeBlockCells() {
+    const cells = new Map();
+    block.earthquakeCells.forEach((cell) => cells.set(`${cell.row}:${cell.col}`, cell));
     return cells;
   }
 
@@ -2367,17 +2686,20 @@
     el.blockBoard.innerHTML = "";
     const previewCells = getBlockPreviewCells();
     const clearingCells = getClearingBlockCells();
+    const earthquakeCells = getEarthquakeBlockCells();
     for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
       for (let c = 0; c < BLOCK_GRID_SIZE; c += 1) {
         const cell = document.createElement("button");
         const preview = previewCells.get(`${r}:${c}`);
         const clearing = clearingCells.get(`${r}:${c}`);
+        const earthquake = earthquakeCells.get(`${r}:${c}`);
         cell.type = "button";
         cell.dataset.row = String(r);
         cell.dataset.col = String(c);
         cell.style.setProperty("--intro-delay", blockIntroDelay(r));
         cell.style.setProperty("--clear-delay", `${(clearing?.index || 0) * 18}ms`);
-        cell.className = `block-cell ${block.starting ? `intro ${blockIntroColor(r, c)}` : ""} ${block.board[r][c] ? `filled ${block.board[r][c]}` : ""} ${clearing ? `clearing ${clearing.color}` : ""} ${preview ? `preview ${preview}` : ""}`;
+        cell.style.setProperty("--quake-delay", `${r * 18 + (c % 3) * 22}ms`);
+        cell.className = `block-cell ${block.starting ? `intro ${blockIntroColor(r, c)}` : ""} ${block.board[r][c] ? `filled ${block.board[r][c]}` : ""} ${clearing ? `clearing ${clearing.color}` : ""} ${earthquake ? "earthquake-fall" : ""} ${preview ? `preview ${preview}` : ""}`;
         cell.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}`);
         cell.addEventListener("click", () => placeBlock(r, c));
         el.blockBoard.appendChild(cell);
@@ -2424,6 +2746,8 @@
   }
 
   function renderBlock() {
+    el.blockScreen?.classList.toggle("earthquake-active", Boolean(block.earthquakeActive));
+    el.blockEarthquakeBanner?.setAttribute("aria-hidden", block.earthquakeActive ? "false" : "true");
     renderBlockBoard();
     renderBlockTray();
     renderBlockStats();
@@ -4134,6 +4458,27 @@
     return applyRewardBooster(earned);
   }
 
+  function snakeSegmentColors(index, now) {
+    const skin = getStoreItem(state.equippedSnakeSkin);
+    if (!skin || skin.slot !== "snake_skin" || !state.owned.includes(skin.id)) {
+      return index === 0
+        ? { start: "#49f4ff", end: "#ff2fad", glow: "#ff2fad" }
+        : { start: "#57ff9a", end: "#1fd36f", glow: "#57ff9a" };
+    }
+    if (skin.rainbow) {
+      const hue = (now / 18 + index * 31) % 360;
+      return {
+        start: `hsl(${hue} 100% 72%)`,
+        end: `hsl(${(hue + 62) % 360} 92% 52%)`,
+        glow: `hsl(${(hue + 28) % 360} 100% 64%)`
+      };
+    }
+    const colors = skin.colors || ["#49f4ff", "#57ff9a", "#1fd36f"];
+    return index === 0
+      ? { start: colors[0], end: colors[1], glow: colors[0] }
+      : { start: colors[1], end: colors[2], glow: colors[1] };
+  }
+
   function drawSnake() {
     const ctx = el.snakeCanvas.getContext("2d");
     const size = el.snakeCanvas.width;
@@ -4159,11 +4504,12 @@
     snake.body.forEach((part, index) => {
       const x = part.x * cell + 3;
       const y = part.y * cell + 3;
+      const colors = snakeSegmentColors(index, now);
       const g = ctx.createLinearGradient(x, y, x + cell, y + cell);
-      g.addColorStop(0, index === 0 ? "#49f4ff" : "#57ff9a");
-      g.addColorStop(1, index === 0 ? "#ff2fad" : "#1fd36f");
+      g.addColorStop(0, colors.start);
+      g.addColorStop(1, colors.end);
       ctx.fillStyle = g;
-      ctx.shadowColor = index === 0 ? "#ff2fad" : "#57ff9a";
+      ctx.shadowColor = colors.glow;
       ctx.shadowBlur = index === 0 ? 20 : 9;
       ctx.fillRect(x, y, cell - 6, cell - 6);
     });
@@ -5863,6 +6209,730 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  let fruitSerial = 0;
+
+  function randomFruitTier() {
+    const total = FRUIT_DROP_WEIGHTS.reduce((sum, weight) => sum + weight, 0);
+    let roll = Math.random() * total;
+    for (let tier = 0; tier < FRUIT_DROP_WEIGHTS.length; tier += 1) {
+      roll -= FRUIT_DROP_WEIGHTS[tier];
+      if (roll < 0) return tier;
+    }
+    return FRUIT_DROP_WEIGHTS.length - 1;
+  }
+
+  function createFruitState() {
+    return {
+      running: false,
+      paused: false,
+      fruits: [],
+      particles: [],
+      score: 0,
+      merges: 0,
+      clears: 0,
+      largest: 0,
+      currentTier: randomFruitTier(),
+      nextTier: randomFruitTier(),
+      aimX: 270,
+      dropReady: true,
+      dropReadyAt: 0,
+      clearFlash: null,
+      lastAt: 0,
+      runStartedAt: 0
+    };
+  }
+
+  function createFruitBody(tier, x, y, options = {}) {
+    const type = FRUIT_TYPES[tier];
+    const spinRange = tier === FRUIT_PINEAPPLE_TIER ? 0.22 : tier === FRUIT_BANANA_TIER ? 0.5 : 0.8;
+    return {
+      id: ++fruitSerial,
+      tier,
+      x,
+      y,
+      vx: options.vx || 0,
+      vy: options.vy || 0,
+      radius: type.radius,
+      angle: options.angle || 0,
+      spin: options.spin ?? (Math.random() - 0.5) * spinRange,
+      spawnedAt: options.spawnedAt || performance.now()
+    };
+  }
+
+  function fruitCollisionParts(body) {
+    if (body.tier !== FRUIT_BANANA_TIER) {
+      return [{ x: body.x, y: body.y, radius: body.radius }];
+    }
+
+    const radius = body.radius;
+    const cos = Math.cos(body.angle);
+    const sin = Math.sin(body.angle);
+    return [
+      { x: -radius * 0.48, y: radius * 0.02, radius: radius * 0.3 },
+      { x: 0, y: radius * 0.36, radius: radius * 0.34 },
+      { x: radius * 0.48, y: radius * 0.1, radius: radius * 0.3 }
+    ].map((part) => ({
+      x: body.x + part.x * cos - part.y * sin,
+      y: body.y + part.x * sin + part.y * cos,
+      radius: part.radius
+    }));
+  }
+
+  function findFruitContact(a, b) {
+    let deepest = null;
+    const partsA = fruitCollisionParts(a);
+    const partsB = fruitCollisionParts(b);
+    partsA.forEach((partA) => {
+      partsB.forEach((partB) => {
+        const dx = partB.x - partA.x;
+        const dy = partB.y - partA.y;
+        const minDistance = partA.radius + partB.radius;
+        const distanceSq = dx * dx + dy * dy;
+        if (distanceSq >= minDistance * minDistance) return;
+        const distance = Math.sqrt(distanceSq);
+        const overlap = minDistance - distance;
+        if (deepest && overlap <= deepest.overlap) return;
+        if (distance > 0.001) {
+          deepest = { nx: dx / distance, ny: dy / distance, overlap };
+          return;
+        }
+        const bodyDx = b.x - a.x;
+        const bodyDy = b.y - a.y;
+        const bodyDistance = Math.hypot(bodyDx, bodyDy);
+        deepest = bodyDistance > 0.001
+          ? { nx: bodyDx / bodyDistance, ny: bodyDy / bodyDistance, overlap }
+          : { nx: 1, ny: 0, overlap };
+      });
+    });
+    return deepest;
+  }
+
+  function resolveFruitBounds(body) {
+    let parts = fruitCollisionParts(body);
+    let minX = Math.min(...parts.map((part) => part.x - part.radius));
+    let maxX = Math.max(...parts.map((part) => part.x + part.radius));
+    if (minX < FRUIT_BOUNDS.left) {
+      body.x += FRUIT_BOUNDS.left - minX;
+      body.vx = Math.abs(body.vx) * 0.12;
+      body.spin *= 0.7;
+    } else if (maxX > FRUIT_BOUNDS.right) {
+      body.x -= maxX - FRUIT_BOUNDS.right;
+      body.vx = -Math.abs(body.vx) * 0.12;
+      body.spin *= 0.7;
+    }
+
+    parts = fruitCollisionParts(body);
+    const maxY = Math.max(...parts.map((part) => part.y + part.radius));
+    if (maxY > FRUIT_BOUNDS.bottom) {
+      body.y -= maxY - FRUIT_BOUNDS.bottom;
+      if (body.vy > 0) body.vy *= -0.08;
+      body.vx *= 0.94;
+      body.spin *= 0.7;
+      if (Math.abs(body.vy) < 10) body.vy = 0;
+    }
+  }
+
+  function openFruit() {
+    currentGame = "fruit";
+    prepareGameTheme();
+    showScreen("fruit");
+    resetFruit();
+  }
+
+  function resetFruit() {
+    stopFruit(false);
+    fruit = createFruitState();
+    renderFruitStats();
+    drawFruitBlend();
+  }
+
+  function startFruit() {
+    stopFruit(false);
+    fruit = createFruitState();
+    fruit.running = true;
+    fruit.runStartedAt = Date.now();
+    fruit.lastAt = performance.now();
+    currentGame = "fruit";
+    playGameTheme("fruit", { restart: true, playlist: true, volume: 0.5 });
+    renderFruitStats();
+    drawFruitBlend();
+    fruitTimer = requestAnimationFrame(tickFruit);
+  }
+
+  function restartFruit() {
+    el.gameOverModal.classList.add("hidden");
+    startFruit();
+  }
+
+  function stopFruit(render = true) {
+    if (fruitTimer) cancelAnimationFrame(fruitTimer);
+    fruitTimer = null;
+    fruit.running = false;
+    fruit.paused = false;
+    fruitPointerId = null;
+    if (render) {
+      renderFruitStats();
+      drawFruitBlend();
+    }
+  }
+
+  function handlePrimaryFruitAction() {
+    if (fruit.running) {
+      endFruitRun("manual");
+      return;
+    }
+    startFruit();
+  }
+
+  function toggleFruitPause() {
+    if (!fruit.running) return;
+    fruit.paused = !fruit.paused;
+    fruit.lastAt = performance.now();
+    renderFruitStats();
+    drawFruitBlend();
+  }
+
+  function fruitPointerPosition(event) {
+    const rect = el.fruitCanvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / Math.max(1, rect.width)) * el.fruitCanvas.width,
+      y: ((event.clientY - rect.top) / Math.max(1, rect.height)) * el.fruitCanvas.height
+    };
+  }
+
+  function aimFruitFromPointer(event) {
+    const point = fruitPointerPosition(event);
+    const radius = FRUIT_TYPES[fruit.currentTier].radius;
+    fruit.aimX = Math.max(FRUIT_BOUNDS.left + radius, Math.min(FRUIT_BOUNDS.right - radius, point.x));
+    drawFruitBlend();
+  }
+
+  function dropFruit() {
+    if (!fruit.running || fruit.paused || !fruit.dropReady) return;
+    const tier = fruit.currentTier;
+    const radius = FRUIT_TYPES[tier].radius;
+    const x = Math.max(FRUIT_BOUNDS.left + radius, Math.min(FRUIT_BOUNDS.right - radius, fruit.aimX));
+    fruit.fruits.push(createFruitBody(tier, x, FRUIT_BOUNDS.top - radius - 12));
+    fruit.currentTier = fruit.nextTier;
+    fruit.nextTier = randomFruitTier();
+    fruit.dropReady = false;
+    fruit.dropReadyAt = performance.now() + 390;
+    playTone("tap");
+    renderFruitStats();
+  }
+
+  function tickFruit(now) {
+    if (!fruit.running) return;
+    const elapsed = Math.max(0.001, Math.min(0.034, (now - fruit.lastAt) / 1000));
+    fruit.lastAt = now;
+    if (!fruit.paused) {
+      const step = elapsed / 2;
+      stepFruitPhysics(step, now);
+      stepFruitPhysics(step, now);
+      if (!fruit.dropReady && now >= fruit.dropReadyAt) fruit.dropReady = true;
+      updateFruitParticles(elapsed);
+      updateFruitDanger(now);
+      if (!fruit.running) return;
+    }
+    renderFruitStats();
+    drawFruitBlend(now);
+    fruitTimer = requestAnimationFrame(tickFruit);
+  }
+
+  function stepFruitPhysics(dt, now) {
+    fruit.fruits.forEach((body) => {
+      body.vy += 1120 * dt;
+      body.vx *= Math.pow(0.996, dt * 60);
+      body.x += body.vx * dt;
+      body.y += body.vy * dt;
+      body.angle += body.spin * dt;
+      const spinDamping = body.tier === FRUIT_PINEAPPLE_TIER ? 0.86 : body.tier === FRUIT_BANANA_TIER ? 0.92 : 0.97;
+      body.spin *= Math.pow(spinDamping, dt * 60);
+      if (Math.hypot(body.vx, body.vy) < 24) {
+        body.vx *= Math.pow(0.96, dt * 60);
+        body.spin *= Math.pow(0.82, dt * 60);
+      }
+      body.spin = Math.max(-2.2, Math.min(2.2, body.spin));
+      resolveFruitBounds(body);
+    });
+
+    const mergePairs = [];
+    for (let i = 0; i < fruit.fruits.length; i += 1) {
+      for (let j = i + 1; j < fruit.fruits.length; j += 1) {
+        const a = fruit.fruits[i];
+        const b = fruit.fruits[j];
+        const contact = findFruitContact(a, b);
+        if (!contact) continue;
+        if (a.tier === b.tier) {
+          mergePairs.push([a, b]);
+          continue;
+        }
+
+        const { nx, ny, overlap } = contact;
+        const invA = 1 / (a.radius * a.radius);
+        const invB = 1 / (b.radius * b.radius);
+        const invTotal = invA + invB;
+        const correction = Math.max(0, overlap - 0.15) * 0.82;
+        a.x -= nx * correction * (invA / invTotal);
+        a.y -= ny * correction * (invA / invTotal);
+        b.x += nx * correction * (invB / invTotal);
+        b.y += ny * correction * (invB / invTotal);
+
+        const relativeVelocity = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (relativeVelocity < 0) {
+          const impulse = (-(1.06) * relativeVelocity) / invTotal;
+          a.vx -= impulse * nx * invA;
+          a.vy -= impulse * ny * invA;
+          b.vx += impulse * nx * invB;
+          b.vy += impulse * ny * invB;
+        }
+        const tangentX = -ny;
+        const tangentY = nx;
+        const tangentVelocity = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
+        const frictionImpulse = (-tangentVelocity * 0.09) / invTotal;
+        a.vx -= frictionImpulse * tangentX * invA;
+        a.vy -= frictionImpulse * tangentY * invA;
+        b.vx += frictionImpulse * tangentX * invB;
+        b.vy += frictionImpulse * tangentY * invB;
+        a.spin *= 0.88;
+        b.spin *= 0.88;
+      }
+    }
+    mergeFruitPairs(mergePairs, now);
+  }
+
+  function mergeFruitPairs(pairs, now) {
+    const used = new Set();
+    pairs.forEach(([a, b]) => {
+      if (used.has(a.id) || used.has(b.id)) return;
+      if (!fruit.fruits.includes(a) || !fruit.fruits.includes(b)) return;
+      used.add(a.id);
+      used.add(b.id);
+      fruit.fruits = fruit.fruits.filter((body) => body !== a && body !== b);
+
+      const nextTier = a.tier + 1;
+      const mergeX = (a.x + b.x) / 2;
+      const mergeY = (a.y + b.y) / 2;
+      const scoreTier = Math.min(nextTier, FRUIT_TYPES.length - 1);
+      fruit.merges += 1;
+      fruit.largest = Math.max(fruit.largest, scoreTier);
+      addFruitMergeParticles(mergeX, mergeY, FRUIT_TYPES[scoreTier].color);
+
+      if (nextTier < FRUIT_TYPES.length) {
+        fruit.score += FRUIT_TYPES[nextTier].points;
+        const nextRadius = FRUIT_TYPES[nextTier].radius;
+        fruit.fruits.push(createFruitBody(
+          nextTier,
+          Math.max(FRUIT_BOUNDS.left + nextRadius, Math.min(FRUIT_BOUNDS.right - nextRadius, mergeX)),
+          Math.min(FRUIT_BOUNDS.bottom - nextRadius, mergeY),
+          {
+            vx: (a.vx + b.vx) * 0.28,
+            vy: Math.min(-85, (a.vy + b.vy) * 0.18 - 55),
+            spin: (a.spin + b.spin) * 0.18,
+            spawnedAt: now
+          }
+        ));
+      } else {
+        fruit.clears += 1;
+        const clearBonus = 3000 + (fruit.clears - 1) * 1000;
+        fruit.score += clearBonus;
+        fruit.clearFlash = { bonus: clearBonus, life: 1.5 };
+        showToast("Maximum Fruit Cleared", `+${formatNumber(clearBonus)} high-score bonus.`, "win", 2600);
+        for (let burst = 0; burst < 4; burst += 1) {
+          addFruitMergeParticles(mergeX, mergeY, burst % 2 ? "#ffd35a" : "#49f4ff");
+        }
+      }
+      playTone("eat");
+    });
+  }
+
+  function addFruitMergeParticles(x, y, color) {
+    for (let i = 0; i < 14; i += 1) {
+      const angle = (Math.PI * 2 * i) / 14 + Math.random() * 0.25;
+      const speed = 55 + Math.random() * 105;
+      fruit.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 35,
+        color,
+        life: 0.7 + Math.random() * 0.4,
+        size: 2 + Math.random() * 4
+      });
+    }
+  }
+
+  function updateFruitParticles(dt) {
+    fruit.particles = fruit.particles.filter((particle) => {
+      particle.life -= dt;
+      particle.vy += 280 * dt;
+      particle.x += particle.vx * dt;
+      particle.y += particle.vy * dt;
+      return particle.life > 0;
+    });
+    if (fruit.clearFlash) {
+      fruit.clearFlash.life -= dt;
+      if (fruit.clearFlash.life <= 0) fruit.clearFlash = null;
+    }
+  }
+
+  function updateFruitDanger(now) {
+    const overflowed = fruit.fruits.some((body) => {
+      if (now - body.spawnedAt <= 900) return false;
+      const top = Math.min(...fruitCollisionParts(body).map((part) => part.y - part.radius));
+      return top < FRUIT_BOUNDS.danger;
+    });
+    if (overflowed) endFruitRun("overflow");
+  }
+
+  function calculateFruitXp() {
+    if (fruit.score <= 0) return 0;
+    const sizeBonus = fruit.largest * 9;
+    return Math.max(12, Math.round(fruit.score * 0.22 + fruit.merges * 3 + sizeBonus + fruit.clears * 75));
+  }
+
+  function previewFruitCoins(newBest = fruit.score > state.stats.fruitBest) {
+    if (fruit.score <= 0) return 0;
+    let earned = Math.max(2, Math.floor(fruit.score / 22) + fruit.largest * 2 + fruit.clears * 25);
+    if (newBest) earned += 25;
+    return applyRewardBooster(earned);
+  }
+
+  function renderFruitStats() {
+    const liveBest = Math.max(Number(state.stats.fruitBest) || 0, fruit.score);
+    el.fruitScore.textContent = formatNumber(fruit.score);
+    el.fruitBest.textContent = formatNumber(liveBest);
+    el.fruitClears.textContent = formatNumber(fruit.clears);
+    el.fruitXpPreview.textContent = formatNumber(applyRewardBooster(calculateFruitXp()));
+    el.fruitCoinPreview.textContent = formatNumber(previewFruitCoins());
+    el.fruitPauseBtn.disabled = !fruit.running;
+    el.fruitPauseBtn.textContent = fruit.paused ? "Resume" : "Pause";
+    el.startFruitBtn.textContent = fruit.running ? "End Run" : "Start Game";
+  }
+
+  function drawFruitBlend(now = performance.now()) {
+    const ctx = el.fruitCanvas.getContext("2d");
+    const width = el.fruitCanvas.width;
+    const height = el.fruitCanvas.height;
+    ctx.clearRect(0, 0, width, height);
+
+    const backdrop = ctx.createLinearGradient(0, 0, 0, height);
+    backdrop.addColorStop(0, "#17072f");
+    backdrop.addColorStop(0.55, "#09051a");
+    backdrop.addColorStop(1, "#030208");
+    ctx.fillStyle = backdrop;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = "rgba(73, 244, 255, 0.07)";
+    ctx.lineWidth = 1;
+    for (let y = 0; y < height; y += 24) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(73, 244, 255, 0.52)";
+    ctx.lineWidth = 5;
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "#49f4ff";
+    ctx.beginPath();
+    ctx.moveTo(FRUIT_BOUNDS.left, FRUIT_BOUNDS.top);
+    ctx.lineTo(FRUIT_BOUNDS.left, FRUIT_BOUNDS.bottom);
+    ctx.lineTo(FRUIT_BOUNDS.right, FRUIT_BOUNDS.bottom);
+    ctx.lineTo(FRUIT_BOUNDS.right, FRUIT_BOUNDS.top);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 63, 117, 0.5)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([12, 9]);
+    ctx.beginPath();
+    ctx.moveTo(FRUIT_BOUNDS.left + 4, FRUIT_BOUNDS.danger);
+    ctx.lineTo(FRUIT_BOUNDS.right - 4, FRUIT_BOUNDS.danger);
+    ctx.stroke();
+    ctx.restore();
+
+    if (fruit.running && fruit.dropReady) {
+      const preview = createFruitBody(fruit.currentTier, fruit.aimX, 75, { spin: 0, spawnedAt: now });
+      fruitSerial -= 1;
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+      ctx.setLineDash([5, 8]);
+      ctx.beginPath();
+      ctx.moveTo(fruit.aimX, 98);
+      ctx.lineTo(fruit.aimX, FRUIT_BOUNDS.bottom - 6);
+      ctx.stroke();
+      ctx.restore();
+      drawFruitSprite(ctx, preview, 0.92);
+    }
+
+    ctx.fillStyle = "rgba(5, 3, 11, 0.72)";
+    ctx.roundRect(width - 82, 18, 64, 82, 14);
+    ctx.fill();
+    ctx.fillStyle = "#b8add1";
+    ctx.font = "800 11px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("NEXT", width - 50, 35);
+    const nextPreview = createFruitBody(fruit.nextTier, width - 50, 67, { spin: 0, spawnedAt: now });
+    fruitSerial -= 1;
+    drawFruitSprite(ctx, nextPreview, 1, 0.62);
+
+    fruit.fruits.forEach((body) => drawFruitSprite(ctx, body));
+    fruit.particles.forEach((particle) => {
+      ctx.globalAlpha = Math.min(1, particle.life * 1.7);
+      ctx.fillStyle = particle.color;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = particle.color;
+      ctx.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size);
+    });
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+
+    if (fruit.clearFlash) {
+      const progress = Math.max(0, fruit.clearFlash.life / 1.5);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, progress * 1.6);
+      ctx.fillStyle = "rgba(5, 3, 11, 0.68)";
+      ctx.roundRect(92, height * 0.39, width - 184, 102, 18);
+      ctx.fill();
+      ctx.fillStyle = "#ffd35a";
+      ctx.shadowBlur = 24;
+      ctx.shadowColor = "#ff2fad";
+      ctx.font = "900 24px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText("MAX FRUIT CLEARED", width / 2, height * 0.39 + 40);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 30px Arial Black";
+      ctx.fillText(`+${formatNumber(fruit.clearFlash.bonus)}`, width / 2, height * 0.39 + 78);
+      ctx.restore();
+    }
+
+    if (!fruit.running || fruit.paused) {
+      ctx.fillStyle = "rgba(5, 3, 11, 0.64)";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = fruit.paused ? "#ffd35a" : "#49f4ff";
+      ctx.font = "900 34px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText(fruit.paused ? "PAUSED" : "PRESS START", width / 2, height / 2 - 8);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#b8add1";
+      ctx.font = "700 16px Arial";
+      ctx.fillText(fruit.paused ? "Press Resume to keep blending" : "Match identical fruit to grow the blend", width / 2, height / 2 + 26);
+    }
+    ctx.textAlign = "left";
+  }
+
+  function drawFruitSprite(ctx, body, alpha = 1, scale = 1) {
+    const type = FRUIT_TYPES[body.tier];
+    const radius = body.radius * scale;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(body.x, body.y);
+    ctx.rotate(body.angle || 0);
+    ctx.shadowBlur = Math.max(8, radius * 0.28);
+    ctx.shadowColor = type.color;
+
+    const gradient = ctx.createRadialGradient(-radius * 0.35, -radius * 0.42, radius * 0.08, 0, 0, radius);
+    gradient.addColorStop(0, type.accent);
+    gradient.addColorStop(0.45, type.color);
+    gradient.addColorStop(1, "#3f173d");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    if (body.tier === 7) {
+      ctx.moveTo(-radius * 0.88, -radius * 0.34);
+      ctx.bezierCurveTo(-radius * 0.68, radius * 0.58, radius * 0.3, radius * 0.82, radius * 0.9, -radius * 0.08);
+      ctx.bezierCurveTo(radius * 0.58, radius * 0.22, radius * 0.02, radius * 0.34, -radius * 0.58, -radius * 0.3);
+      ctx.bezierCurveTo(-radius * 0.7, -radius * 0.42, -radius * 0.82, -radius * 0.42, -radius * 0.88, -radius * 0.34);
+      ctx.closePath();
+    } else if (body.tier === 8) {
+      ctx.ellipse(0, radius * 0.08, radius * 0.78, radius * 0.94, 0, 0, Math.PI * 2);
+    } else {
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.lineWidth = Math.max(1.5, radius * 0.045);
+    ctx.strokeStyle = "rgba(255,255,255,0.62)";
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    if ([0, 1, 3, 4, 5, 6].includes(body.tier)) {
+      ctx.strokeStyle = "#6e3d25";
+      ctx.lineWidth = Math.max(2, radius * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(0, -radius * 0.78);
+      ctx.quadraticCurveTo(radius * 0.06, -radius * 1.18, radius * 0.24, -radius * 1.24);
+      ctx.stroke();
+      ctx.fillStyle = "#57ff9a";
+      ctx.beginPath();
+      ctx.ellipse(radius * 0.28, -radius * 1.12, radius * 0.28, radius * 0.12, -0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (body.tier === 7) {
+      ctx.strokeStyle = "rgba(255, 249, 176, 0.8)";
+      ctx.lineWidth = Math.max(2, radius * 0.045);
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.6, -radius * 0.16);
+      ctx.bezierCurveTo(-radius * 0.3, radius * 0.42, radius * 0.35, radius * 0.5, radius * 0.68, radius * 0.02);
+      ctx.stroke();
+      ctx.fillStyle = "#6e3d25";
+      ctx.beginPath();
+      ctx.ellipse(-radius * 0.84, -radius * 0.33, radius * 0.1, radius * 0.15, -0.7, 0, Math.PI * 2);
+      ctx.ellipse(radius * 0.88, -radius * 0.08, radius * 0.09, radius * 0.14, 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (body.tier === 8) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(0, radius * 0.08, radius * 0.76, radius * 0.92, 0, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.strokeStyle = "rgba(126, 76, 22, 0.62)";
+      ctx.lineWidth = Math.max(1.4, radius * 0.038);
+      for (let offset = -0.82; offset <= 0.72; offset += 0.25) {
+        ctx.beginPath();
+        ctx.moveTo(-radius, offset * radius);
+        ctx.lineTo(radius, (offset + 0.62) * radius);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(radius, offset * radius);
+        ctx.lineTo(-radius, (offset + 0.62) * radius);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(255, 244, 140, 0.72)";
+      for (let y = -0.55; y <= 0.68; y += 0.31) {
+        for (let x = -0.48; x <= 0.48; x += 0.32) {
+          ctx.beginPath();
+          ctx.arc(x * radius, y * radius, Math.max(1.2, radius * 0.028), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      for (let i = -3; i <= 3; i += 1) {
+        ctx.save();
+        ctx.translate(0, -radius * 0.77);
+        ctx.rotate(i * 0.2);
+        ctx.fillStyle = i % 2 ? "#29d777" : "#57ff9a";
+        ctx.beginPath();
+        ctx.ellipse(0, -radius * (0.38 + Math.abs(i) * 0.035), radius * 0.12, radius * (0.42 - Math.abs(i) * 0.025), 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    if (body.tier === 9) {
+      ctx.strokeStyle = "rgba(35, 15, 11, 0.48)";
+      ctx.lineWidth = Math.max(2, radius * 0.045);
+      for (let i = -2; i <= 2; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(i * radius * 0.22, -radius * 0.84);
+        ctx.quadraticCurveTo(i * radius * 0.34, 0, i * radius * 0.18, radius * 0.88);
+        ctx.stroke();
+      }
+    }
+
+    if (body.tier === 10) {
+      ctx.fillStyle = "#57ff9a";
+      for (let i = 0; i < 9; i += 1) {
+        const angle = (Math.PI * 2 * i) / 9;
+        ctx.save();
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(radius * 0.7, -radius * 0.16);
+        ctx.lineTo(radius * 1.1, 0);
+        ctx.lineTo(radius * 0.7, radius * 0.16);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    if (body.tier === 11) {
+      ctx.strokeStyle = "rgba(20, 92, 44, 0.7)";
+      ctx.lineWidth = Math.max(3, radius * 0.065);
+      for (let i = -2; i <= 2; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(i * radius * 0.28, -radius * 0.9);
+        ctx.quadraticCurveTo((i + 0.5) * radius * 0.2, 0, i * radius * 0.28, radius * 0.9);
+        ctx.stroke();
+      }
+    }
+
+    const faceOffsetY = body.tier === 7 ? radius * 0.35 : 0;
+    const eyeY = faceOffsetY - radius * 0.08;
+    const eyeX = radius * 0.28;
+    ctx.fillStyle = "#100817";
+    ctx.beginPath();
+    ctx.arc(-eyeX, eyeY, Math.max(1.6, radius * 0.075), 0, Math.PI * 2);
+    ctx.arc(eyeX, eyeY, Math.max(1.6, radius * 0.075), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#100817";
+    ctx.lineWidth = Math.max(1.4, radius * 0.045);
+    ctx.beginPath();
+    ctx.arc(0, faceOffsetY + radius * 0.12, radius * 0.22, 0.08 * Math.PI, 0.92 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function endFruitRun(reason = "overflow") {
+    if (!fruit.running) return;
+    const previousBest = Number(state.stats.fruitBest) || 0;
+    const newBest = fruit.score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem("fruit");
+    const earned = applyRewardBooster(calculateFruitXp());
+    const coinsEarned = previewFruitCoins(newBest);
+    stopFruit(false);
+    stopGameTheme(reason === "overflow" ? "death" : "stop");
+    if (reason === "overflow") playGameOverSound();
+    else playTone("tap");
+
+    state.stats.gamesPlayed += 1;
+    state.stats.fruitRuns += 1;
+    state.stats.fruitTotalScore += fruit.score;
+    state.stats.fruitBest = Math.max(previousBest, fruit.score);
+    state.stats.fruitMerges += fruit.merges;
+    state.stats.fruitLargest = Math.max(Number(state.stats.fruitLargest) || 0, fruit.largest);
+    state.stats.fruitClears += fruit.clears;
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+    state.xp += earned;
+    state.stats.fruitXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "fruit";
+    el.resultKicker.textContent = "Fruit Blend Results";
+    el.resultTitle.textContent = reason === "overflow" ? "Container Overflow" : "Blend Complete";
+    if (newBest) showToast("New High Score", `Fruit Blend best is now ${formatNumber(fruit.score)}.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(fruit.score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.fruitBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = `${formatNumber(fruit.merges)} blends, ${formatNumber(fruit.clears)} max clears. Largest fruit: ${FRUIT_TYPES[fruit.largest]?.name || "Cherry"}.`;
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -5881,6 +6951,10 @@
       ["crossy_10", state.stats.crossyBest >= 10],
       ["solitaire_first", state.stats.solitaireRuns >= 1],
       ["solitaire_win", state.stats.solitaireWins >= 1],
+      ["fruit_first", state.stats.fruitRuns >= 1],
+      ["fruit_500", state.stats.fruitBest >= 500],
+      ["fruit_melon", state.stats.fruitLargest >= FRUIT_TYPES.length - 1],
+      ["fruit_clear", state.stats.fruitClears >= 1],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -6229,6 +7303,8 @@
         startCrossy();
       } else if (currentGame === "solitaire") {
         startSolitaire();
+      } else if (currentGame === "fruit") {
+        startFruit();
       } else {
         startSnake();
       }
@@ -6265,6 +7341,30 @@
     el.hintSolitaireBtn.addEventListener("click", showSolitaireHint);
     el.solitaireBoard.addEventListener("click", handleSolitaireBoardClick);
     el.solitaireBoard.addEventListener("dblclick", handleSolitaireBoardDoubleClick);
+    el.exitFruitBtn.addEventListener("click", () => showScreen("home"));
+    el.fruitPauseBtn.addEventListener("click", toggleFruitPause);
+    el.startFruitBtn.addEventListener("click", handlePrimaryFruitAction);
+    el.restartFruitBtn.addEventListener("click", restartFruit);
+    el.fruitCanvas.addEventListener("pointermove", (event) => {
+      if (!fruit.running || fruit.paused) return;
+      event.preventDefault();
+      aimFruitFromPointer(event);
+    });
+    el.fruitCanvas.addEventListener("pointerdown", (event) => {
+      if (!fruit.running || fruit.paused) return;
+      event.preventDefault();
+      fruitPointerId = event.pointerId;
+      aimFruitFromPointer(event);
+      el.fruitCanvas.setPointerCapture?.(event.pointerId);
+    });
+    el.fruitCanvas.addEventListener("pointerup", (event) => {
+      if (fruitPointerId !== event.pointerId) return;
+      event.preventDefault();
+      aimFruitFromPointer(event);
+      fruitPointerId = null;
+      dropFruit();
+    });
+    el.fruitCanvas.addEventListener("pointercancel", () => { fruitPointerId = null; });
     el.flappyCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       flapBird();
@@ -6366,6 +7466,18 @@
         if (!crossy.running) startCrossy();
         else moveCrossy("up");
       }
+      if (event.key === " " && currentScreen === "fruit") {
+        event.preventDefault();
+        if (!fruit.running) startFruit();
+        else dropFruit();
+      }
+      if (currentScreen === "fruit" && fruit.running && ["ArrowLeft", "a", "A", "ArrowRight", "d", "D"].includes(event.key)) {
+        event.preventDefault();
+        const direction = ["ArrowLeft", "a", "A"].includes(event.key) ? -1 : 1;
+        const radius = FRUIT_TYPES[fruit.currentTier].radius;
+        fruit.aimX = Math.max(FRUIT_BOUNDS.left + radius, Math.min(FRUIT_BOUNDS.right - radius, fruit.aimX + direction * 18));
+        drawFruitBlend();
+      }
     });
 
     document.addEventListener("keyup", (event) => {
@@ -6403,6 +7515,7 @@
 
     window.addEventListener("resize", () => {
       if (currentScreen === "solitaire") renderSolitaireBoard();
+      if (currentScreen === "fruit") drawFruitBlend();
       if (!document.body.classList.contains("video-live")) return;
       startBackgroundVideo();
     });
@@ -6414,6 +7527,7 @@
     localStorage.setItem(VERSION_KEY, APP_VERSION);
     drawSnake();
     renderSolitaireBoard();
+    drawFruitBlend();
     setTimeout(() => {
       if (currentScreen === "boot") {
         showConnectionPrompt();
