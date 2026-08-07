@@ -1215,7 +1215,6 @@ input:focus {
 .score-row .rank,
 .score-row strong,
 .result-grid strong,
-.canvas-score-pill strong,
 #headerCoins,
 #levelNumber,
 #profileXp,
@@ -1225,7 +1224,6 @@ input:focus {
 #profileAchievements,
 #snakeScore,
 #snakeBest,
-#snakeStreak,
 #snakeXpPreview,
 #snakeCoinPreview,
 #fruitScore,
@@ -1506,8 +1504,35 @@ input:focus {
 
 .snake-stage {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
   gap: 14px;
+}
+
+.snake-stage.score-visible {
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+}
+
+.game-hud.snake-hud {
+  display: none;
+  grid-template-columns: repeat(2, max-content);
+  justify-content: space-between;
+  align-items: start;
+}
+
+.game-hud.snake-hud.is-visible {
+  display: grid;
+}
+
+.snake-hud > div {
+  width: 112px;
+  text-align: center;
+}
+
+.snake-hud > div span {
+  width: auto;
+  margin-inline: auto;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .block-stage {
@@ -1515,6 +1540,82 @@ input:focus {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto auto;
   gap: 14px;
+}
+
+.block-live-scorebar {
+  display: none;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 560px);
+  min-height: 40px;
+  margin: 0 auto -5px;
+  pointer-events: none;
+}
+
+.block-live-scorebar.is-visible {
+  display: grid;
+  animation: blockScoreRailPop 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.block-live-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid rgba(73, 244, 255, 0.28);
+  border-radius: 10px;
+  background: rgba(5, 3, 11, 0.74);
+  box-shadow: 0 0 18px rgba(73, 244, 255, 0.1);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+
+.block-live-stat span {
+  color: var(--cyan);
+  font-size: 0.66rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.block-live-stat strong {
+  min-width: 0;
+  color: #ffffff;
+  font-family: var(--font-player);
+  font-size: clamp(0.9rem, 2.4vw, 1.12rem);
+  line-height: 1;
+}
+
+.block-live-score {
+  justify-self: start;
+}
+
+.block-live-lines {
+  justify-self: center;
+  border-color: rgba(255, 211, 90, 0.25);
+}
+
+.block-live-lines span {
+  color: var(--yellow);
+}
+
+.block-live-best {
+  justify-self: end;
+  text-align: right;
+  border-color: rgba(255, 47, 173, 0.3);
+  box-shadow: 0 0 18px rgba(255, 47, 173, 0.11);
+}
+
+.block-live-best span {
+  color: var(--pink);
+}
+
+@keyframes blockScoreRailPop {
+  0% { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  72% { opacity: 1; transform: translateY(1px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .block-earthquake-banner {
@@ -1934,6 +2035,10 @@ input:focus {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .block-live-scorebar.is-visible {
+    animation: none;
+  }
+
   .block-screen.earthquake-active .block-stage {
     animation: none;
   }
@@ -1974,39 +2079,6 @@ input:focus {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
     0 0 16px rgba(255, 52, 93, 0.72);
-}
-
-.canvas-score-pill {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  border-radius: 999px;
-  padding: 6px 11px;
-  border: 1px solid rgba(87, 255, 154, 0.34);
-  background: rgba(5, 3, 11, 0.7);
-  box-shadow: 0 0 20px rgba(87, 255, 154, 0.16);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  pointer-events: none;
-}
-
-.canvas-score-pill span {
-  color: var(--green);
-  font-size: 0.66rem;
-  font-weight: 950;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.canvas-score-pill strong {
-  color: white;
-  font-size: 1rem;
-  line-height: 1;
 }
 
 .star-canvas-shell {
@@ -2916,6 +2988,10 @@ input:focus {
     border-radius: 26px 26px 0 0;
   }
 
+  .snake-stage.score-visible {
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+
   .star-stage {
     width: min(100%, calc(100vw - 24px - var(--safe-left) - var(--safe-right)));
     max-width: calc(100vw - 24px - var(--safe-left) - var(--safe-right));
@@ -2947,6 +3023,35 @@ input:focus {
   .game-hud,
   .reward-preview {
     display: none;
+  }
+
+  .snake-stage > .game-hud {
+    display: none;
+    grid-template-columns: repeat(2, max-content);
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .snake-stage > .game-hud.is-visible {
+    display: grid;
+  }
+
+  .snake-stage > .game-hud div {
+    width: 82px;
+    min-width: 0;
+    padding: 7px 8px;
+    border-radius: 12px;
+  }
+
+  .snake-stage > .game-hud span {
+    font-size: 0.56rem;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .snake-stage > .game-hud strong {
+    margin-top: 3px;
+    font-size: clamp(0.86rem, 4vw, 1rem);
   }
 
   .canvas-shell {
@@ -3046,13 +3151,6 @@ input:focus {
     width: clamp(42px, 14vw, 50px);
     height: clamp(42px, 14vw, 50px);
     font-size: clamp(0.72rem, 3.2vw, 0.9rem);
-  }
-
-  .canvas-score-pill {
-    top: 9px;
-    left: 9px;
-    min-height: 30px;
-    padding: 5px 9px;
   }
 
   .game-actions {
@@ -3214,6 +3312,22 @@ input:focus {
     width: min(100%, calc(var(--app-height) - 330px));
     gap: 4px;
     padding: 8px;
+  }
+
+  .block-live-scorebar {
+    gap: 5px;
+    min-height: 34px;
+    margin-bottom: -7px;
+  }
+
+  .block-live-stat {
+    min-height: 32px;
+    gap: 4px;
+    padding: 5px 7px;
+  }
+
+  .block-live-stat span {
+    font-size: 0.56rem;
   }
 
   .block-tray {

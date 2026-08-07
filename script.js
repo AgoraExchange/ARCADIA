@@ -3,10 +3,15 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.0.2";
+  const APP_VERSION = "19.9.1.6";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Snake's Start Game and Restart controls now use the same responsive mobile layout and normal button height as ARCADIA's other games.",
+    "Snake's compact Score and High Score cards use single-line labels matching Block Grid and appear only after Start Game.",
+    "Snake's stage HUD is simplified to Score on the left and High Score on the right, with Streak removed from view.",
+    "Snake's High Score now stays in the stage HUD above the board instead of covering playable canvas space.",
+    "Block Grid now reveals a compact live score rail when a run starts, with Score on the left and High Score on the right.",
     "Fruit Blend's strawberry now has a tapered berry silhouette, leafy crown, and visible seeds.",
     "Fruit Blend's Next card now shows the upcoming fruit name beneath its preview.",
     "The Player Store adds six permanent Snake color skins, including an animated Rainbow Snake unlocked at level 35.",
@@ -647,11 +652,11 @@
     storePreviewCoins: $("storePreviewCoins"),
     storeSearch: $("storeSearch"),
     storeGrid: $("storeGrid"),
+    snakeStage: $("snakeStage"),
     snakeCanvas: $("snakeCanvas"),
+    snakeLiveScorebar: $("snakeLiveScorebar"),
     snakeScore: $("snakeScore"),
     snakeBest: $("snakeBest"),
-    snakeLiveBest: $("snakeLiveBest"),
-    snakeStreak: $("snakeStreak"),
     snakeXpPreview: $("snakeXpPreview"),
     snakeCoinPreview: $("snakeCoinPreview"),
     startSnakeBtn: $("startSnakeBtn"),
@@ -661,6 +666,7 @@
     exitGameBtn: $("exitGameBtn"),
     exitBlockBtn: $("exitBlockBtn"),
     blockPauseBtn: $("blockPauseBtn"),
+    blockLiveScorebar: $("blockLiveScorebar"),
     blockBoard: $("blockBoard"),
     blockEarthquakeBanner: $("blockEarthquakeBanner"),
     blockTray: $("blockTray"),
@@ -2509,6 +2515,8 @@
     el.blockScore.textContent = formatNumber(block.score);
     el.blockBest.textContent = formatNumber(Math.max(Number(state.stats.blockBest) || 0, block.score));
     el.blockLines.textContent = formatNumber(block.lines);
+    el.blockLiveScorebar?.classList.toggle("is-visible", block.running);
+    el.blockLiveScorebar?.setAttribute("aria-hidden", block.running ? "false" : "true");
     el.blockXpPreview.textContent = formatNumber(applyRewardBooster(calculateBlockXp()));
     el.blockCoinPreview.textContent = formatNumber(previewBlockCoins());
     el.startBlockBtn.textContent = block.running ? "End Game" : "Start Game";
@@ -4289,6 +4297,7 @@
     snake.paused = false;
     snake.runStartedAt = Date.now();
     syncSnakeButtons();
+    renderSnakeStats();
     playTone("tap");
     playGameTheme("snake", { restart: true });
     snakeTimer = setInterval(tickSnake, GAME_TICK_MS);
@@ -4302,6 +4311,9 @@
     snake.running = false;
     snake.paused = false;
     syncSnakeButtons();
+    el.snakeStage?.classList.remove("score-visible");
+    el.snakeLiveScorebar?.classList.remove("is-visible");
+    el.snakeLiveScorebar?.setAttribute("aria-hidden", "true");
   }
 
   function handlePrimarySnakeAction() {
@@ -4558,8 +4570,9 @@
     const liveBest = Math.max(Number(state.stats.snakeBest) || 0, Number(snake.score) || 0);
     el.snakeScore.textContent = formatNumber(snake.score);
     el.snakeBest.textContent = formatNumber(liveBest);
-    el.snakeLiveBest.textContent = formatNumber(liveBest);
-    el.snakeStreak.textContent = formatNumber(snake.streak);
+    el.snakeStage?.classList.toggle("score-visible", snake.running);
+    el.snakeLiveScorebar?.classList.toggle("is-visible", snake.running);
+    el.snakeLiveScorebar?.setAttribute("aria-hidden", snake.running ? "false" : "true");
     el.snakeXpPreview.textContent = formatNumber(preview);
     el.snakeCoinPreview.textContent = formatNumber(previewCoins());
   }

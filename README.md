@@ -22,13 +22,14 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Rewards Store with permanent player cosmetics and reusable game boosters
 - Snake game page
   - Neon framed board
-  - Score, best, streak
+  - Run-only Score on the left and High Score on the right above the unobstructed board
   - XP and coin preview
   - Start, pause, restart, exit
   - Keyboard, swipe, and mobile controls
   - Six purchasable color skins, including the level-35 animated Rainbow Snake
 - Block Grid game page
   - Eight-by-eight placement board with row and column clears
+  - Run-only live score rail with Score, Lines, and High Score positioned above the board
   - Earthquake booster that clears and scores the board during the opening 15-45 seconds
   - Skill recharge after every five player-cleared lines
 - Fruit Blend game page
