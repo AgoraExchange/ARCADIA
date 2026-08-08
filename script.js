@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.4.0";
+  const APP_VERSION = "19.9.4.1";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
     "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
     "Crossy Road adds a smooth forward-moving camera and bottom danger edge that ends the run when the player falls behind.",
@@ -5291,6 +5292,7 @@
       cameraFloor: 0,
       furthestDepth: 0,
       nextLaneDepth: -2,
+      pathCol: 4,
       section: 0,
       bestLive: 0,
       player: { col: 4, depth: 0, x: 270, y: CROSSY_START_Y, targetX: 270, targetY: CROSSY_START_Y, size: 34 },
@@ -5325,7 +5327,27 @@
     crossy.lanes = [];
     crossy.decor = [];
     crossy.nextLaneDepth = -2;
+    crossy.pathCol = 4;
     ensureCrossyWorld(13);
+  }
+
+  function createCrossyCorridor(currentCol, depth, roll = Math.random()) {
+    const entryCol = Math.max(0, Math.min(8, Number.isFinite(currentCol) ? currentCol : 4));
+    const shift = depth <= 1 ? 0 : Math.floor(roll * 3) - 1;
+    const exitCol = Math.max(0, Math.min(8, entryCol + shift));
+    const columns = [];
+    for (let col = Math.min(entryCol, exitCol); col <= Math.max(entryCol, exitCol); col += 1) columns.push(col);
+    return { entryCol, exitCol, columns };
+  }
+
+  function chooseCrossyObstacleColumns(reservedColumns, count, random = Math.random) {
+    const reserved = new Set(reservedColumns);
+    const available = Array.from({ length: 9 }, (_, col) => col).filter((col) => !reserved.has(col));
+    for (let index = available.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(random() * (index + 1));
+      [available[index], available[swapIndex]] = [available[swapIndex], available[index]];
+    }
+    return available.slice(0, Math.min(count, available.length));
   }
 
   function createCrossyLane(depth) {
@@ -5341,7 +5363,9 @@
       else type = roll < 0.58 ? "road" : roll < 0.78 ? "forest" : "grass";
     }
 
-    const lane = { depth, type };
+    const corridor = createCrossyCorridor(crossy.pathCol, depth);
+    const lane = { depth, type, pathEntry: corridor.entryCol, pathExit: corridor.exitCol };
+    crossy.pathCol = corridor.exitCol;
     if (type === "road") {
       const palette = ["#d94b45", "#d7cf48", "#78b14b", "#4fb5ff", "#ff8a35", "#c46cff"];
       const difficulty = Math.min(92, Math.floor(Math.max(0, depth) / 10) * 9);
@@ -5364,15 +5388,10 @@
         });
       }
     } else {
-      const reserved = new Set(depth <= 1 ? [3, 4, 5] : []);
-      const used = new Set();
+      const reserved = new Set(corridor.columns);
+      if (depth <= 1) [3, 4, 5].forEach((col) => reserved.add(col));
       const count = type === "forest" ? 4 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
-      while (used.size < count) {
-        const col = Math.floor(Math.random() * 9);
-        if (reserved.has(col)) continue;
-        used.add(col);
-      }
-      [...used].forEach((col, index) => {
+      chooseCrossyObstacleColumns(reserved, count).forEach((col, index) => {
         crossy.decor.push({
           depth,
           col,
@@ -5380,6 +5399,7 @@
           scale: 0.86 + Math.random() * 0.28
         });
       });
+      crossy.decor = crossy.decor.filter((item) => item.depth !== depth || !corridor.columns.includes(item.col));
     }
     crossy.lanes.push(lane);
   }

@@ -1,6 +1,7 @@
 {
-  "version": "19.9.4.0",
+  "version": "19.9.4.1",
   "patchNotes": [
+    "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
     "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
     "Crossy Road adds a smooth forward-moving camera and bottom danger edge that ends the run when the player falls behind.",

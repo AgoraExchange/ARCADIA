@@ -36,6 +36,7 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Skill recharge after every five player-cleared lines
 - Crossy Road game page
   - Endless procedurally generated lanes that recycle only after leaving the screen
+  - Guaranteed connected island routes that prevent impossible tree-and-rock dead ends
   - Smooth forward camera pressure with a bottom danger edge for idle players
   - Continuous world progress and scoring without resetting the player to the middle
 - Fruit Blend game page
