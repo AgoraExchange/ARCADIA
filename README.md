@@ -34,9 +34,15 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Run-only live score rail with Score, Lines, and High Score positioned above the board
   - Earthquake booster that clears and scores the board during the opening 15-45 seconds
   - Skill recharge after every five player-cleared lines
+- Crossy Road game page
+  - Endless procedurally generated lanes that recycle only after leaving the screen
+  - Smooth forward camera pressure with a bottom danger edge for idle players
+  - Continuous world progress and scoring without resetting the player to the middle
 - Fruit Blend game page
   - Physics-based fruit drops and same-tier merging
+  - Stable resting stacks that sleep instead of jittering under compression
   - Twelve fruit sizes with mixed weighted drops, including banana and pineapple
+  - Tier-scaled merge scoring with visible point popups and massive maximum-fruit clear bonuses
   - Upcoming-fruit card with a scaled preview and the fruit name
   - Maximum-fruit clears that disappear for escalating high-score bonuses
   - Overflow danger line, high scores, XP, coins, and achievements

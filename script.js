@@ -3,10 +3,14 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.3.0";
+  const APP_VERSION = "19.9.4.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
+    "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
+    "Crossy Road adds a smooth forward-moving camera and bottom danger edge that ends the run when the player falls behind.",
+    "Fruit Blend stacked fruit now settles into a stable sleep state, preventing compressed bottom fruit from shaking or spinning in place.",
     "Rewards Store adds horizontal game and ownership filter chips, useful item sorting, compact cards, and an internally scrolling results area.",
     "Tombstone now uses the same clean text-only Rewards Store presentation as ARCADIA's other boosters.",
     "Player Profile now shows three locked-first Achievements and the top three Leaderboard entries at a time, with the complete lists available through compact panel scrolling.",
@@ -92,6 +96,9 @@
   const STACK_TICK_MS = 1000 / 60;
   const FLAPPY_TICK_MS = 1000 / 60;
   const CROSSY_TICK_MS = 1000 / 60;
+  const CROSSY_LANE_HEIGHT = 66;
+  const CROSSY_START_Y = 620;
+  const CROSSY_CAMERA_LOCK_Y = 320;
   const FRUIT_TICK_MS = 1000 / 60;
   const SOLITAIRE_SUITS = [
     { id: "hearts", symbol: "♥", color: "red" },
@@ -101,18 +108,18 @@
   ];
   const SOLITAIRE_RANKS = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
   const FRUIT_TYPES = [
-    { name: "Cherry", radius: 17, color: "#ff3f75", accent: "#ffb3ca", points: 2 },
-    { name: "Strawberry", radius: 22, color: "#ff416c", accent: "#ffd35a", points: 5 },
-    { name: "Grape", radius: 28, color: "#8b5cff", accent: "#d7b5ff", points: 10 },
-    { name: "Tangerine", radius: 35, color: "#ff8a3d", accent: "#ffd35a", points: 18 },
-    { name: "Apple", radius: 43, color: "#78df52", accent: "#d9ff8c", points: 30 },
-    { name: "Pear", radius: 52, color: "#cbe944", accent: "#f3ff9a", points: 48 },
-    { name: "Peach", radius: 62, color: "#ff8ca1", accent: "#ffd1bf", points: 75 },
-    { name: "Banana", radius: 70, color: "#ffe14c", accent: "#fff6a0", points: 105 },
-    { name: "Pineapple", radius: 79, color: "#ffc83d", accent: "#fff19a", points: 145 },
-    { name: "Coconut", radius: 89, color: "#7c4b37", accent: "#e8c89f", points: 200 },
-    { name: "Dragon Fruit", radius: 99, color: "#ff2f8c", accent: "#ff9fce", points: 280 },
-    { name: "Watermelon", radius: 110, color: "#54cb62", accent: "#b8ff8c", points: 400 }
+    { name: "Cherry", radius: 17, color: "#ff3f75", accent: "#ffb3ca", points: 3 },
+    { name: "Strawberry", radius: 22, color: "#ff416c", accent: "#ffd35a", points: 10 },
+    { name: "Grape", radius: 28, color: "#8b5cff", accent: "#d7b5ff", points: 25 },
+    { name: "Tangerine", radius: 35, color: "#ff8a3d", accent: "#ffd35a", points: 50 },
+    { name: "Apple", radius: 43, color: "#78df52", accent: "#d9ff8c", points: 90 },
+    { name: "Pear", radius: 52, color: "#cbe944", accent: "#f3ff9a", points: 150 },
+    { name: "Peach", radius: 62, color: "#ff8ca1", accent: "#ffd1bf", points: 240 },
+    { name: "Banana", radius: 70, color: "#ffe14c", accent: "#fff6a0", points: 380 },
+    { name: "Pineapple", radius: 79, color: "#ffc83d", accent: "#fff19a", points: 600 },
+    { name: "Coconut", radius: 89, color: "#7c4b37", accent: "#e8c89f", points: 950 },
+    { name: "Dragon Fruit", radius: 99, color: "#ff2f8c", accent: "#ff9fce", points: 1500 },
+    { name: "Watermelon", radius: 110, color: "#54cb62", accent: "#b8ff8c", points: 2400 }
   ];
   const FRUIT_DROP_WEIGHTS = [18, 16, 14, 12, 10, 8, 7, 8, 7];
   const FRUIT_BANANA_TIER = 7;
@@ -5278,12 +5285,15 @@
       dying: false,
       deathStartedAt: 0,
       deathModalTimer: null,
+      deathReason: "crash",
       score: 0,
-      depth: 0,
-      pressureDepth: -4,
+      cameraDepth: 0,
+      cameraFloor: 0,
+      furthestDepth: 0,
+      nextLaneDepth: -2,
       section: 0,
       bestLive: 0,
-      player: { col: 4, row: 9, x: 270, y: 612, targetX: 270, targetY: 612, size: 34 },
+      player: { col: 4, depth: 0, x: 270, y: CROSSY_START_Y, targetX: 270, targetY: CROSSY_START_Y, size: 34 },
       cars: [],
       lanes: [],
       decor: [],
@@ -5311,51 +5321,82 @@
   }
 
   function seedCrossyLanes() {
-    const speedBoost = Math.min(70, crossy.section * 10);
-    const laneData = [
-      { type: "grass" },
-      { type: "road", speed: -128 - speedBoost, color: "#d94b45", count: 2, vehicle: "car" },
-      { type: "road", speed: 142 + speedBoost, color: "#d7cf48", count: 2, vehicle: "car" },
-      { type: "forest" },
-      { type: "road", speed: -176 - speedBoost, color: "#78b14b", count: 3, vehicle: "truck" },
-      { type: "road", speed: 164 + speedBoost, color: "#4fb5ff", count: 2, vehicle: "car" },
-      { type: "grass" },
-      { type: "road", speed: -208 - speedBoost, color: "#ff8a35", count: 3, vehicle: "truck" },
-      { type: "road", speed: 188 + speedBoost, color: "#c46cff", count: 2, vehicle: "car" },
-      { type: "grass" }
-    ];
-    crossy.lanes = laneData;
     crossy.cars = [];
+    crossy.lanes = [];
     crossy.decor = [];
-    laneData.forEach((lane, row) => {
-      if (lane.type !== "road") return;
-      const spacing = 540 / lane.count;
-      for (let i = 0; i < lane.count; i += 1) {
+    crossy.nextLaneDepth = -2;
+    ensureCrossyWorld(13);
+  }
+
+  function createCrossyLane(depth) {
+    let type = "grass";
+    if (depth > 1) {
+      let roadRun = 0;
+      let forestRun = 0;
+      for (let index = crossy.lanes.length - 1; index >= 0 && crossy.lanes[index].type === "road"; index -= 1) roadRun += 1;
+      for (let index = crossy.lanes.length - 1; index >= 0 && crossy.lanes[index].type === "forest"; index -= 1) forestRun += 1;
+      const roll = Math.random();
+      if (roadRun) type = roadRun < 3 && roll < 0.6 ? "road" : roll < 0.8 ? "grass" : "forest";
+      else if (forestRun) type = forestRun < 2 && roll < 0.34 ? "forest" : roll < 0.76 ? "grass" : "road";
+      else type = roll < 0.58 ? "road" : roll < 0.78 ? "forest" : "grass";
+    }
+
+    const lane = { depth, type };
+    if (type === "road") {
+      const palette = ["#d94b45", "#d7cf48", "#78b14b", "#4fb5ff", "#ff8a35", "#c46cff"];
+      const difficulty = Math.min(92, Math.floor(Math.max(0, depth) / 10) * 9);
+      const direction = Math.random() < 0.5 ? -1 : 1;
+      const vehicle = Math.random() < 0.32 ? "truck" : "car";
+      const count = vehicle === "truck" ? (Math.random() < 0.45 ? 2 : 3) : (Math.random() < 0.68 ? 2 : 3);
+      lane.speed = direction * (126 + Math.random() * 74 + difficulty);
+      lane.color = palette[Math.floor(Math.random() * palette.length)];
+      lane.vehicle = vehicle;
+      lane.count = count;
+      const spacing = 540 / count;
+      for (let i = 0; i < count; i += 1) {
         crossy.cars.push({
-          row,
-          x: (i * spacing + Math.random() * 90) % 620 - 40,
-          width: lane.vehicle === "truck" ? 104 + Math.random() * 18 : 64 + Math.random() * 18,
+          depth,
+          x: (i * spacing + Math.random() * 88) % 620 - 40,
+          width: vehicle === "truck" ? 104 + Math.random() * 18 : 64 + Math.random() * 18,
           speed: lane.speed,
           color: lane.color,
-          vehicle: lane.vehicle
+          vehicle
         });
       }
-    });
-    laneData.forEach((lane, row) => {
-      if (!["grass", "forest"].includes(lane.type)) return;
-      const blocked = row === crossy.player.row ? [crossy.player.col] : [];
-      const count = lane.type === "forest" ? 5 : 3;
-      for (let i = 0; i < count; i += 1) {
+    } else {
+      const reserved = new Set(depth <= 1 ? [3, 4, 5] : []);
+      const used = new Set();
+      const count = type === "forest" ? 4 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
+      while (used.size < count) {
         const col = Math.floor(Math.random() * 9);
-        if (blocked.includes(col) || (row === 9 && Math.abs(col - 4) <= 1)) continue;
+        if (reserved.has(col)) continue;
+        used.add(col);
+      }
+      [...used].forEach((col, index) => {
         crossy.decor.push({
-          row,
+          depth,
           col,
-          kind: i % 3 === 0 ? "rock" : "tree",
+          kind: index % 3 === 0 ? "rock" : "tree",
           scale: 0.86 + Math.random() * 0.28
         });
-      }
-    });
+      });
+    }
+    crossy.lanes.push(lane);
+  }
+
+  function ensureCrossyWorld(targetDepth = Math.ceil(Math.max(crossy.cameraDepth, crossy.player.depth) + 12)) {
+    while (crossy.nextLaneDepth <= targetDepth) {
+      createCrossyLane(crossy.nextLaneDepth);
+      crossy.nextLaneDepth += 1;
+    }
+    const oldestDepth = Math.floor(crossy.cameraDepth) - 3;
+    crossy.lanes = crossy.lanes.filter((lane) => lane.depth >= oldestDepth);
+    crossy.cars = crossy.cars.filter((car) => car.depth >= oldestDepth);
+    crossy.decor = crossy.decor.filter((item) => item.depth >= oldestDepth);
+  }
+
+  function crossyScreenY(depth) {
+    return CROSSY_START_Y - (depth - crossy.cameraDepth) * CROSSY_LANE_HEIGHT;
   }
 
   function startCrossy() {
@@ -5425,36 +5466,30 @@
   function moveCrossy(direction) {
     if (!crossy.running || crossy.paused || crossy.dying) return;
     const player = crossy.player;
-    const next = { col: player.col, row: player.row };
-    if (direction === "up") next.row -= 1;
-    if (direction === "down") next.row += 1;
+    const next = { col: player.col, depth: player.depth };
+    if (direction === "up") next.depth += 1;
+    if (direction === "down") next.depth -= 1;
     if (direction === "left") next.col -= 1;
     if (direction === "right") next.col += 1;
     next.col = Math.max(0, Math.min(8, next.col));
-    next.row = Math.max(0, Math.min(9, next.row));
-    if (next.col === player.col && next.row === player.row) return;
-    if (isCrossyBlocked(next.row, next.col)) {
+    if (direction === "down" && crossyScreenY(next.depth) > 674) return;
+    if (next.col === player.col && next.depth === player.depth) return;
+    ensureCrossyWorld(next.depth + 12);
+    if (isCrossyBlocked(next.depth, next.col)) {
       playTone("tap");
       return;
     }
     player.col = next.col;
-    player.row = next.row;
+    player.depth = next.depth;
     player.targetX = 30 + player.col * 60;
-    player.targetY = 54 + player.row * 66;
     if (direction === "up") {
-      crossy.depth += 1;
-      crossy.score = Math.max(crossy.score, crossy.depth);
+      crossy.furthestDepth = Math.max(crossy.furthestDepth, player.depth);
+      crossy.score = Math.max(crossy.score, crossy.furthestDepth);
+      crossy.section = Math.floor(crossy.score / 10);
       crossy.bestLive = Math.max(Number(state.stats.crossyBest) || 0, crossy.score);
       playTone("eat");
-      if (player.row <= 1) {
-        crossy.section += 1;
-        player.row = 6;
-        player.y = 54 + player.row * 66;
-        player.targetY = 54 + player.row * 66;
-        seedCrossyLanes();
-      }
     }
-    if (direction === "down") crossy.depth = Math.max(0, crossy.depth - 1);
+    player.targetY = crossyScreenY(player.depth);
     renderCrossyStats();
   }
 
@@ -5469,9 +5504,19 @@
       if (car.speed > 0 && car.x > 590) car.x = -car.width - 60;
       if (car.speed < 0 && car.x + car.width < -50) car.x = 590 + Math.random() * 80;
     });
-    const pressureRate = Math.min(0.42, 0.2 + crossy.section * 0.025);
-    crossy.pressureDepth += pressureRate * dt;
+    const activeSeconds = Math.max(0, (Date.now() - crossy.startedAt - crossy.pausedMs) / 1000);
+    if (activeSeconds > 2.25) {
+      const pressureRate = Math.min(0.34, 0.17 + crossy.section * 0.012);
+      crossy.cameraFloor += pressureRate * dt;
+    }
+    const lockDistance = (CROSSY_START_Y - CROSSY_CAMERA_LOCK_Y) / CROSSY_LANE_HEIGHT;
+    const followDepth = Math.max(0, crossy.player.depth - lockDistance);
+    const followStep = Math.max(0, followDepth - crossy.cameraDepth) * Math.min(1, dt * 5.2);
+    crossy.cameraDepth = Math.max(crossy.cameraFloor, crossy.cameraDepth + followStep);
+    crossy.cameraFloor = Math.max(crossy.cameraFloor, crossy.cameraDepth);
+    ensureCrossyWorld();
     const p = crossy.player;
+    p.targetY = crossyScreenY(p.depth);
     p.x += (p.targetX - p.x) * Math.min(1, dt * 16);
     p.y += (p.targetY - p.y) * Math.min(1, dt * 16);
     crossy.particles.forEach((part) => {
@@ -5481,8 +5526,12 @@
     });
     crossy.particles = crossy.particles.filter((part) => part.life > 0);
 
-    if (!crossy.dying && (crossyHit() || crossyPressureCaught())) {
-      triggerCrossyDeath();
+    if (!crossy.dying && crossyHit()) {
+      triggerCrossyDeath("crash");
+      return;
+    }
+    if (!crossy.dying && crossyPressureCaught()) {
+      triggerCrossyDeath("caught");
       return;
     }
 
@@ -5493,10 +5542,10 @@
   function crossyHit() {
     const p = crossy.player;
     return crossy.cars.some((car) => {
-      if (car.row !== p.row) return false;
+      if (car.depth !== p.depth) return false;
       const carLeft = car.x;
       const carRight = car.x + car.width;
-      const carTop = 54 + car.row * 66 - 24;
+      const carTop = crossyScreenY(car.depth) - 24;
       const carBottom = carTop + 48;
       return p.x + p.size * 0.42 > carLeft
         && p.x - p.size * 0.42 < carRight
@@ -5505,12 +5554,12 @@
     });
   }
 
-  function isCrossyBlocked(row, col) {
-    return crossy.decor.some((item) => item.row === row && item.col === col);
+  function isCrossyBlocked(depth, col) {
+    return crossy.decor.some((item) => item.depth === depth && item.col === col);
   }
 
   function crossyPressureCaught() {
-    return crossy.pressureDepth >= crossy.depth - 0.12;
+    return crossy.player.targetY > el.crossyCanvas.height - 16;
   }
 
   function addCrossyCrashBurst(x, y) {
@@ -5547,14 +5596,15 @@
     }
   }
 
-  function triggerCrossyDeath() {
+  function triggerCrossyDeath(reason = "crash") {
     crossy.dying = true;
+    crossy.deathReason = reason;
     crossy.deathStartedAt = performance.now();
     addCrossyCrashBurst(crossy.player.x, crossy.player.y);
     stopGameTheme("death");
     const finishDeath = () => {
       if (!crossy.running || !crossy.dying) return;
-      endCrossyRun("crash");
+      endCrossyRun(reason);
     };
     playCrossyCrashSound(finishDeath);
     drawCrossy();
@@ -5642,7 +5692,7 @@
   }
 
   function drawCrossyVehicle(ctx, car) {
-    const y = 54 + car.row * 66;
+    const y = crossyScreenY(car.depth);
     const isTruck = car.vehicle === "truck";
     const bodyH = isTruck ? 38 : 34;
     ctx.save();
@@ -5697,11 +5747,12 @@
     for (let x = -40; x < w; x += 54) {
       ctx.fillRect(x, 0, 3, h);
     }
-    crossy.lanes.forEach((lane, row) => {
-      const y = 22 + row * 66;
+    crossy.lanes.forEach((lane) => {
+      const y = crossyScreenY(lane.depth) - CROSSY_LANE_HEIGHT / 2;
+      if (y > h || y + CROSSY_LANE_HEIGHT < 0) return;
       if (lane.type === "road") {
-        ctx.fillStyle = row % 2 ? "#5f6475" : "#555b6b";
-        ctx.fillRect(0, y, w, 66);
+        ctx.fillStyle = Math.abs(lane.depth) % 2 ? "#5f6475" : "#555b6b";
+        ctx.fillRect(0, y, w, CROSSY_LANE_HEIGHT + 1);
         ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
         ctx.fillRect(0, y + 58, w, 8);
         ctx.fillStyle = "rgba(255, 255, 255, 0.82)";
@@ -5710,35 +5761,39 @@
         }
       } else {
         ctx.fillStyle = lane.type === "forest" ? "#5aba49" : "#76d65e";
-        ctx.fillRect(0, y, w, 66);
+        ctx.fillRect(0, y, w, CROSSY_LANE_HEIGHT + 1);
         ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
         ctx.fillRect(0, y + 58, w, 8);
         ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
         for (let x = 0; x < w; x += 34) {
-          ctx.fillRect(x + (row % 2 ? 16 : 0), y + 12, 12, 4);
+          ctx.fillRect(x + (Math.abs(lane.depth) % 2 ? 16 : 0), y + 12, 12, 4);
         }
       }
     });
 
     crossy.decor.forEach((item) => {
       const x = 30 + item.col * 60;
-      const y = 54 + item.row * 66 + 16;
+      const y = crossyScreenY(item.depth) + 16;
+      if (y < -60 || y > h + 60) return;
       if (item.kind === "rock") drawCrossyRock(ctx, x, y, item.scale);
       else drawCrossyTree(ctx, x, y, item.scale);
     });
 
-    crossy.cars.forEach((car) => drawCrossyVehicle(ctx, car));
+    crossy.cars.forEach((car) => {
+      const y = crossyScreenY(car.depth);
+      if (y > -60 && y < h + 60) drawCrossyVehicle(ctx, car);
+    });
 
-    const pressureGap = Math.max(-0.2, crossy.depth - crossy.pressureDepth);
-    const dangerY = crossy.player.targetY + pressureGap * 66 + 34;
-    if (dangerY < h + 36) {
-      const alpha = Math.max(0.18, Math.min(0.78, 1 - (dangerY - crossy.player.targetY) / 360));
-      const gradient = ctx.createLinearGradient(0, dangerY - 44, 0, h);
+    const dangerY = h - 18;
+    const dangerDistance = dangerY - crossy.player.targetY;
+    const alpha = Math.max(0.16, Math.min(0.82, 1 - dangerDistance / 220));
+    if (crossy.running || crossy.dying) {
+      const gradient = ctx.createLinearGradient(0, h - 128, 0, h);
       gradient.addColorStop(0, `rgba(255, 82, 117, ${alpha * 0.08})`);
-      gradient.addColorStop(0.26, `rgba(255, 82, 117, ${alpha * 0.32})`);
+      gradient.addColorStop(0.52, `rgba(255, 82, 117, ${alpha * 0.28})`);
       gradient.addColorStop(1, `rgba(5, 3, 11, ${alpha})`);
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, Math.max(0, dangerY - 44), w, h);
+      ctx.fillRect(0, h - 128, w, 128);
       ctx.fillStyle = `rgba(255, 82, 117, ${Math.min(0.92, alpha + 0.1)})`;
       ctx.fillRect(0, dangerY, w, 5);
       ctx.fillStyle = `rgba(255, 211, 90, ${Math.min(0.68, alpha)})`;
@@ -5782,7 +5837,7 @@
       ctx.font = "900 52px ByteBounce, Arial Black";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("YOU DIED", w / 2, h / 2);
+      ctx.fillText(crossy.deathReason === "caught" ? "TOO SLOW" : "YOU DIED", w / 2, h / 2);
       ctx.textBaseline = "alphabetic";
       ctx.shadowBlur = 0;
     }
@@ -5800,6 +5855,7 @@
   function endCrossyRun(reason = "crash") {
     if (!crossy.running) return;
     const wasCrash = reason === "crash";
+    const wasCaught = reason === "caught";
     const previousBest = Number(state.stats.crossyBest) || 0;
     const newBest = crossy.score > previousBest;
     const oldAchievements = new Set(state.achievements);
@@ -5849,7 +5905,9 @@
       ? "New street record. Keep dodging traffic."
       : wasCrash
         ? "Crash logged. Retry and cross farther."
-        : "Run ended. Your crossing score has been saved.";
+        : wasCaught
+          ? "The road caught up. Keep moving forward to stay ahead."
+          : "Run ended. Your crossing score has been saved.";
     el.gameOverModal.classList.remove("hidden");
   }
 
@@ -6447,6 +6505,7 @@
       paused: false,
       fruits: [],
       particles: [],
+      scorePops: [],
       score: 0,
       merges: 0,
       clears: 0,
@@ -6475,7 +6534,10 @@
       radius: type.radius,
       angle: options.angle || 0,
       spin: options.spin ?? (Math.random() - 0.5) * spinRange,
-      spawnedAt: options.spawnedAt || performance.now()
+      spawnedAt: options.spawnedAt || performance.now(),
+      supported: false,
+      settleFrames: 0,
+      sleeping: false
     };
   }
 
@@ -6543,6 +6605,7 @@
 
     parts = fruitCollisionParts(body);
     const maxY = Math.max(...parts.map((part) => part.y + part.radius));
+    if (maxY >= FRUIT_BOUNDS.bottom - 0.75) body.supported = true;
     if (maxY > FRUIT_BOUNDS.bottom) {
       body.y -= maxY - FRUIT_BOUNDS.bottom;
       if (body.vy > 0) body.vy *= -0.08;
@@ -6661,6 +6724,14 @@
 
   function stepFruitPhysics(dt, now) {
     fruit.fruits.forEach((body) => {
+      body.supported = false;
+      if (body.sleeping) {
+        body.vx = 0;
+        body.vy = 0;
+        body.spin = 0;
+        resolveFruitBounds(body);
+        return;
+      }
       body.vy += 1120 * dt;
       body.vx *= Math.pow(0.996, dt * 60);
       body.x += body.vx * dt;
@@ -6689,9 +6760,24 @@
         }
 
         const { nx, ny, overlap } = contact;
-        const invA = 1 / (a.radius * a.radius);
-        const invB = 1 / (b.radius * b.radius);
+        const impactSpeed = Math.abs((b.vx - a.vx) * nx + (b.vy - a.vy) * ny);
+        const shouldWakeStack = (Math.abs(nx) > 0.58 && impactSpeed > 72) || overlap > 5;
+        if (shouldWakeStack) {
+          if (a.sleeping) {
+            a.sleeping = false;
+            a.settleFrames = 0;
+          }
+          if (b.sleeping) {
+            b.sleeping = false;
+            b.settleFrames = 0;
+          }
+        }
+        if (ny > 0.46) a.supported = true;
+        if (ny < -0.46) b.supported = true;
+        const invA = a.sleeping ? 0 : 1 / (a.radius * a.radius);
+        const invB = b.sleeping ? 0 : 1 / (b.radius * b.radius);
         const invTotal = invA + invB;
+        if (invTotal <= 0) continue;
         const correction = Math.max(0, overlap - 0.15) * 0.82;
         a.x -= nx * correction * (invA / invTotal);
         a.y -= ny * correction * (invA / invTotal);
@@ -6718,6 +6804,26 @@
         b.spin *= 0.88;
       }
     }
+    fruit.fruits.forEach((body) => {
+      if (body.sleeping) return;
+      const speed = Math.hypot(body.vx, body.vy);
+      const canSettle = body.supported && speed < 18 && Math.abs(body.spin) < 0.22 && now - body.spawnedAt > 240;
+      if (!canSettle) {
+        body.settleFrames = 0;
+        return;
+      }
+      body.settleFrames += 1;
+      body.vx *= 0.72;
+      body.vy *= 0.45;
+      body.spin *= 0.5;
+      if (Math.abs(body.vy) < 5) body.vy = 0;
+      if (body.settleFrames >= 18) {
+        body.sleeping = true;
+        body.vx = 0;
+        body.vy = 0;
+        body.spin = 0;
+      }
+    });
     mergeFruitPairs(mergePairs, now);
   }
 
@@ -6733,13 +6839,20 @@
       const nextTier = a.tier + 1;
       const mergeX = (a.x + b.x) / 2;
       const mergeY = (a.y + b.y) / 2;
+      fruit.fruits.forEach((body) => {
+        if (Math.hypot(body.x - mergeX, body.y - mergeY) > body.radius + 150) return;
+        body.sleeping = false;
+        body.settleFrames = 0;
+      });
       const scoreTier = Math.min(nextTier, FRUIT_TYPES.length - 1);
       fruit.merges += 1;
       fruit.largest = Math.max(fruit.largest, scoreTier);
       addFruitMergeParticles(mergeX, mergeY, FRUIT_TYPES[scoreTier].color);
 
       if (nextTier < FRUIT_TYPES.length) {
-        fruit.score += FRUIT_TYPES[nextTier].points;
+        const mergePoints = FRUIT_TYPES[nextTier].points;
+        fruit.score += mergePoints;
+        addFruitScorePop(mergeX, mergeY, mergePoints, FRUIT_TYPES[nextTier].accent);
         const nextRadius = FRUIT_TYPES[nextTier].radius;
         fruit.fruits.push(createFruitBody(
           nextTier,
@@ -6754,7 +6867,7 @@
         ));
       } else {
         fruit.clears += 1;
-        const clearBonus = 3000 + (fruit.clears - 1) * 1000;
+        const clearBonus = 10000 + (fruit.clears - 1) * 3000;
         fruit.score += clearBonus;
         fruit.clearFlash = { bonus: clearBonus, life: 1.5 };
         showToast("Maximum Fruit Cleared", `+${formatNumber(clearBonus)} high-score bonus.`, "win", 2600);
@@ -6782,6 +6895,10 @@
     }
   }
 
+  function addFruitScorePop(x, y, points, color) {
+    fruit.scorePops.push({ x, y: y - 12, points, color, life: 1.15 });
+  }
+
   function updateFruitParticles(dt) {
     fruit.particles = fruit.particles.filter((particle) => {
       particle.life -= dt;
@@ -6789,6 +6906,11 @@
       particle.x += particle.vx * dt;
       particle.y += particle.vy * dt;
       return particle.life > 0;
+    });
+    fruit.scorePops = fruit.scorePops.filter((pop) => {
+      pop.life -= dt;
+      pop.y -= 28 * dt;
+      return pop.life > 0;
     });
     if (fruit.clearFlash) {
       fruit.clearFlash.life -= dt;
@@ -6932,6 +7054,17 @@
     });
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
+    fruit.scorePops.forEach((pop) => {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, pop.life * 1.7);
+      ctx.fillStyle = pop.color;
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = pop.color;
+      ctx.font = "900 21px ByteBounce, Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText(`+${formatNumber(pop.points)}`, pop.x, pop.y);
+      ctx.restore();
+    });
 
     if (fruit.clearFlash) {
       const progress = Math.max(0, fruit.clearFlash.life / 1.5);

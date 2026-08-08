@@ -1,6 +1,10 @@
 {
-  "version": "19.9.3.0",
+  "version": "19.9.4.0",
   "patchNotes": [
+    "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
+    "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
+    "Crossy Road adds a smooth forward-moving camera and bottom danger edge that ends the run when the player falls behind.",
+    "Fruit Blend stacked fruit now settles into a stable sleep state, preventing compressed bottom fruit from shaking or spinning in place.",
     "Rewards Store adds horizontal game and ownership filter chips, useful item sorting, compact cards, and an internally scrolling results area.",
     "Tombstone now uses the same clean text-only Rewards Store presentation as ARCADIA's other boosters.",
     "Player Profile now shows three locked-first Achievements and the top three Leaderboard entries at a time, with the complete lists available through compact panel scrolling.",
