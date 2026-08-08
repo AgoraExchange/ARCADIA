@@ -19,7 +19,8 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Coins, games played, Snake best, favorite game, badges
   - Achievements
   - Leaderboard preview
-  - Rewards Store with permanent player cosmetics and reusable game boosters
+  - Compact three-item achievement and leaderboard views with internal scrolling
+  - Compact Rewards Store with permanent player cosmetics, reusable game boosters, horizontal game filters, search, and internal scrolling
 - Snake game page
   - Neon framed board
   - Run-only Score on the left and High Score on the right above the unobstructed board
@@ -27,6 +28,7 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Start, pause, restart, exit
   - Keyboard, swipe, and mobile controls
   - Six purchasable color skins, including the level-35 animated Rainbow Snake
+  - Tombstone resurrection booster with one wall rebound or self-collision ghost pass per run
 - Block Grid game page
   - Eight-by-eight placement board with row and column clears
   - Run-only live score rail with Score, Lines, and High Score positioned above the board

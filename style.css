@@ -1251,6 +1251,49 @@ input:focus {
   gap: 12px;
 }
 
+.profile-scroll-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 247, 255, 0.72) rgba(255, 255, 255, 0.06);
+  scrollbar-gutter: stable;
+  scroll-snap-type: y proximity;
+}
+
+.profile-scroll-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.profile-scroll-list::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.profile-scroll-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--cyan), var(--purple));
+}
+
+.achievement-list {
+  grid-auto-rows: 132px;
+  max-height: 132px;
+}
+
+.scoreboard {
+  grid-auto-rows: 104px;
+  max-height: 104px;
+}
+
+.achievement-list .achievement-card,
+.scoreboard .score-row {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
 .achievement-card,
 .store-card {
   border-radius: 18px;
@@ -1294,6 +1337,126 @@ input:focus {
 .store-search input {
   width: 100%;
   height: 46px;
+}
+
+.store-filter-strip {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 2px 2px 7px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(196, 113, 255, 0.64) rgba(255, 255, 255, 0.05);
+  scroll-snap-type: x proximity;
+  touch-action: pan-x;
+}
+
+.store-filter-strip::-webkit-scrollbar {
+  height: 5px;
+}
+
+.store-filter-strip::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.store-filter-strip::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+}
+
+.store-filter-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  border: 1px solid rgba(196, 113, 255, 0.24);
+  border-radius: 999px;
+  padding: 6px 11px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.045);
+  font-family: var(--font-ui);
+  font-weight: 950;
+  cursor: pointer;
+  scroll-snap-align: start;
+  white-space: nowrap;
+}
+
+.store-filter-chip b {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  padding-inline: 5px;
+  color: var(--yellow);
+  background: rgba(255, 255, 255, 0.08);
+  font-family: var(--font-numbers);
+  font-size: 0.72rem;
+}
+
+.store-filter-chip.active {
+  color: #12041b;
+  border-color: rgba(73, 244, 255, 0.52);
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  box-shadow: 0 0 17px rgba(73, 244, 255, 0.18);
+}
+
+.store-filter-chip.active b {
+  color: #12041b;
+  background: rgba(5, 3, 11, 0.14);
+}
+
+.store-results {
+  grid-auto-rows: 218px;
+  max-height: 448px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(73, 244, 255, 0.7) rgba(255, 255, 255, 0.06);
+  scrollbar-gutter: stable;
+  scroll-snap-type: y proximity;
+}
+
+.store-results::-webkit-scrollbar {
+  width: 7px;
+}
+
+.store-results::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.store-results::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--cyan), var(--purple));
+}
+
+.store-results .store-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+.store-results .store-card > p:not(.system-line) {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.store-results .store-card-foot {
+  margin-top: auto;
+  padding-top: 9px;
 }
 
 .store-card.equipped {
@@ -3258,6 +3421,19 @@ input:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  #achievementList,
+  #leaderboardPreview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .achievement-list {
+    max-height: 420px;
+  }
+
+  .scoreboard {
+    max-height: 336px;
+  }
+
 }
 
 @media (max-width: 520px) {
@@ -3352,6 +3528,10 @@ input:focus {
 
   .modal-actions {
     flex-direction: column;
+  }
+
+  .store-results {
+    max-height: min(678px, calc(var(--app-height) - 178px));
   }
 
   .profile-actions {

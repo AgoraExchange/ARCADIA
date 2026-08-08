@@ -135,17 +135,17 @@
         <section class="panel">
           <div class="section-row">
             <p class="system-line">Achievements</p>
-            <span id="achievementCount">0 / 5</span>
+            <span id="achievementCount">0 / 5 · Scroll for all</span>
           </div>
-          <div id="achievementList" class="achievement-list"></div>
+          <div id="achievementList" class="achievement-list profile-scroll-list" tabindex="0" role="region" aria-label="Achievements, locked achievements first. Scroll to view all achievements."></div>
         </section>
 
         <section class="panel">
           <div class="section-row">
             <p class="system-line">Leaderboard</p>
-            <span>Preview</span>
+            <span>Top 3 · Scroll for all</span>
           </div>
-          <div id="leaderboardPreview" class="scoreboard"></div>
+          <div id="leaderboardPreview" class="scoreboard profile-scroll-list" tabindex="0" role="region" aria-label="Leaderboard. Scroll to view all players."></div>
         </section>
 
         <section class="panel">
@@ -161,8 +161,9 @@
             <div class="store-search">
               <input id="storeSearch" type="search" placeholder="Search rewards" autocomplete="off" />
             </div>
+            <div id="storeFilters" class="store-filter-strip" role="toolbar" aria-label="Store filters"></div>
           </div>
-          <div id="storeGrid" class="store-grid"></div>
+          <div id="storeGrid" class="store-grid store-results" tabindex="0" role="region" aria-label="Store results. Scroll to view more rewards."></div>
         </section>
       </main>
     </section>
@@ -518,7 +519,7 @@
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
           <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 19.9.1.6</p>
+        <p id="appVersionText" class="app-version-text">Version 19.9.3.0</p>
       </div>
     </div>
 

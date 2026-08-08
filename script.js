@@ -3,10 +3,14 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.1.6";
+  const APP_VERSION = "19.9.3.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Rewards Store adds horizontal game and ownership filter chips, useful item sorting, compact cards, and an internally scrolling results area.",
+    "Tombstone now uses the same clean text-only Rewards Store presentation as ARCADIA's other boosters.",
+    "Player Profile now shows three locked-first Achievements and the top three Leaderboard entries at a time, with the complete lists available through compact panel scrolling.",
+    "The Rewards Store adds Tombstone, a reusable Snake resurrection booster that rebounds fatal wall crashes or activates one ghost pass through the snake's body before entering cooldown.",
     "Snake's Start Game and Restart controls now use the same responsive mobile layout and normal button height as ARCADIA's other games.",
     "Snake's compact Score and High Score cards use single-line labels matching Block Grid and appear only after Start Game.",
     "Snake's stage HUD is simplified to Score on the left and High Score on the right, with Streak removed from view.",
@@ -534,6 +538,19 @@
       text: "Triple XP and coins from your next completed run."
     },
     {
+      id: "tombstone_snake",
+      title: "Tombstone",
+      category: "boosters",
+      type: "booster",
+      boost: "tombstone_snake",
+      effect: "tombstone",
+      game: "snake",
+      level: 10,
+      cost: 1500,
+      tags: ["booster", "snake", "tombstone", "resurrection", "revive", "ghost", "extra life"],
+      text: "Resurrect once in your next Snake run. Rebound from a wall or ghost through your own body instead of dying."
+    },
+    {
       id: "machine_gun_star",
       title: "Machine Gun",
       category: "boosters",
@@ -588,6 +605,8 @@
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
   let activeStoreTab = "player";
+  let activeStoreFilter = "all";
+  let storeScrollTop = 0;
   let storeCountdownTimer = null;
   let themeAudio = null;
   let gameOverAudio = null;
@@ -651,6 +670,7 @@
     leaderboardPreview: $("leaderboardPreview"),
     storePreviewCoins: $("storePreviewCoins"),
     storeSearch: $("storeSearch"),
+    storeFilters: $("storeFilters"),
     storeGrid: $("storeGrid"),
     snakeStage: $("snakeStage"),
     snakeCanvas: $("snakeCanvas"),
@@ -1874,8 +1894,10 @@
 
   function renderAchievements() {
     el.achievementList.innerHTML = "";
-    achievements.forEach((achievement) => {
-      const unlocked = state.achievements.includes(achievement.id);
+    const orderedAchievements = achievements
+      .map((achievement, index) => ({ achievement, index, unlocked: state.achievements.includes(achievement.id) }))
+      .sort((a, b) => Number(a.unlocked) - Number(b.unlocked) || a.index - b.index);
+    orderedAchievements.forEach(({ achievement, unlocked }) => {
       const text = achievement.id === "booster_climb" && state.boosterLevelTarget
         ? `Use a booster to reach level ${state.boosterLevelTarget}.`
         : achievement.text;
@@ -1888,7 +1910,7 @@
       `;
       el.achievementList.appendChild(card);
     });
-    el.achievementCount.textContent = `${state.achievements.length} / ${achievements.length}`;
+    el.achievementCount.textContent = `${state.achievements.length} / ${achievements.length} · Scroll for all`;
   }
 
   function renderLeaderboard() {
@@ -1945,15 +1967,42 @@
     const term = (el.storeSearch?.value || "").trim().toLowerCase();
     document.querySelectorAll(".store-tab").forEach((tab) => {
       tab.classList.toggle("active", tab.dataset.storeTab === activeStoreTab);
+      tab.setAttribute("aria-selected", tab.dataset.storeTab === activeStoreTab ? "true" : "false");
     });
-    el.storeGrid.innerHTML = "";
-    const filtered = storeItems.filter((item) => {
+    const searchedItems = storeItems.filter((item) => {
       const haystack = `${item.title} ${item.text} ${item.category} ${item.type} ${(item.tags || []).join(" ")}`.toLowerCase();
       return item.category === activeStoreTab && haystack.includes(term);
     });
 
+    const filterOptions = getStoreFilterOptions(activeStoreTab)
+      .map((option) => ({
+        ...option,
+        count: searchedItems.filter((item) => storeItemMatchesFilter(item, option.id)).length
+      }))
+      .filter((option) => option.id === "all" || option.count > 0);
+    if (!filterOptions.some((option) => option.id === activeStoreFilter)) activeStoreFilter = "all";
+
+    const filterScrollLeft = el.storeFilters?.scrollLeft || 0;
+    el.storeFilters.innerHTML = filterOptions.map((option) => `
+      <button
+        class="store-filter-chip ${option.id === activeStoreFilter ? "active" : ""}"
+        type="button"
+        data-store-filter="${option.id}"
+        aria-pressed="${option.id === activeStoreFilter}"
+      >
+        <span>${option.label}</span><b>${option.count}</b>
+      </button>
+    `).join("");
+    el.storeFilters.scrollLeft = filterScrollLeft;
+
+    el.storeGrid.innerHTML = "";
+    const filtered = searchedItems
+      .filter((item) => storeItemMatchesFilter(item, activeStoreFilter))
+      .sort(compareStoreItems);
+
     if (!filtered.length) {
       el.storeGrid.innerHTML = `<div class="store-empty">No rewards found.</div>`;
+      el.storeGrid.scrollTop = 0;
       return;
     }
 
@@ -1980,6 +2029,55 @@
       if (action) action.addEventListener("click", () => handleStoreAction(item));
       el.storeGrid.appendChild(card);
     });
+    el.storeGrid.scrollTop = Math.min(storeScrollTop, Math.max(0, el.storeGrid.scrollHeight - el.storeGrid.clientHeight));
+  }
+
+  function getStoreFilterOptions(tab) {
+    if (tab === "boosters") {
+      return [
+        { id: "all", label: "All" },
+        { id: "universal", label: "Universal" },
+        { id: "snake", label: "Snake" },
+        { id: "block", label: "Block Grid" },
+        { id: "star", label: "Star Invaders" },
+        { id: "ready", label: "Ready" }
+      ];
+    }
+    return [
+      { id: "all", label: "All" },
+      { id: "profile", label: "Profile" },
+      { id: "snake", label: "Snake" },
+      { id: "star", label: "Star Invaders" },
+      { id: "owned", label: "Owned" }
+    ];
+  }
+
+  function storeItemMatchesFilter(item, filter) {
+    if (filter === "all") return true;
+    if (filter === "profile") return item.slot === "nameplate";
+    if (filter === "snake") return item.slot === "snake_skin" || item.game === "snake";
+    if (filter === "block") return item.game === "block";
+    if (filter === "star") return item.slot === "laser" || item.game === "star";
+    if (filter === "universal") return item.type === "booster" && !item.game;
+    if (filter === "owned") return state.owned.includes(item.id);
+    if (filter === "ready") return item.type === "booster" && state.owned.includes(item.id) && getBoosterCooldownRemaining(item) <= 0;
+    return true;
+  }
+
+  function compareStoreItems(a, b) {
+    const rank = (item) => {
+      const owned = state.owned.includes(item.id);
+      const equipped = isCosmeticEquipped(item) || (item.type === "booster" && state.equippedBooster === item.boost);
+      const locked = state.level < item.level;
+      const cooldown = item.type === "booster" ? getBoosterCooldownRemaining(item) : 0;
+      if (equipped) return 0;
+      if (owned && !cooldown) return 1;
+      if (!owned && !locked && state.coins >= item.cost) return 2;
+      if (owned) return 3;
+      if (!locked) return 4;
+      return 5;
+    };
+    return rank(a) - rank(b) || a.level - b.level || a.title.localeCompare(b.title);
   }
 
   function renderStoreItemPreview(item) {
@@ -4273,6 +4371,11 @@
       food: { x: 14, y: 10 },
       particles: [],
       popups: [],
+      tombstoneArmed: false,
+      tombstoneUsed: false,
+      ghostTicks: 0,
+      reviveFlashTicks: 0,
+      reviveReason: "",
       runStartedAt: 0
     };
   }
@@ -4293,13 +4396,16 @@
 
   function startSnake() {
     resetSnake();
+    const booster = getEquippedBoosterItem("snake");
     snake.running = true;
     snake.paused = false;
+    snake.tombstoneArmed = booster?.effect === "tombstone";
     snake.runStartedAt = Date.now();
     syncSnakeButtons();
     renderSnakeStats();
     playTone("tap");
     playGameTheme("snake", { restart: true });
+    if (snake.tombstoneArmed) showToast("Tombstone Armed", "One fatal collision will resurrect your snake.", "win", 3600);
     snakeTimer = setInterval(tickSnake, GAME_TICK_MS);
   }
 
@@ -4358,11 +4464,23 @@
     }
     snake.direction = snake.nextDirection;
     const head = snake.body[0];
-    const next = { x: head.x + snake.direction.x, y: head.y + snake.direction.y };
-    const hitWall = next.x < 0 || next.y < 0 || next.x >= GRID_SIZE || next.y >= GRID_SIZE;
-    const hitSelf = snake.body.some((part) => part.x === next.x && part.y === next.y);
+    let next = { x: head.x + snake.direction.x, y: head.y + snake.direction.y };
+    let hitWall = next.x < 0 || next.y < 0 || next.x >= GRID_SIZE || next.y >= GRID_SIZE;
+    let hitSelf = !hitWall && snake.body.some((part) => part.x === next.x && part.y === next.y);
 
-    if (hitWall || hitSelf) {
+    if (hitWall && activateSnakeTombstone("wall")) {
+      const rebound = { x: -snake.direction.x, y: -snake.direction.y };
+      snake.direction = rebound;
+      snake.nextDirection = rebound;
+      snake.directionQueue = [];
+      next = { x: head.x + rebound.x, y: head.y + rebound.y };
+      hitWall = false;
+      hitSelf = snake.body.some((part) => part.x === next.x && part.y === next.y);
+    } else if (hitSelf && snake.ghostTicks <= 0) {
+      activateSnakeTombstone("self");
+    }
+
+    if (hitWall || (hitSelf && snake.ghostTicks <= 0)) {
       endSnakeRun();
       return;
     }
@@ -4392,6 +4510,47 @@
     snake.popups = snake.popups
       .map((p) => ({ ...p, y: p.y - 0.08, life: p.life - 1 }))
       .filter((p) => p.life > 0);
+    if (snake.ghostTicks > 0) snake.ghostTicks -= 1;
+    if (snake.reviveFlashTicks > 0) snake.reviveFlashTicks -= 1;
+  }
+
+  function activateSnakeTombstone(reason) {
+    if (!snake.tombstoneArmed || snake.tombstoneUsed) return false;
+    const booster = getStoreItem("tombstone_snake");
+    if (!booster) return false;
+
+    snake.tombstoneArmed = false;
+    snake.tombstoneUsed = true;
+    snake.reviveReason = reason;
+    snake.reviveFlashTicks = 11;
+    snake.ghostTicks = reason === "wall" ? Math.max(8, snake.body.length + 2) : 14;
+    snake.popups.push({
+      x: snake.body[0].x,
+      y: snake.body[0].y,
+      life: 12,
+      text: reason === "wall" ? "REBOUND!" : "GHOST!"
+    });
+
+    state.boosterCooldowns[booster.boost] = Date.now() + 10 * 60 * 1000;
+    if (state.equippedBooster === booster.boost) state.equippedBooster = null;
+    state.boosterUses += 1;
+    if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    unlockEarnedAchievements();
+    saveState();
+    playSnakeResurrectionSound();
+    showToast(
+      "Tombstone Resurrection",
+      reason === "wall" ? "Fatal wall crash reversed. You are alive again." : "Fatal self-crash phased through. You are alive again.",
+      "win",
+      4200
+    );
+    return true;
+  }
+
+  function playSnakeResurrectionSound() {
+    playToneAt(180, 0.14, "sawtooth", 0.055);
+    setTimeout(() => playToneAt(360, 0.12, "square", 0.06), 105);
+    setTimeout(() => playToneAt(720, 0.18, "square", 0.065), 210);
   }
 
   function addFoodParticles(cell) {
@@ -4515,10 +4674,18 @@
       ctx.stroke();
     }
 
+    const ghostActive = snake.ghostTicks > 0;
+    ctx.save();
+    if (ghostActive) {
+      ctx.globalAlpha = 0.3 + Math.abs(Math.sin(now / 85)) * 0.24;
+      ctx.globalCompositeOperation = "screen";
+    }
     snake.body.forEach((part, index) => {
       const x = part.x * cell + 3;
       const y = part.y * cell + 3;
-      const colors = snakeSegmentColors(index, now);
+      const colors = ghostActive
+        ? { start: "#e7f8ff", end: "#8cf7ff", glow: "#c471ff" }
+        : snakeSegmentColors(index, now);
       const g = ctx.createLinearGradient(x, y, x + cell, y + cell);
       g.addColorStop(0, colors.start);
       g.addColorStop(1, colors.end);
@@ -4527,6 +4694,7 @@
       ctx.shadowBlur = index === 0 ? 20 : 9;
       ctx.fillRect(x, y, cell - 6, cell - 6);
     });
+    ctx.restore();
 
     const pulse = 0.24 + Math.sin(now / 120) * 0.08;
     ctx.shadowBlur = 22;
@@ -4553,6 +4721,42 @@
 
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
+
+    if (snake.reviveFlashTicks > 0) {
+      const strength = snake.reviveFlashTicks / 11;
+      const flashColor = snake.reviveReason === "wall" ? "255, 47, 173" : "140, 247, 255";
+      const overlay = ctx.createRadialGradient(size / 2, size / 2, size * 0.08, size / 2, size / 2, size * 0.68);
+      overlay.addColorStop(0, `rgba(${flashColor}, ${0.08 + strength * 0.12})`);
+      overlay.addColorStop(1, `rgba(${flashColor}, ${0.16 + strength * 0.28})`);
+      ctx.fillStyle = overlay;
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = `rgba(${flashColor}, ${0.42 + strength * 0.45})`;
+      ctx.lineWidth = 7;
+      ctx.strokeRect(4, 4, size - 8, size - 8);
+
+      const stoneWidth = 62;
+      const stoneHeight = 70;
+      const stoneX = size / 2 - stoneWidth / 2;
+      const stoneY = size * 0.18;
+      ctx.save();
+      ctx.shadowColor = snake.reviveReason === "wall" ? "#ff2fad" : "#8cf7ff";
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = "rgba(18, 12, 29, 0.9)";
+      ctx.beginPath();
+      ctx.roundRect(stoneX, stoneY, stoneWidth, stoneHeight, [28, 28, 8, 8]);
+      ctx.fill();
+      ctx.strokeStyle = snake.reviveReason === "wall" ? "#ff75cf" : "#b9fbff";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 17px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText("RIP", size / 2, stoneY + 39);
+      ctx.font = "900 24px Arial Black";
+      ctx.fillText(snake.reviveReason === "wall" ? "REBOUND" : "GHOST MODE", size / 2, stoneY + stoneHeight + 39);
+      ctx.restore();
+      ctx.textAlign = "left";
+    }
 
     if (snake.paused) {
       ctx.fillStyle = "rgba(5, 3, 11, 0.68)";
@@ -4590,7 +4794,7 @@
     const previousBest = state.stats.snakeBest;
     const newBest = snake.score > previousBest;
     const oldAchievements = new Set(state.achievements);
-    const boosterUsed = getEquippedBoosterItem();
+    const boosterUsed = getEquippedBoosterItem("snake");
     let earned = applyRewardBooster(calculateSnakeXp());
     let coinsEarned = previewCoins(newBest);
 
@@ -4599,7 +4803,8 @@
     state.stats.snakeTotalScore += snake.score;
     state.stats.snakeBest = Math.max(previousBest, snake.score);
 
-    if (boosterUsed) {
+    const shouldConsumeBooster = boosterUsed && boosterUsed.effect !== "tombstone";
+    if (shouldConsumeBooster) {
       state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
       state.equippedBooster = null;
       state.boosterUses += 1;
@@ -4612,7 +4817,7 @@
     state.coins += coinsEarned;
     state.level = deriveLevel(state.xp);
     unlockEarnedAchievements();
-    if (boosterUsed && state.level >= state.boosterLevelTarget) {
+    if (shouldConsumeBooster && state.level >= state.boosterLevelTarget) {
       state.boosterLevelTarget = state.level + 2;
     }
     saveState();
@@ -7352,10 +7557,25 @@
       renderGames();
       el.gameSearch.focus();
     });
-    el.storeSearch.addEventListener("input", renderStore);
+    el.storeSearch.addEventListener("input", () => {
+      storeScrollTop = 0;
+      renderStore();
+    });
+    el.storeFilters.addEventListener("click", (event) => {
+      const chip = event.target.closest("[data-store-filter]");
+      if (!chip) return;
+      activeStoreFilter = chip.dataset.storeFilter || "all";
+      storeScrollTop = 0;
+      renderStore();
+    });
+    el.storeGrid.addEventListener("scroll", () => {
+      storeScrollTop = el.storeGrid.scrollTop;
+    }, { passive: true });
     document.querySelectorAll(".store-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
         activeStoreTab = tab.dataset.storeTab || "player";
+        activeStoreFilter = "all";
+        storeScrollTop = 0;
         renderStore();
       });
     });

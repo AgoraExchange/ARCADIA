@@ -1,6 +1,10 @@
 {
-  "version": "19.9.1.6",
+  "version": "19.9.3.0",
   "patchNotes": [
+    "Rewards Store adds horizontal game and ownership filter chips, useful item sorting, compact cards, and an internally scrolling results area.",
+    "Tombstone now uses the same clean text-only Rewards Store presentation as ARCADIA's other boosters.",
+    "Player Profile now shows three locked-first Achievements and the top three Leaderboard entries at a time, with the complete lists available through compact panel scrolling.",
+    "The Rewards Store adds Tombstone, a reusable Snake resurrection booster that rebounds fatal wall crashes or activates one ghost pass through the snake's body before entering cooldown.",
     "Snake's Start Game and Restart controls now use the same responsive mobile layout and normal button height as ARCADIA's other games.",
     "Snake's compact Score and High Score cards use single-line labels matching Block Grid and appear only after Start Game.",
     "Snake's stage HUD is simplified to Score on the left and High Score on the right, with Streak removed from view.",
