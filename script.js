@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.4.1";
+  const APP_VERSION = "19.9.4.2";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Fruit Blend sleeping fruit now rechecks its support every physics step, eliminating midair hangs while multi-pass collision settling keeps crowded stacks calm.",
     "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
     "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
@@ -6609,6 +6610,30 @@
     return deepest;
   }
 
+  function fruitHasSupport(body, tolerance = 1.5) {
+    const bodyParts = fruitCollisionParts(body);
+    const maxY = Math.max(...bodyParts.map((part) => part.y + part.radius));
+    if (maxY >= FRUIT_BOUNDS.bottom - tolerance) return true;
+
+    return fruit.fruits.some((other) => {
+      if (other === body) return false;
+      return bodyParts.some((bodyPart) => fruitCollisionParts(other).some((otherPart) => {
+        const dx = otherPart.x - bodyPart.x;
+        const dy = otherPart.y - bodyPart.y;
+        const distance = Math.hypot(dx, dy);
+        const contactDistance = bodyPart.radius + otherPart.radius + tolerance;
+        if (distance > contactDistance) return false;
+        if (distance < 0.001) return other.y > body.y;
+        return dy / distance > 0.46;
+      }));
+    });
+  }
+
+  function wakeFruitBody(body) {
+    body.sleeping = false;
+    body.settleFrames = 0;
+  }
+
   function resolveFruitBounds(body) {
     let parts = fruitCollisionParts(body);
     let minX = Math.min(...parts.map((part) => part.x - part.radius));
@@ -6744,6 +6769,7 @@
 
   function stepFruitPhysics(dt, now) {
     fruit.fruits.forEach((body) => {
+      if (body.sleeping && !fruitHasSupport(body)) wakeFruitBody(body);
       body.supported = false;
       if (body.sleeping) {
         body.vx = 0;
@@ -6768,65 +6794,69 @@
     });
 
     const mergePairs = [];
-    for (let i = 0; i < fruit.fruits.length; i += 1) {
-      for (let j = i + 1; j < fruit.fruits.length; j += 1) {
-        const a = fruit.fruits[i];
-        const b = fruit.fruits[j];
-        const contact = findFruitContact(a, b);
-        if (!contact) continue;
-        if (a.tier === b.tier) {
-          mergePairs.push([a, b]);
-          continue;
-        }
-
-        const { nx, ny, overlap } = contact;
-        const impactSpeed = Math.abs((b.vx - a.vx) * nx + (b.vy - a.vy) * ny);
-        const shouldWakeStack = (Math.abs(nx) > 0.58 && impactSpeed > 72) || overlap > 5;
-        if (shouldWakeStack) {
-          if (a.sleeping) {
-            a.sleeping = false;
-            a.settleFrames = 0;
+    for (let pass = 0; pass < 3; pass += 1) {
+      for (let i = 0; i < fruit.fruits.length; i += 1) {
+        for (let j = i + 1; j < fruit.fruits.length; j += 1) {
+          const a = fruit.fruits[i];
+          const b = fruit.fruits[j];
+          const contact = findFruitContact(a, b);
+          if (!contact) continue;
+          if (a.tier === b.tier) {
+            if (pass === 0) mergePairs.push([a, b]);
+            continue;
           }
-          if (b.sleeping) {
-            b.sleeping = false;
-            b.settleFrames = 0;
-          }
-        }
-        if (ny > 0.46) a.supported = true;
-        if (ny < -0.46) b.supported = true;
-        const invA = a.sleeping ? 0 : 1 / (a.radius * a.radius);
-        const invB = b.sleeping ? 0 : 1 / (b.radius * b.radius);
-        const invTotal = invA + invB;
-        if (invTotal <= 0) continue;
-        const correction = Math.max(0, overlap - 0.15) * 0.82;
-        a.x -= nx * correction * (invA / invTotal);
-        a.y -= ny * correction * (invA / invTotal);
-        b.x += nx * correction * (invB / invTotal);
-        b.y += ny * correction * (invB / invTotal);
 
-        const relativeVelocity = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-        if (relativeVelocity < 0) {
-          const impulse = (-(1.06) * relativeVelocity) / invTotal;
-          a.vx -= impulse * nx * invA;
-          a.vy -= impulse * ny * invA;
-          b.vx += impulse * nx * invB;
-          b.vy += impulse * ny * invB;
+          const { nx, ny, overlap } = contact;
+          const relativeVelocity = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          const shouldWakeStack = Math.abs(nx) > 0.62 && relativeVelocity < -90;
+          if (shouldWakeStack) {
+            if (a.sleeping) wakeFruitBody(a);
+            if (b.sleeping) wakeFruitBody(b);
+          }
+          const invA = a.sleeping ? 0 : 1 / (a.radius * a.radius);
+          const invB = b.sleeping ? 0 : 1 / (b.radius * b.radius);
+          const invTotal = invA + invB;
+          if (invTotal <= 0) continue;
+          const correction = Math.max(0, overlap - 0.15) * 0.72;
+          a.x -= nx * correction * (invA / invTotal);
+          a.y -= ny * correction * (invA / invTotal);
+          b.x += nx * correction * (invB / invTotal);
+          b.y += ny * correction * (invB / invTotal);
+
+          if (relativeVelocity < 0) {
+            const impulse = (-(1.04) * relativeVelocity) / invTotal;
+            a.vx -= impulse * nx * invA;
+            a.vy -= impulse * ny * invA;
+            b.vx += impulse * nx * invB;
+            b.vy += impulse * ny * invB;
+          }
+          const tangentX = -ny;
+          const tangentY = nx;
+          const tangentVelocity = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
+          const frictionImpulse = (-tangentVelocity * 0.14) / invTotal;
+          a.vx -= frictionImpulse * tangentX * invA;
+          a.vy -= frictionImpulse * tangentY * invA;
+          b.vx += frictionImpulse * tangentX * invB;
+          b.vy += frictionImpulse * tangentY * invB;
+          a.spin *= 0.84;
+          b.spin *= 0.84;
         }
-        const tangentX = -ny;
-        const tangentY = nx;
-        const tangentVelocity = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
-        const frictionImpulse = (-tangentVelocity * 0.09) / invTotal;
-        a.vx -= frictionImpulse * tangentX * invA;
-        a.vy -= frictionImpulse * tangentY * invA;
-        b.vx += frictionImpulse * tangentX * invB;
-        b.vy += frictionImpulse * tangentY * invB;
-        a.spin *= 0.88;
-        b.spin *= 0.88;
       }
     }
+
+    mergeFruitPairs(mergePairs, now);
     fruit.fruits.forEach((body) => {
-      if (body.sleeping) return;
+      body.supported = fruitHasSupport(body);
+      if (body.sleeping) {
+        if (!body.supported) wakeFruitBody(body);
+        return;
+      }
       const speed = Math.hypot(body.vx, body.vy);
+      if (body.supported && speed < 60) {
+        body.vx *= Math.pow(0.9, dt * 60);
+        if (body.vy > 0) body.vy *= 0.55;
+        body.spin *= Math.pow(0.8, dt * 60);
+      }
       const canSettle = body.supported && speed < 18 && Math.abs(body.spin) < 0.22 && now - body.spawnedAt > 240;
       if (!canSettle) {
         body.settleFrames = 0;
@@ -6844,7 +6874,6 @@
         body.spin = 0;
       }
     });
-    mergeFruitPairs(mergePairs, now);
   }
 
   function mergeFruitPairs(pairs, now) {

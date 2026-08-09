@@ -1,6 +1,7 @@
 {
-  "version": "19.9.4.1",
+  "version": "19.9.4.2",
   "patchNotes": [
+    "Fruit Blend sleeping fruit now rechecks its support every physics step, eliminating midair hangs while multi-pass collision settling keeps crowded stacks calm.",
     "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
     "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
