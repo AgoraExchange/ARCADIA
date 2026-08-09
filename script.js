@@ -3,11 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.4.2";
+  const APP_VERSION = "19.9.4.3";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
-    "Fruit Blend sleeping fruit now rechecks its support every physics step, eliminating midair hangs while multi-pass collision settling keeps crowded stacks calm.",
+    "Fruit Blend sleeping fruit now rechecks its support every physics step, while angled fruit keeps rolling naturally and crowded stacks settle calmly.",
     "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
     "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
@@ -6615,18 +6615,31 @@
     const maxY = Math.max(...bodyParts.map((part) => part.y + part.radius));
     if (maxY >= FRUIT_BOUNDS.bottom - tolerance) return true;
 
-    return fruit.fruits.some((other) => {
-      if (other === body) return false;
-      return bodyParts.some((bodyPart) => fruitCollisionParts(other).some((otherPart) => {
-        const dx = otherPart.x - bodyPart.x;
-        const dy = otherPart.y - bodyPart.y;
-        const distance = Math.hypot(dx, dy);
-        const contactDistance = bodyPart.radius + otherPart.radius + tolerance;
-        if (distance > contactDistance) return false;
-        if (distance < 0.001) return other.y > body.y;
-        return dy / distance > 0.46;
-      }));
+    const supportNormals = [];
+    fruit.fruits.forEach((other) => {
+      if (other === body) return;
+      const otherParts = fruitCollisionParts(other);
+      bodyParts.forEach((bodyPart) => {
+        otherParts.forEach((otherPart) => {
+          const dx = otherPart.x - bodyPart.x;
+          const dy = otherPart.y - bodyPart.y;
+          const distance = Math.hypot(dx, dy);
+          const contactDistance = bodyPart.radius + otherPart.radius + tolerance;
+          if (distance > contactDistance) return;
+          if (distance < 0.001) {
+            if (other.y > body.y) supportNormals.push({ nx: 0, ny: 1 });
+            return;
+          }
+          const ny = dy / distance;
+          if (ny > 0.28) supportNormals.push({ nx: dx / distance, ny });
+        });
+      });
     });
+
+    if (supportNormals.some(({ ny }) => ny > 0.94)) return true;
+    const supportedFromLeft = supportNormals.some(({ nx, ny }) => nx < -0.16 && ny > 0.34);
+    const supportedFromRight = supportNormals.some(({ nx, ny }) => nx > 0.16 && ny > 0.34);
+    return supportedFromLeft && supportedFromRight;
   }
 
   function wakeFruitBody(body) {
@@ -6833,13 +6846,16 @@
           const tangentX = -ny;
           const tangentY = nx;
           const tangentVelocity = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
-          const frictionImpulse = (-tangentVelocity * 0.14) / invTotal;
+          const frictionScale = pass === 0 ? 0.055 : 0.015;
+          const frictionImpulse = (-tangentVelocity * frictionScale) / invTotal;
           a.vx -= frictionImpulse * tangentX * invA;
           a.vy -= frictionImpulse * tangentY * invA;
           b.vx += frictionImpulse * tangentX * invB;
           b.vy += frictionImpulse * tangentY * invB;
-          a.spin *= 0.84;
-          b.spin *= 0.84;
+          if (pass === 0) {
+            a.spin *= 0.94;
+            b.spin *= 0.94;
+          }
         }
       }
     }
