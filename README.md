@@ -39,6 +39,10 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Guaranteed connected island routes that prevent impossible tree-and-rock dead ends
   - Smooth forward camera pressure with a bottom danger edge for idle players
   - Continuous world progress and scoring without resetting the player to the middle
+- Solitaire game page
+  - Solver-verified winnable Draw-1 deals generated off the UI thread
+  - Automatic tableau exposure, unlimited ordered stock redeals, complete hints, and card-state integrity checks
+  - Seven fixed tableau columns that keep empty King destinations available
 - Fruit Blend game page
   - Physics-based fruit drops and same-tier merging
   - Stable resting stacks that sleep instead of jittering under compression

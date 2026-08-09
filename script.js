@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.4.4";
+  const APP_VERSION = "19.9.5.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Solitaire now deals solver-verified winnable Draw-1 games, automatically flips newly exposed tableau cards, validates card integrity, and gives complete legal-move and stock-aware hints.",
     "Fruit Blend restores its lively one-pass motion with spin-driven rolling, while sleep is limited to the floor and genuinely cradled fruit.",
     "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
@@ -607,6 +608,8 @@
   let crossyCrashAudio = null;
   let solitaire = createSolitaireState();
   let solitaireTimer = null;
+  let solitaireDealRequest = 0;
+  let solitaireSolverJob = null;
   let fruit = createFruitState();
   let fruitTimer = null;
   let fruitPointerId = null;
@@ -5936,6 +5939,8 @@
     return {
       running: false,
       paused: false,
+      dealing: false,
+      dealAttempts: 0,
       stock: [],
       waste: [],
       foundations: { hearts: [], diamonds: [], clubs: [], spades: [] },
@@ -5966,23 +5971,263 @@
     renderSolitaireStats();
   }
 
-  function createSolitaireDeck() {
-    const deck = [];
-    SOLITAIRE_SUITS.forEach((suit) => {
-      for (let rank = 1; rank <= 13; rank += 1) {
-        deck.push({ id: `${suit.id}-${rank}`, suit: suit.id, rank, faceUp: false });
+  function solitaireSolverWorkerMain() {
+    const rankOf = (card) => card % 13 + 1;
+    const suitOf = (card) => Math.floor(card / 13);
+    const colorOf = (card) => suitOf(card) < 2 ? 0 : 1;
+
+    function shuffledDeck() {
+      const deck = Array.from({ length: 52 }, (_, index) => index);
+      for (let index = deck.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
       }
-    });
-    for (let index = deck.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(Math.random() * (index + 1));
-      [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
+      return deck;
     }
-    return deck;
+
+    function dealDeck(deck) {
+      const reserve = deck.slice();
+      const tableau = Array.from({ length: 7 }, () => []);
+      const down = [];
+      for (let column = 0; column < 7; column += 1) {
+        for (let row = 0; row <= column; row += 1) tableau[column].push(reserve.pop());
+        down[column] = column;
+      }
+      return { tableau, down, reserve, foundation: [0, 0, 0, 0] };
+    }
+
+    function solveDeal(initial, nodeLimit, timeLimitMs) {
+      const deadline = Date.now() + timeLimitMs;
+      const seen = new Set();
+      let nodes = 0;
+      let stopped = false;
+
+      function cloneState(state) {
+        return {
+          tableau: state.tableau.map((pile) => pile.slice()),
+          down: state.down.slice(),
+          reserve: state.reserve.slice(),
+          foundation: state.foundation.slice()
+        };
+      }
+
+      function exposeTableauTop(state, column) {
+        if (state.down[column] > 0 && state.tableau[column].length === state.down[column]) {
+          state.down[column] -= 1;
+        }
+      }
+
+      function safeForFoundation(card, foundation) {
+        const suit = suitOf(card);
+        const oppositeSuits = suit < 2 ? [2, 3] : [0, 1];
+        return rankOf(card) <= Math.min(foundation[oppositeSuits[0]], foundation[oppositeSuits[1]]) + 1;
+      }
+
+      function promoteSafeCards(state) {
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (let column = 0; column < 7; column += 1) {
+            const pile = state.tableau[column];
+            const card = pile[pile.length - 1];
+            if (card === undefined
+              || rankOf(card) !== state.foundation[suitOf(card)] + 1
+              || !safeForFoundation(card, state.foundation)) continue;
+            pile.pop();
+            state.foundation[suitOf(card)] += 1;
+            exposeTableauTop(state, column);
+            changed = true;
+          }
+          for (let index = 0; index < state.reserve.length; index += 1) {
+            const card = state.reserve[index];
+            if (rankOf(card) !== state.foundation[suitOf(card)] + 1
+              || !safeForFoundation(card, state.foundation)) continue;
+            state.reserve.splice(index, 1);
+            state.foundation[suitOf(card)] += 1;
+            changed = true;
+            break;
+          }
+        }
+      }
+
+      function stateKey(state) {
+        const piles = state.tableau
+          .map((pile, column) => `${state.down[column]}:${pile.join(".")}`)
+          .sort();
+        return `${state.foundation.join(".")}/${state.reserve.slice().sort((a, b) => a - b).join(".")}/${piles.join("/")}`;
+      }
+
+      function fitsTableau(card, target) {
+        return target === undefined
+          ? rankOf(card) === 13
+          : rankOf(target) === rankOf(card) + 1 && colorOf(target) !== colorOf(card);
+      }
+
+      function search(source) {
+        nodes += 1;
+        if (nodes > nodeLimit || Date.now() > deadline) {
+          stopped = true;
+          return false;
+        }
+
+        const state = cloneState(source);
+        promoteSafeCards(state);
+        if (state.foundation.every((rank) => rank === 13)) return true;
+        const key = stateKey(state);
+        if (seen.has(key)) return false;
+        seen.add(key);
+
+        const moves = [];
+        const firstEmpty = state.tableau.findIndex((pile) => pile.length === 0);
+        for (let from = 0; from < 7; from += 1) {
+          const pile = state.tableau[from];
+          for (let index = state.down[from]; index < pile.length; index += 1) {
+            const card = pile[index];
+            for (let to = 0; to < 7; to += 1) {
+              if (to === from) continue;
+              const targetPile = state.tableau[to];
+              const target = targetPile[targetPile.length - 1];
+              if (!fitsTableau(card, target)) continue;
+              if (target === undefined) {
+                if (to !== firstEmpty || (state.down[from] === 0 && index === 0)) continue;
+              }
+              moves.push({
+                type: "tableau",
+                from,
+                index,
+                to,
+                score: index === state.down[from] && state.down[from] > 0 ? 140 : 35
+              });
+            }
+          }
+        }
+
+        for (let index = 0; index < state.reserve.length; index += 1) {
+          const card = state.reserve[index];
+          for (let to = 0; to < 7; to += 1) {
+            const targetPile = state.tableau[to];
+            const target = targetPile[targetPile.length - 1];
+            if (!fitsTableau(card, target) || (target === undefined && to !== firstEmpty)) continue;
+            moves.push({ type: "reserveTableau", index, to, score: target === undefined ? 70 : 80 });
+          }
+          if (rankOf(card) === state.foundation[suitOf(card)] + 1) {
+            moves.push({ type: "reserveFoundation", index, score: 95 });
+          }
+        }
+
+        for (let from = 0; from < 7; from += 1) {
+          const pile = state.tableau[from];
+          const card = pile[pile.length - 1];
+          if (card !== undefined && rankOf(card) === state.foundation[suitOf(card)] + 1) {
+            moves.push({
+              type: "tableauFoundation",
+              from,
+              score: state.down[from] > 0 && pile.length === state.down[from] + 1 ? 130 : 90
+            });
+          }
+        }
+        moves.sort((a, b) => b.score - a.score);
+
+        for (const move of moves) {
+          const next = cloneState(state);
+          if (move.type === "tableau") {
+            next.tableau[move.to].push(...next.tableau[move.from].splice(move.index));
+            exposeTableauTop(next, move.from);
+          } else if (move.type === "reserveTableau") {
+            next.tableau[move.to].push(next.reserve.splice(move.index, 1)[0]);
+          } else if (move.type === "reserveFoundation") {
+            const card = next.reserve.splice(move.index, 1)[0];
+            next.foundation[suitOf(card)] += 1;
+          } else {
+            const card = next.tableau[move.from].pop();
+            next.foundation[suitOf(card)] += 1;
+            exposeTableauTop(next, move.from);
+          }
+          if (search(next)) return true;
+          if (stopped) return false;
+        }
+        return false;
+      }
+
+      return { solved: search(initial), nodes };
+    }
+
+    self.onmessage = (event) => {
+      const nodeLimit = Math.max(1000, Number(event.data?.nodeLimit) || 80000);
+      const timeLimitMs = Math.max(100, Number(event.data?.timeLimitMs) || 700);
+      let attempts = 0;
+      let testedNodes = 0;
+      while (true) {
+        attempts += 1;
+        const deck = shuffledDeck();
+        const result = solveDeal(dealDeck(deck), nodeLimit, timeLimitMs);
+        testedNodes += result.nodes;
+        if (result.solved) {
+          self.postMessage({ type: "solved", deck, attempts, testedNodes });
+          return;
+        }
+        if (attempts % 5 === 0) self.postMessage({ type: "progress", attempts, testedNodes });
+      }
+    };
   }
 
-  function startSolitaire() {
-    resetSolitaire();
-    const deck = createSolitaireDeck();
+  function finishSolitaireSolverJob(job) {
+    if (!job) return;
+    job.worker.terminate();
+    URL.revokeObjectURL(job.url);
+    if (solitaireSolverJob === job) solitaireSolverJob = null;
+  }
+
+  function cancelSolitaireSolver() {
+    solitaireDealRequest += 1;
+    const job = solitaireSolverJob;
+    if (!job) return;
+    finishSolitaireSolverJob(job);
+    job.reject(new Error("Solitaire deal generation cancelled."));
+  }
+
+  function generateSolvableSolitaireDeck(requestId) {
+    return new Promise((resolve, reject) => {
+      const source = `(${solitaireSolverWorkerMain.toString()})();`;
+      const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+      const worker = new Worker(url);
+      const job = { worker, url, reject, requestId };
+      solitaireSolverJob = job;
+      worker.onmessage = (event) => {
+        if (solitaireSolverJob !== job || solitaireDealRequest !== requestId) return;
+        if (event.data?.type === "progress") {
+          solitaire.dealAttempts = event.data.attempts;
+          renderSolitaireBoard();
+          return;
+        }
+        if (event.data?.type !== "solved") return;
+        finishSolitaireSolverJob(job);
+        resolve(event.data);
+      };
+      worker.onerror = (event) => {
+        finishSolitaireSolverJob(job);
+        reject(new Error(event.message || "Solitaire solver worker failed."));
+      };
+      worker.postMessage({ nodeLimit: 80000, timeLimitMs: 700 });
+    });
+  }
+
+  function createSolitaireDeck(cardOrder = null) {
+    const order = cardOrder ? cardOrder.slice() : Array.from({ length: 52 }, (_, index) => index);
+    if (!cardOrder) {
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
+      }
+    }
+    return order.map((cardIndex) => {
+      const suit = SOLITAIRE_SUITS[Math.floor(cardIndex / 13)];
+      const rank = cardIndex % 13 + 1;
+      return { id: `${suit.id}-${rank}`, suit: suit.id, rank, faceUp: false };
+    });
+  }
+
+  function dealSolitaireDeck(deck) {
     for (let column = 0; column < 7; column += 1) {
       for (let row = 0; row <= column; row += 1) {
         const card = deck.pop();
@@ -5991,6 +6236,33 @@
       }
     }
     solitaire.stock = deck;
+  }
+
+  async function startSolitaire() {
+    resetSolitaire();
+    const requestId = ++solitaireDealRequest;
+    solitaire.dealing = true;
+    solitaire.dealAttempts = 0;
+    renderSolitaireBoard();
+    renderSolitaireStats();
+
+    let result;
+    try {
+      result = await generateSolvableSolitaireDeck(requestId);
+    } catch (error) {
+      if (solitaireDealRequest !== requestId) return;
+      solitaire.dealing = false;
+      renderSolitaireBoard();
+      showToast("Deal Generator", "Could not verify a solvable deal. Please try again.", "fail");
+      console.error(error);
+      return;
+    }
+    if (solitaireDealRequest !== requestId) return;
+
+    solitaire.dealing = false;
+    solitaire.dealAttempts = result.attempts;
+    dealSolitaireDeck(createSolitaireDeck(result.deck));
+    ensureSolitaireIntegrity("initial deal");
     solitaire.running = true;
     solitaire.startedAt = Date.now();
     solitaireTimer = setInterval(renderSolitaireStats, 1000);
@@ -6005,6 +6277,7 @@
   }
 
   function stopSolitaire(render = true) {
+    cancelSolitaireSolver();
     if (solitaireTimer) {
       clearInterval(solitaireTimer);
       solitaireTimer = null;
@@ -6110,7 +6383,9 @@
     renderSolitairePileButton(el.solitaireStock, stockTop, "stock", {
       count: solitaire.stock.length,
       emptyText: solitaire.waste.length ? "↻" : "",
-      ariaLabel: solitaire.stock.length ? `${solitaire.stock.length} cards in stock` : "Recycle waste into stock"
+      ariaLabel: solitaire.stock.length
+        ? `${solitaire.stock.length} cards in stock`
+        : solitaire.waste.length ? "Recycle waste into stock" : "Empty stock pile"
     });
 
     const wasteTop = solitaire.waste[solitaire.waste.length - 1] || null;
@@ -6148,11 +6423,15 @@
     const baseBoardHeight = window.innerWidth <= 700 ? 440 : 560;
     el.solitaireBoard.style.minHeight = `${Math.ceil(Math.max(baseBoardHeight, cardHeight + maxTableauBottom + 60))}px`;
 
-    el.solitaireBoardOverlay.classList.toggle("hidden", solitaire.running && !solitaire.paused);
-    el.solitaireBoardOverlay.textContent = solitaire.paused ? "Paused" : "Press Start";
-    el.startSolitaireBtn.textContent = solitaire.running ? "End Game" : "Start Game";
+    el.solitaireBoardOverlay.classList.toggle("hidden", solitaire.running && !solitaire.paused && !solitaire.dealing);
+    el.solitaireBoardOverlay.textContent = solitaire.dealing
+      ? `Finding a solvable deal${solitaire.dealAttempts ? ` (${solitaire.dealAttempts} tested)` : ""}…`
+      : solitaire.paused ? "Paused" : "Press Start";
+    el.startSolitaireBtn.textContent = solitaire.dealing ? "Finding Deal…" : solitaire.running ? "End Game" : "Start Game";
+    el.startSolitaireBtn.disabled = solitaire.dealing;
+    el.restartSolitaireBtn.disabled = solitaire.dealing;
     el.solitairePauseBtn.textContent = solitaire.paused ? "Resume" : "Pause";
-    el.solitairePauseBtn.disabled = !solitaire.running;
+    el.solitairePauseBtn.disabled = !solitaire.running || solitaire.dealing;
     el.undoSolitaireBtn.disabled = !solitaire.running || solitaire.paused || solitaire.history.length === 0;
     el.hintSolitaireBtn.disabled = !solitaire.running || solitaire.paused;
   }
@@ -6206,6 +6485,7 @@
     solitaire.moves = previous.moves;
     solitaire.recycles = previous.recycles;
     solitaire.selected = null;
+    ensureSolitaireIntegrity("undo");
     playTone("tap");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6230,6 +6510,7 @@
       solitaire.score = Math.max(0, solitaire.score - 5);
     }
     solitaire.moves += 1;
+    ensureSolitaireIntegrity("stock draw or recycle");
     playTone("tap");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6237,6 +6518,44 @@
 
   function solitaireCardColor(card) {
     return getSolitaireSuit(card).color;
+  }
+
+  function hasValidSolitaireState(game = solitaire) {
+    const cards = [
+      ...game.stock,
+      ...game.waste,
+      ...SOLITAIRE_SUITS.flatMap((suit) => game.foundations[suit.id]),
+      ...game.tableau.flat()
+    ];
+    const expectedIds = new Set(SOLITAIRE_SUITS.flatMap((suit) => (
+      Array.from({ length: 13 }, (_, index) => `${suit.id}-${index + 1}`)
+    )));
+    if (cards.length !== 52 || new Set(cards.map((card) => card.id)).size !== 52) return false;
+    if (cards.some((card) => !expectedIds.has(card.id) || card.id !== `${card.suit}-${card.rank}`)) return false;
+    if (game.stock.some((card) => card.faceUp) || game.waste.some((card) => !card.faceUp)) return false;
+
+    for (const suit of SOLITAIRE_SUITS) {
+      const pile = game.foundations[suit.id];
+      if (pile.some((card, index) => !card.faceUp || card.suit !== suit.id || card.rank !== index + 1)) return false;
+    }
+
+    for (const pile of game.tableau) {
+      const firstFaceUp = pile.findIndex((card) => card.faceUp);
+      const faceUpIndex = firstFaceUp < 0 ? pile.length : firstFaceUp;
+      if (pile.slice(0, faceUpIndex).some((card) => card.faceUp)) return false;
+      if (pile.slice(faceUpIndex).some((card) => !card.faceUp)) return false;
+      for (let index = faceUpIndex; index < pile.length - 1; index += 1) {
+        const card = pile[index];
+        const next = pile[index + 1];
+        if (card.rank !== next.rank + 1 || solitaireCardColor(card) === solitaireCardColor(next)) return false;
+      }
+    }
+    return true;
+  }
+
+  function ensureSolitaireIntegrity(context) {
+    if (hasValidSolitaireState()) return;
+    throw new Error(`Invalid Solitaire card state after ${context}.`);
   }
 
   function canPlaceSolitaireTableau(card, target) {
@@ -6249,6 +6568,15 @@
     const pile = solitaire.foundations[suitId];
     const target = pile[pile.length - 1];
     return target ? card.rank === target.rank + 1 : card.rank === 1;
+  }
+
+  function isSafeSolitaireFoundationMove(card) {
+    const suit = getSolitaireSuit(card);
+    const oppositeColor = suit.color === "red" ? "black" : "red";
+    const oppositeRanks = SOLITAIRE_SUITS
+      .filter((item) => item.color === oppositeColor)
+      .map((item) => solitaire.foundations[item.id].length);
+    return card.rank <= Math.min(...oppositeRanks) + 1;
   }
 
   function isValidSolitaireSequence(cards) {
@@ -6286,6 +6614,7 @@
     solitaire.score = Math.max(0, solitaire.score + scoreDelta);
     solitaire.moves += 1;
     solitaire.selected = null;
+    ensureSolitaireIntegrity("card move");
     playTone("tap");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6296,6 +6625,15 @@
     }
   }
 
+  function exposeSolitaireTableauTop(column) {
+    if (!Number.isInteger(column)) return false;
+    const pile = solitaire.tableau[column];
+    const card = pile[pile.length - 1];
+    if (!card || card.faceUp) return false;
+    card.faceUp = true;
+    return true;
+  }
+
   function moveSelectedSolitaireToTableau(column) {
     const cards = getSelectedSolitaireCards();
     if (!cards.length || !isValidSolitaireSequence(cards)) return false;
@@ -6304,9 +6642,11 @@
     if (!canPlaceSolitaireTableau(cards[0], target)) return false;
     if (solitaire.selected.source === "tableau" && solitaire.selected.pile === column) return false;
     saveSolitaireHistory();
-    const fromFoundation = solitaire.selected.source === "foundation";
+    const source = { ...solitaire.selected };
+    const fromFoundation = source.source === "foundation";
     targetPile.push(...removeSelectedSolitaireCards());
-    finishSolitaireMove(fromFoundation ? -10 : 5);
+    const flipped = source.source === "tableau" && exposeSolitaireTableauTop(source.pile);
+    finishSolitaireMove((fromFoundation ? -10 : 5) + (flipped ? 5 : 0));
     return true;
   }
 
@@ -6315,8 +6655,10 @@
     if (cards.length !== 1 || !canPlaceSolitaireFoundation(cards[0], suitId)) return false;
     if (solitaire.selected.source === "foundation") return false;
     saveSolitaireHistory();
+    const source = { ...solitaire.selected };
     solitaire.foundations[suitId].push(...removeSelectedSolitaireCards());
-    finishSolitaireMove(10);
+    const flipped = source.source === "tableau" && exposeSolitaireTableauTop(source.pile);
+    finishSolitaireMove(10 + (flipped ? 5 : 0));
     return true;
   }
 
@@ -6329,6 +6671,7 @@
     solitaire.moves += 1;
     solitaire.score += 5;
     solitaire.selected = null;
+    ensureSolitaireIntegrity("manual tableau flip");
     playTone("win");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6410,48 +6753,142 @@
     }
   }
 
-  function showSolitaireHint() {
-    if (!solitaire.running || solitaire.paused) return;
+  function findSolitaireLegalMoves() {
+    const moves = [];
+    solitaire.tableau.forEach((pile, column) => {
+      const card = pile[pile.length - 1];
+      if (card && !card.faceUp) {
+        moves.push({
+          type: "flip",
+          source: "tableau",
+          pile: column,
+          cardIndex: pile.length - 1,
+          card,
+          priority: 130,
+          message: `Flip the face-down card in column ${column + 1}.`
+        });
+      }
+    });
+
     const waste = solitaire.waste[solitaire.waste.length - 1];
     if (waste && canPlaceSolitaireFoundation(waste, waste.suit)) {
-      selectSolitaireSource("waste", "waste", solitaire.waste.length - 1);
-      showToast("Hint", `Move ${solitaireCardLabel(waste)} to its foundation.`, "win");
-      return;
+      moves.push({
+        type: "waste-foundation",
+        source: "waste",
+        pile: "waste",
+        cardIndex: solitaire.waste.length - 1,
+        card: waste,
+        priority: isSafeSolitaireFoundationMove(waste) ? 105 : 55,
+        message: `Move ${solitaireCardLabel(waste)} to its foundation.`
+      });
     }
-    for (let column = 0; column < 7; column += 1) {
-      const pile = solitaire.tableau[column];
-      const card = pile[pile.length - 1];
-      if (card?.faceUp && canPlaceSolitaireFoundation(card, card.suit)) {
-        selectSolitaireSource("tableau", column, pile.length - 1);
-        showToast("Hint", `Move ${solitaireCardLabel(card)} to its foundation.`, "win");
-        return;
-      }
-    }
-    const sources = [];
-    if (waste) sources.push({ source: "waste", pile: "waste", cardIndex: solitaire.waste.length - 1, cards: [waste] });
+
     solitaire.tableau.forEach((pile, column) => {
-      pile.forEach((card, cardIndex) => {
-        if (card.faceUp && isValidSolitaireSequence(pile.slice(cardIndex))) {
-          sources.push({ source: "tableau", pile: column, cardIndex, cards: pile.slice(cardIndex) });
-        }
+      const card = pile[pile.length - 1];
+      if (!card?.faceUp || !canPlaceSolitaireFoundation(card, card.suit)) return;
+      const revealsCard = pile.length > 1 && !pile[pile.length - 2].faceUp;
+      moves.push({
+        type: "tableau-foundation",
+        source: "tableau",
+        pile: column,
+        cardIndex: pile.length - 1,
+        card,
+        priority: revealsCard ? 125 : isSafeSolitaireFoundationMove(card) ? 100 : 50,
+        message: `Move ${solitaireCardLabel(card)} to its foundation.`
       });
     });
-    for (const source of sources) {
-      for (let column = 0; column < 7; column += 1) {
-        if (source.source === "tableau" && source.pile === column) continue;
-        const targetPile = solitaire.tableau[column];
-        if (canPlaceSolitaireTableau(source.cards[0], targetPile[targetPile.length - 1] || null)) {
-          selectSolitaireSource(source.source, source.pile, source.cardIndex);
-          showToast("Hint", `Move ${solitaireCardLabel(source.cards[0])} to column ${column + 1}.`, "win");
-          return;
-        }
-      }
+
+    const tableauSources = [];
+    solitaire.tableau.forEach((pile, column) => {
+      pile.forEach((card, cardIndex) => {
+        if (!card.faceUp || !isValidSolitaireSequence(pile.slice(cardIndex))) return;
+        tableauSources.push({
+          source: "tableau",
+          pile: column,
+          cardIndex,
+          cards: pile.slice(cardIndex),
+          revealsCard: cardIndex > 0 && !pile[cardIndex - 1].faceUp
+        });
+      });
+    });
+
+    const tableauTargets = (source, cards, priority, type) => {
+      solitaire.tableau.forEach((targetPile, column) => {
+        if (source.source === "tableau" && source.pile === column) return;
+        const target = targetPile[targetPile.length - 1] || null;
+        if (!canPlaceSolitaireTableau(cards[0], target)) return;
+        const relocatesWholeOpenKingPile = source.source === "tableau"
+          && source.cardIndex === 0
+          && cards[0].rank === 13
+          && !target;
+        moves.push({
+          type,
+          source: source.source,
+          pile: source.pile,
+          cardIndex: source.cardIndex,
+          card: cards[0],
+          targetColumn: column,
+          useful: !relocatesWholeOpenKingPile,
+          priority: source.revealsCard ? 120 : priority,
+          message: `Move ${solitaireCardLabel(cards[0])} to column ${column + 1}.`
+        });
+      });
+    };
+
+    if (waste) {
+      tableauTargets(
+        { source: "waste", pile: "waste", cardIndex: solitaire.waste.length - 1, revealsCard: false },
+        [waste],
+        90,
+        "waste-tableau"
+      );
     }
-    if (solitaire.stock.length || solitaire.waste.length) {
-      showToast("Hint", solitaire.stock.length ? "Draw the next stock card." : "Recycle the waste pile.", "win");
+    tableauSources.forEach((source) => tableauTargets(source, source.cards, 80, "tableau-tableau"));
+
+    SOLITAIRE_SUITS.forEach((suit) => {
+      const pile = solitaire.foundations[suit.id];
+      const card = pile[pile.length - 1];
+      if (!card) return;
+      tableauTargets(
+        { source: "foundation", pile: suit.id, cardIndex: pile.length - 1, revealsCard: false },
+        [card],
+        30,
+        "foundation-tableau"
+      );
+    });
+
+    return moves.sort((a, b) => b.priority - a.priority);
+  }
+
+  function usefulSolitaireStockAction() {
+    const buriedWaste = solitaire.waste.slice(0, -1);
+    const accessibleCards = [...solitaire.stock, ...buriedWaste];
+    const hasPlayableCard = accessibleCards.some((card) => {
+      if (canPlaceSolitaireFoundation(card, card.suit)) return true;
+      return solitaire.tableau.some((pile) => canPlaceSolitaireTableau(card, pile[pile.length - 1] || null));
+    });
+    if (!hasPlayableCard) return null;
+    if (solitaire.stock.length) return { type: "draw", message: "Draw from the stock to reach another playable card." };
+    if (solitaire.waste.length > 1) return { type: "recycle", message: "Recycle the waste pile to reach another playable card." };
+    return null;
+  }
+
+  function showSolitaireHint() {
+    if (!solitaire.running || solitaire.paused) return;
+    const move = findSolitaireLegalMoves().find((candidate) => candidate.useful !== false);
+    if (move) {
+      selectSolitaireSource(move.source, move.pile, move.cardIndex);
+      showToast("Hint", move.message, "win");
       return;
     }
-    showToast("No Move Found", "Undo a move or start a new deal.", "fail");
+    const stockAction = usefulSolitaireStockAction();
+    if (stockAction) {
+      solitaire.selected = null;
+      renderSolitaireBoard();
+      showToast("Hint", stockAction.message, "win");
+      return;
+    }
+    showToast("No More Moves", "No legal play or useful stock action remains. Undo a move or start a new solvable deal.", "fail");
   }
 
   function endSolitaireRun(reason = "manual") {
