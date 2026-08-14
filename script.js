@@ -3,10 +3,14 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.4.1";
+  const APP_VERSION = "19.9.6.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
+    "The Rewards Store adds Skips, a purchasable white, blue-eyed cat character for Crossy Road.",
+    "Solitaire now deals solver-verified winnable Draw-1 games, automatically flips newly exposed tableau cards, validates card integrity, and gives complete legal-move and stock-aware hints.",
+    "Fruit Blend restores its lively one-pass motion with spin-driven rolling, while sleep is limited to the floor and genuinely cradled fruit.",
     "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
     "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",
@@ -172,6 +176,7 @@
     equippedNameplate: null,
     equippedLaser: null,
     equippedSnakeSkin: null,
+    equippedCrossyCharacter: null,
     equippedBooster: null,
     boosterCooldowns: {},
     boosterPurchases: 0,
@@ -522,6 +527,17 @@
       text: "Cycle every snake segment through a living rainbow."
     },
     {
+      id: "crossy_skips",
+      title: "Skips",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 5,
+      cost: 650,
+      tags: ["crossy", "road", "character", "cat", "skips", "white", "blue eyes"],
+      text: "Cross the road as Skips, a bright white cat with vivid blue eyes."
+    },
+    {
       id: "xp_boost_2",
       title: "2X XP Booster",
       category: "boosters",
@@ -552,11 +568,11 @@
       type: "booster",
       boost: "tombstone_snake",
       effect: "tombstone",
-      game: "snake",
+      games: ["snake", "crossy"],
       level: 10,
       cost: 1500,
-      tags: ["booster", "snake", "tombstone", "resurrection", "revive", "ghost", "extra life"],
-      text: "Resurrect once in your next Snake run. Rebound from a wall or ghost through your own body instead of dying."
+      tags: ["booster", "snake", "crossy", "road", "tombstone", "resurrection", "revive", "ghost", "extra life"],
+      text: "Resurrect once in Snake or Crossy Road. Rebound, phase through danger, or ghost back to a safe island."
     },
     {
       id: "machine_gun_star",
@@ -606,6 +622,8 @@
   let crossyCrashAudio = null;
   let solitaire = createSolitaireState();
   let solitaireTimer = null;
+  let solitaireDealRequest = 0;
+  let solitaireSolverJob = null;
   let fruit = createFruitState();
   let fruitTimer = null;
   let fruitPointerId = null;
@@ -897,6 +915,7 @@
       equippedNameplate: typeof saved?.equippedNameplate === "string" ? saved.equippedNameplate : null,
       equippedLaser: typeof saved?.equippedLaser === "string" ? saved.equippedLaser : null,
       equippedSnakeSkin: typeof saved?.equippedSnakeSkin === "string" ? saved.equippedSnakeSkin : null,
+      equippedCrossyCharacter: typeof saved?.equippedCrossyCharacter === "string" ? saved.equippedCrossyCharacter : null,
       equippedBooster: typeof saved?.equippedBooster === "string"
         ? saved.equippedBooster
         : typeof saved?.activeBoost === "string"
@@ -2046,6 +2065,7 @@
         { id: "all", label: "All" },
         { id: "universal", label: "Universal" },
         { id: "snake", label: "Snake" },
+        { id: "crossy", label: "Crossy Road" },
         { id: "block", label: "Block Grid" },
         { id: "star", label: "Star Invaders" },
         { id: "ready", label: "Ready" }
@@ -2055,18 +2075,25 @@
       { id: "all", label: "All" },
       { id: "profile", label: "Profile" },
       { id: "snake", label: "Snake" },
+      { id: "crossy", label: "Crossy Road" },
       { id: "star", label: "Star Invaders" },
       { id: "owned", label: "Owned" }
     ];
   }
 
+  function storeItemSupportsGame(item, game) {
+    if (Array.isArray(item.games)) return item.games.includes(game);
+    return item.game === game;
+  }
+
   function storeItemMatchesFilter(item, filter) {
     if (filter === "all") return true;
     if (filter === "profile") return item.slot === "nameplate";
-    if (filter === "snake") return item.slot === "snake_skin" || item.game === "snake";
-    if (filter === "block") return item.game === "block";
-    if (filter === "star") return item.slot === "laser" || item.game === "star";
-    if (filter === "universal") return item.type === "booster" && !item.game;
+    if (filter === "snake") return item.slot === "snake_skin" || storeItemSupportsGame(item, "snake");
+    if (filter === "crossy") return item.slot === "crossy_character" || storeItemSupportsGame(item, "crossy");
+    if (filter === "block") return storeItemSupportsGame(item, "block");
+    if (filter === "star") return item.slot === "laser" || storeItemSupportsGame(item, "star");
+    if (filter === "universal") return item.type === "booster" && !item.game && !item.games?.length;
     if (filter === "owned") return state.owned.includes(item.id);
     if (filter === "ready") return item.type === "booster" && state.owned.includes(item.id) && getBoosterCooldownRemaining(item) <= 0;
     return true;
@@ -2095,6 +2122,18 @@
       return `
         <div class="snake-skin-preview ${item.rainbow ? "rainbow" : ""}" style="${style}" aria-hidden="true">
           <span></span><span></span><span></span><span></span>
+        </div>
+      `;
+    }
+    if (item.slot === "crossy_character") {
+      return `
+        <div class="crossy-character-preview" aria-hidden="true">
+          <div class="skips-store-cat">
+            <span class="cat-ear left"></span><span class="cat-ear right"></span>
+            <span class="cat-face"><i></i><i></i><b></b></span>
+            <span class="cat-body"></span><span class="cat-tail"></span>
+          </div>
+          <strong>SKIPS</strong>
         </div>
       `;
     }
@@ -2142,6 +2181,7 @@
     if (item.slot === "nameplate") return state.equippedNameplate === item.id;
     if (item.slot === "laser") return state.equippedLaser === item.id;
     if (item.slot === "snake_skin") return state.equippedSnakeSkin === item.id;
+    if (item.slot === "crossy_character") return state.equippedCrossyCharacter === item.id;
     return false;
   }
 
@@ -2149,6 +2189,7 @@
     if (item.slot === "nameplate") state.equippedNameplate = state.equippedNameplate === item.id ? null : item.id;
     else if (item.slot === "laser") state.equippedLaser = state.equippedLaser === item.id ? null : item.id;
     else if (item.slot === "snake_skin") state.equippedSnakeSkin = state.equippedSnakeSkin === item.id ? null : item.id;
+    else if (item.slot === "crossy_character") state.equippedCrossyCharacter = state.equippedCrossyCharacter === item.id ? null : item.id;
     else return;
     saveState();
     renderAll();
@@ -2191,6 +2232,7 @@
       if (item.slot === "nameplate") state.equippedNameplate = item.id;
       if (item.slot === "laser") state.equippedLaser = item.id;
       if (item.slot === "snake_skin") state.equippedSnakeSkin = item.id;
+      if (item.slot === "crossy_character") state.equippedCrossyCharacter = item.id;
     }
     if (item.type === "booster") {
       state.owned.push(item.id);
@@ -4524,7 +4566,7 @@
 
   function activateSnakeTombstone(reason) {
     if (!snake.tombstoneArmed || snake.tombstoneUsed) return false;
-    const booster = getStoreItem("tombstone_snake");
+    const booster = consumeTombstoneBooster();
     if (!booster) return false;
 
     snake.tombstoneArmed = false;
@@ -4539,13 +4581,7 @@
       text: reason === "wall" ? "REBOUND!" : "GHOST!"
     });
 
-    state.boosterCooldowns[booster.boost] = Date.now() + 10 * 60 * 1000;
-    if (state.equippedBooster === booster.boost) state.equippedBooster = null;
-    state.boosterUses += 1;
-    if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
-    unlockEarnedAchievements();
-    saveState();
-    playSnakeResurrectionSound();
+    playTombstoneResurrectionSound();
     showToast(
       "Tombstone Resurrection",
       reason === "wall" ? "Fatal wall crash reversed. You are alive again." : "Fatal self-crash phased through. You are alive again.",
@@ -4555,7 +4591,19 @@
     return true;
   }
 
-  function playSnakeResurrectionSound() {
+  function consumeTombstoneBooster() {
+    const booster = getStoreItem("tombstone_snake");
+    if (!booster) return null;
+    state.boosterCooldowns[booster.boost] = Date.now() + 10 * 60 * 1000;
+    if (state.equippedBooster === booster.boost) state.equippedBooster = null;
+    state.boosterUses += 1;
+    if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    unlockEarnedAchievements();
+    saveState();
+    return booster;
+  }
+
+  function playTombstoneResurrectionSound() {
     playToneAt(180, 0.14, "sawtooth", 0.055);
     setTimeout(() => playToneAt(360, 0.12, "square", 0.06), 105);
     setTimeout(() => playToneAt(720, 0.18, "square", 0.065), 210);
@@ -4611,7 +4659,8 @@
     if (!state.equippedBooster) return null;
     const item = getStoreItem(state.equippedBooster);
     if (!item || getBoosterCooldownRemaining(item) > 0) return null;
-    if (item.game && item.game !== game) return null;
+    const supportedGames = Array.isArray(item.games) ? item.games : item.game ? [item.game] : [];
+    if (supportedGames.length && !supportedGames.includes(game)) return null;
     return item;
   }
 
@@ -5300,6 +5349,14 @@
       lanes: [],
       decor: [],
       particles: [],
+      tombstoneArmed: false,
+      tombstoneUsed: false,
+      ghostUntil: 0,
+      reviveFlashStartedAt: 0,
+      reviveFlashUntil: 0,
+      reviveReason: "",
+      rescuing: false,
+      rescueTarget: null,
       lastFrame: 0,
       startedAt: 0,
       pausedAt: 0,
@@ -5421,13 +5478,18 @@
 
   function startCrossy() {
     resetCrossy();
+    const booster = getEquippedBoosterItem("crossy");
     crossy.running = true;
+    crossy.tombstoneArmed = booster?.effect === "tombstone";
     crossy.startedAt = Date.now();
     crossy.lastFrame = performance.now();
     playTone("tap");
     playGameTheme("crossy", { restart: true, volume: 0.4 });
     crossyTimer = setInterval(tickCrossy, CROSSY_TICK_MS);
     renderCrossyStats();
+    if (crossy.tombstoneArmed) {
+      showToast("Tombstone Armed", "One traffic hit or danger-edge catch will resurrect your runner.", "win", 3600);
+    }
   }
 
   function restartCrossy() {
@@ -5474,7 +5536,13 @@
       crossy.pausedAt = Date.now();
     } else {
       if (crossy.pausedAt) {
-        crossy.pausedMs += Date.now() - crossy.pausedAt;
+        const pausedFor = Date.now() - crossy.pausedAt;
+        crossy.pausedMs += pausedFor;
+        if (crossy.ghostUntil) crossy.ghostUntil += pausedFor;
+        if (crossy.reviveFlashUntil) {
+          crossy.reviveFlashStartedAt += pausedFor;
+          crossy.reviveFlashUntil += pausedFor;
+        }
         crossy.pausedAt = 0;
       }
       crossy.lastFrame = performance.now();
@@ -5484,7 +5552,7 @@
   }
 
   function moveCrossy(direction) {
-    if (!crossy.running || crossy.paused || crossy.dying) return;
+    if (!crossy.running || crossy.paused || crossy.dying || crossy.rescuing) return;
     const player = crossy.player;
     const next = { col: player.col, depth: player.depth };
     if (direction === "up") next.depth += 1;
@@ -5539,6 +5607,12 @@
     p.targetY = crossyScreenY(p.depth);
     p.x += (p.targetX - p.x) * Math.min(1, dt * 16);
     p.y += (p.targetY - p.y) * Math.min(1, dt * 16);
+    if (crossy.rescuing && Math.abs(p.x - p.targetX) < 1.5 && Math.abs(p.y - p.targetY) < 1.5) {
+      p.x = p.targetX;
+      p.y = p.targetY;
+      crossy.rescuing = false;
+      crossy.rescueTarget = null;
+    }
     crossy.particles.forEach((part) => {
       part.x += part.vx * dt;
       part.y += part.vy * dt;
@@ -5546,11 +5620,11 @@
     });
     crossy.particles = crossy.particles.filter((part) => part.life > 0);
 
-    if (!crossy.dying && crossyHit()) {
+    if (!crossy.dying && !isCrossyGhostActive(now) && crossyHit()) {
       triggerCrossyDeath("crash");
       return;
     }
-    if (!crossy.dying && crossyPressureCaught()) {
+    if (!crossy.dying && !isCrossyGhostActive(now) && crossyPressureCaught()) {
       triggerCrossyDeath("caught");
       return;
     }
@@ -5580,6 +5654,79 @@
 
   function crossyPressureCaught() {
     return crossy.player.targetY > el.crossyCanvas.height - 16;
+  }
+
+  function isCrossyGhostActive(now = performance.now()) {
+    return crossy.rescuing || crossy.ghostUntil > now;
+  }
+
+  function findCrossyRescueCell() {
+    const lockDistance = (CROSSY_START_Y - CROSSY_CAMERA_LOCK_Y) / CROSSY_LANE_HEIGHT;
+    const desiredDepth = Math.max(crossy.player.depth + 1, Math.ceil(crossy.cameraDepth + lockDistance));
+    ensureCrossyWorld(desiredDepth + 16);
+    const nearby = crossy.lanes
+      .filter((lane) => lane.depth >= desiredDepth && lane.depth <= desiredDepth + 16 && lane.type !== "road")
+      .sort((a, b) => a.depth - b.depth || (a.type === "grass" ? 0 : 1) - (b.type === "grass" ? 0 : 1));
+    const lane = nearby[0] || crossy.lanes.find((candidate) => candidate.depth >= desiredDepth) || { depth: desiredDepth };
+    const columns = Array.from({ length: 9 }, (_, col) => col).sort((a, b) => Math.abs(a - 4) - Math.abs(b - 4));
+    const col = columns.find((candidate) => !isCrossyBlocked(lane.depth, candidate)) ?? 4;
+    return { depth: lane.depth, col };
+  }
+
+  function activateCrossyTombstone(reason) {
+    if (!crossy.tombstoneArmed || crossy.tombstoneUsed) return false;
+    const booster = consumeTombstoneBooster();
+    if (!booster) return false;
+
+    const now = performance.now();
+    crossy.tombstoneArmed = false;
+    crossy.tombstoneUsed = true;
+    crossy.reviveReason = reason;
+    crossy.reviveFlashStartedAt = now;
+    crossy.reviveFlashUntil = now + 1050;
+    crossy.ghostUntil = now + (reason === "caught" ? 2800 : 2400);
+    addCrossyGhostBurst(crossy.player.x, crossy.player.y);
+
+    if (reason === "caught") {
+      const target = findCrossyRescueCell();
+      crossy.rescuing = true;
+      crossy.rescueTarget = target;
+      crossy.player.col = target.col;
+      crossy.player.depth = target.depth;
+      crossy.player.targetX = 30 + target.col * 60;
+      crossy.player.targetY = crossyScreenY(target.depth);
+      crossy.furthestDepth = Math.max(crossy.furthestDepth, target.depth);
+      crossy.score = Math.max(crossy.score, crossy.furthestDepth);
+      crossy.section = Math.floor(crossy.score / 10);
+      crossy.bestLive = Math.max(Number(state.stats.crossyBest) || 0, crossy.score);
+    }
+
+    playTombstoneResurrectionSound();
+    renderCrossyStats();
+    showToast(
+      "Tombstone Resurrection",
+      reason === "caught"
+        ? "Ghost rescue active. Phasing through traffic to a safe island."
+        : "Traffic phased through. You are a ghost - keep crossing.",
+      "win",
+      4200
+    );
+    return true;
+  }
+
+  function addCrossyGhostBurst(x, y) {
+    for (let i = 0; i < 32; i += 1) {
+      const angle = (Math.PI * 2 * i) / 32;
+      const speed = 70 + Math.random() * 130;
+      crossy.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 30,
+        color: i % 3 ? "#8cf7ff" : "#c471ff"
+      });
+    }
   }
 
   function addCrossyCrashBurst(x, y) {
@@ -5617,6 +5764,10 @@
   }
 
   function triggerCrossyDeath(reason = "crash") {
+    if (activateCrossyTombstone(reason)) {
+      drawCrossy();
+      return;
+    }
     crossy.dying = true;
     crossy.deathReason = reason;
     crossy.deathStartedAt = performance.now();
@@ -5736,11 +5887,11 @@
     ctx.restore();
   }
 
-  function drawCrossyPlayer(ctx, p) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = "#ffffff";
+  function crossySkipsEquipped() {
+    return state.equippedCrossyCharacter === "crossy_skips" && state.owned.includes("crossy_skips");
+  }
+
+  function drawCrossyChicken(ctx) {
     drawCrossyBlock(ctx, -16, -16, 32, 32, 8, "#f7f4df", "rgba(188, 180, 145, 0.58)");
     drawCrossyBlock(ctx, -11, -35, 22, 20, 6, "#fff7d8", "rgba(188, 180, 145, 0.5)");
     ctx.shadowBlur = 0;
@@ -5751,6 +5902,98 @@
     ctx.fillRect(5, -28, 4, 4);
     ctx.fillStyle = "#ffd35a";
     ctx.fillRect(-5, -22, 10, 5);
+  }
+
+  function drawCrossySkips(ctx) {
+    drawCrossyBlock(ctx, 12, -17, 15, 8, 4, "#f8fbff", "rgba(160, 190, 210, 0.54)");
+    drawCrossyBlock(ctx, 20, -27, 8, 15, 4, "#ffffff", "rgba(160, 190, 210, 0.5)");
+    drawCrossyBlock(ctx, -17, -17, 34, 31, 8, "#f8fbff", "rgba(174, 201, 217, 0.58)");
+    drawCrossyBlock(ctx, -15, 7, 10, 10, 4, "#ffffff", "rgba(174, 201, 217, 0.5)");
+    drawCrossyBlock(ctx, 5, 7, 10, 10, 4, "#ffffff", "rgba(174, 201, 217, 0.5)");
+    drawCrossyBlock(ctx, -14, -38, 28, 25, 7, "#ffffff", "rgba(174, 201, 217, 0.54)");
+    drawCrossyBlock(ctx, -13, -47, 9, 12, 4, "#f8fbff", "rgba(174, 201, 217, 0.5)");
+    drawCrossyBlock(ctx, 4, -47, 9, 12, 4, "#f8fbff", "rgba(174, 201, 217, 0.5)");
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#38bfff";
+    ctx.shadowColor = "#49f4ff";
+    ctx.shadowBlur = 7;
+    ctx.fillRect(-8, -31, 5, 6);
+    ctx.fillRect(4, -31, 5, 6);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#0b1e39";
+    ctx.fillRect(-6, -29, 2, 3);
+    ctx.fillRect(6, -29, 2, 3);
+    ctx.fillStyle = "#ff9db7";
+    ctx.fillRect(-2, -23, 5, 4);
+    ctx.strokeStyle = "rgba(207, 235, 246, 0.94)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-3, -20);
+    ctx.lineTo(-17, -23);
+    ctx.moveTo(3, -20);
+    ctx.lineTo(17, -23);
+    ctx.stroke();
+  }
+
+  function drawCrossyPlayer(ctx, p) {
+    const now = performance.now();
+    const ghostActive = isCrossyGhostActive(now);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.shadowBlur = ghostActive ? 25 : 14;
+    ctx.shadowColor = ghostActive ? "#8cf7ff" : "#ffffff";
+    if (ghostActive) {
+      ctx.globalAlpha = 0.42 + Math.abs(Math.sin(now / 90)) * 0.18;
+      ctx.globalCompositeOperation = "screen";
+    }
+    if (crossySkipsEquipped()) drawCrossySkips(ctx);
+    else drawCrossyChicken(ctx);
+    if (ghostActive) {
+      ctx.fillStyle = "#dffcff";
+      ctx.globalAlpha = 0.24 + Math.abs(Math.sin(now / 110)) * 0.18;
+      ctx.fillRect(-18, 23, 8, 5);
+      ctx.fillRect(-3, 28, 7, 4);
+      ctx.fillRect(11, 21, 9, 5);
+    }
+    ctx.restore();
+  }
+
+  function drawCrossyTombstoneFlash(ctx, width, height, now) {
+    if (crossy.reviveFlashUntil <= now) return;
+    const duration = Math.max(1, crossy.reviveFlashUntil - crossy.reviveFlashStartedAt);
+    const strength = Math.max(0, Math.min(1, (crossy.reviveFlashUntil - now) / duration));
+    const label = crossy.reviveReason === "caught" ? "GHOST RESCUE" : "GHOST MODE";
+    ctx.save();
+    const overlay = ctx.createRadialGradient(width / 2, height / 2, 40, width / 2, height / 2, height * 0.7);
+    overlay.addColorStop(0, `rgba(231, 248, 255, ${0.1 + strength * 0.2})`);
+    overlay.addColorStop(1, `rgba(140, 247, 255, ${0.18 + strength * 0.34})`);
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = `rgba(196, 113, 255, ${0.48 + strength * 0.44})`;
+    ctx.lineWidth = 8;
+    ctx.strokeRect(5, 5, width - 10, height - 10);
+
+    const stoneWidth = 72;
+    const stoneHeight = 82;
+    const stoneX = width / 2 - stoneWidth / 2;
+    const stoneY = height * 0.18;
+    ctx.shadowColor = "#8cf7ff";
+    ctx.shadowBlur = 28;
+    ctx.fillStyle = "rgba(18, 12, 29, 0.91)";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(stoneX, stoneY, stoneWidth, stoneHeight, [32, 32, 9, 9]);
+    else ctx.rect(stoneX, stoneY, stoneWidth, stoneHeight);
+    ctx.fill();
+    ctx.strokeStyle = "#b9fbff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 19px Arial Black";
+    ctx.textAlign = "center";
+    ctx.fillText("RIP", width / 2, stoneY + 47);
+    ctx.font = "900 28px ByteBounce, Arial Black";
+    ctx.fillText(label, width / 2, stoneY + stoneHeight + 43);
     ctx.restore();
   }
 
@@ -5759,6 +6002,7 @@
     const ctx = el.crossyCanvas.getContext("2d");
     const w = el.crossyCanvas.width;
     const h = el.crossyCanvas.height;
+    const now = performance.now();
     ctx.clearRect(0, 0, w, h);
 
     ctx.fillStyle = "#6ecf52";
@@ -5831,11 +6075,16 @@
 
     drawCrossyPlayer(ctx, crossy.player);
 
+    drawCrossyTombstoneFlash(ctx, w, h, now);
+
     const previousBest = Number(state.stats.crossyBest) || 0;
     const liveBest = Math.max(previousBest, crossy.score);
     drawCrossyPill(ctx, 14, 14, "BEST", formatNumber(liveBest), crossy.score > previousBest ? "#ffd35a" : "#49f4ff");
     if (crossy.score <= previousBest) {
       drawCrossyPill(ctx, w - 160, 14, "SCORE", formatNumber(crossy.score), "#57ff9a");
+    }
+    if (isCrossyGhostActive(now)) {
+      drawCrossyPill(ctx, w / 2 - 73, 55, "TOMBSTONE", crossy.rescuing ? "RESCUING" : "GHOST MODE", "#8cf7ff");
     }
 
     if (crossy.paused) {
@@ -5879,7 +6128,7 @@
     const previousBest = Number(state.stats.crossyBest) || 0;
     const newBest = crossy.score > previousBest;
     const oldAchievements = new Set(state.achievements);
-    const boosterUsed = getEquippedBoosterItem();
+    const boosterUsed = getEquippedBoosterItem("crossy");
     const earned = applyRewardBooster(calculateCrossyXp());
     const coinsEarned = previewCrossyCoins(newBest);
     stopCrossy(false);
@@ -5893,7 +6142,8 @@
     state.stats.crossyTotalScore += crossy.score;
     state.stats.crossyBest = Math.max(previousBest, crossy.score);
 
-    if (boosterUsed) {
+    const shouldConsumeBooster = boosterUsed && boosterUsed.effect !== "tombstone";
+    if (shouldConsumeBooster) {
       state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
       state.equippedBooster = null;
       state.boosterUses += 1;
@@ -5906,7 +6156,7 @@
     state.coins += coinsEarned;
     state.level = deriveLevel(state.xp);
     unlockEarnedAchievements();
-    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    if (shouldConsumeBooster && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
     saveState();
     renderAll();
 
@@ -5935,6 +6185,8 @@
     return {
       running: false,
       paused: false,
+      dealing: false,
+      dealAttempts: 0,
       stock: [],
       waste: [],
       foundations: { hearts: [], diamonds: [], clubs: [], spades: [] },
@@ -5965,23 +6217,263 @@
     renderSolitaireStats();
   }
 
-  function createSolitaireDeck() {
-    const deck = [];
-    SOLITAIRE_SUITS.forEach((suit) => {
-      for (let rank = 1; rank <= 13; rank += 1) {
-        deck.push({ id: `${suit.id}-${rank}`, suit: suit.id, rank, faceUp: false });
+  function solitaireSolverWorkerMain() {
+    const rankOf = (card) => card % 13 + 1;
+    const suitOf = (card) => Math.floor(card / 13);
+    const colorOf = (card) => suitOf(card) < 2 ? 0 : 1;
+
+    function shuffledDeck() {
+      const deck = Array.from({ length: 52 }, (_, index) => index);
+      for (let index = deck.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
       }
-    });
-    for (let index = deck.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(Math.random() * (index + 1));
-      [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
+      return deck;
     }
-    return deck;
+
+    function dealDeck(deck) {
+      const reserve = deck.slice();
+      const tableau = Array.from({ length: 7 }, () => []);
+      const down = [];
+      for (let column = 0; column < 7; column += 1) {
+        for (let row = 0; row <= column; row += 1) tableau[column].push(reserve.pop());
+        down[column] = column;
+      }
+      return { tableau, down, reserve, foundation: [0, 0, 0, 0] };
+    }
+
+    function solveDeal(initial, nodeLimit, timeLimitMs) {
+      const deadline = Date.now() + timeLimitMs;
+      const seen = new Set();
+      let nodes = 0;
+      let stopped = false;
+
+      function cloneState(state) {
+        return {
+          tableau: state.tableau.map((pile) => pile.slice()),
+          down: state.down.slice(),
+          reserve: state.reserve.slice(),
+          foundation: state.foundation.slice()
+        };
+      }
+
+      function exposeTableauTop(state, column) {
+        if (state.down[column] > 0 && state.tableau[column].length === state.down[column]) {
+          state.down[column] -= 1;
+        }
+      }
+
+      function safeForFoundation(card, foundation) {
+        const suit = suitOf(card);
+        const oppositeSuits = suit < 2 ? [2, 3] : [0, 1];
+        return rankOf(card) <= Math.min(foundation[oppositeSuits[0]], foundation[oppositeSuits[1]]) + 1;
+      }
+
+      function promoteSafeCards(state) {
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (let column = 0; column < 7; column += 1) {
+            const pile = state.tableau[column];
+            const card = pile[pile.length - 1];
+            if (card === undefined
+              || rankOf(card) !== state.foundation[suitOf(card)] + 1
+              || !safeForFoundation(card, state.foundation)) continue;
+            pile.pop();
+            state.foundation[suitOf(card)] += 1;
+            exposeTableauTop(state, column);
+            changed = true;
+          }
+          for (let index = 0; index < state.reserve.length; index += 1) {
+            const card = state.reserve[index];
+            if (rankOf(card) !== state.foundation[suitOf(card)] + 1
+              || !safeForFoundation(card, state.foundation)) continue;
+            state.reserve.splice(index, 1);
+            state.foundation[suitOf(card)] += 1;
+            changed = true;
+            break;
+          }
+        }
+      }
+
+      function stateKey(state) {
+        const piles = state.tableau
+          .map((pile, column) => `${state.down[column]}:${pile.join(".")}`)
+          .sort();
+        return `${state.foundation.join(".")}/${state.reserve.slice().sort((a, b) => a - b).join(".")}/${piles.join("/")}`;
+      }
+
+      function fitsTableau(card, target) {
+        return target === undefined
+          ? rankOf(card) === 13
+          : rankOf(target) === rankOf(card) + 1 && colorOf(target) !== colorOf(card);
+      }
+
+      function search(source) {
+        nodes += 1;
+        if (nodes > nodeLimit || Date.now() > deadline) {
+          stopped = true;
+          return false;
+        }
+
+        const state = cloneState(source);
+        promoteSafeCards(state);
+        if (state.foundation.every((rank) => rank === 13)) return true;
+        const key = stateKey(state);
+        if (seen.has(key)) return false;
+        seen.add(key);
+
+        const moves = [];
+        const firstEmpty = state.tableau.findIndex((pile) => pile.length === 0);
+        for (let from = 0; from < 7; from += 1) {
+          const pile = state.tableau[from];
+          for (let index = state.down[from]; index < pile.length; index += 1) {
+            const card = pile[index];
+            for (let to = 0; to < 7; to += 1) {
+              if (to === from) continue;
+              const targetPile = state.tableau[to];
+              const target = targetPile[targetPile.length - 1];
+              if (!fitsTableau(card, target)) continue;
+              if (target === undefined) {
+                if (to !== firstEmpty || (state.down[from] === 0 && index === 0)) continue;
+              }
+              moves.push({
+                type: "tableau",
+                from,
+                index,
+                to,
+                score: index === state.down[from] && state.down[from] > 0 ? 140 : 35
+              });
+            }
+          }
+        }
+
+        for (let index = 0; index < state.reserve.length; index += 1) {
+          const card = state.reserve[index];
+          for (let to = 0; to < 7; to += 1) {
+            const targetPile = state.tableau[to];
+            const target = targetPile[targetPile.length - 1];
+            if (!fitsTableau(card, target) || (target === undefined && to !== firstEmpty)) continue;
+            moves.push({ type: "reserveTableau", index, to, score: target === undefined ? 70 : 80 });
+          }
+          if (rankOf(card) === state.foundation[suitOf(card)] + 1) {
+            moves.push({ type: "reserveFoundation", index, score: 95 });
+          }
+        }
+
+        for (let from = 0; from < 7; from += 1) {
+          const pile = state.tableau[from];
+          const card = pile[pile.length - 1];
+          if (card !== undefined && rankOf(card) === state.foundation[suitOf(card)] + 1) {
+            moves.push({
+              type: "tableauFoundation",
+              from,
+              score: state.down[from] > 0 && pile.length === state.down[from] + 1 ? 130 : 90
+            });
+          }
+        }
+        moves.sort((a, b) => b.score - a.score);
+
+        for (const move of moves) {
+          const next = cloneState(state);
+          if (move.type === "tableau") {
+            next.tableau[move.to].push(...next.tableau[move.from].splice(move.index));
+            exposeTableauTop(next, move.from);
+          } else if (move.type === "reserveTableau") {
+            next.tableau[move.to].push(next.reserve.splice(move.index, 1)[0]);
+          } else if (move.type === "reserveFoundation") {
+            const card = next.reserve.splice(move.index, 1)[0];
+            next.foundation[suitOf(card)] += 1;
+          } else {
+            const card = next.tableau[move.from].pop();
+            next.foundation[suitOf(card)] += 1;
+            exposeTableauTop(next, move.from);
+          }
+          if (search(next)) return true;
+          if (stopped) return false;
+        }
+        return false;
+      }
+
+      return { solved: search(initial), nodes };
+    }
+
+    self.onmessage = (event) => {
+      const nodeLimit = Math.max(1000, Number(event.data?.nodeLimit) || 80000);
+      const timeLimitMs = Math.max(100, Number(event.data?.timeLimitMs) || 700);
+      let attempts = 0;
+      let testedNodes = 0;
+      while (true) {
+        attempts += 1;
+        const deck = shuffledDeck();
+        const result = solveDeal(dealDeck(deck), nodeLimit, timeLimitMs);
+        testedNodes += result.nodes;
+        if (result.solved) {
+          self.postMessage({ type: "solved", deck, attempts, testedNodes });
+          return;
+        }
+        if (attempts % 5 === 0) self.postMessage({ type: "progress", attempts, testedNodes });
+      }
+    };
   }
 
-  function startSolitaire() {
-    resetSolitaire();
-    const deck = createSolitaireDeck();
+  function finishSolitaireSolverJob(job) {
+    if (!job) return;
+    job.worker.terminate();
+    URL.revokeObjectURL(job.url);
+    if (solitaireSolverJob === job) solitaireSolverJob = null;
+  }
+
+  function cancelSolitaireSolver() {
+    solitaireDealRequest += 1;
+    const job = solitaireSolverJob;
+    if (!job) return;
+    finishSolitaireSolverJob(job);
+    job.reject(new Error("Solitaire deal generation cancelled."));
+  }
+
+  function generateSolvableSolitaireDeck(requestId) {
+    return new Promise((resolve, reject) => {
+      const source = `(${solitaireSolverWorkerMain.toString()})();`;
+      const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+      const worker = new Worker(url);
+      const job = { worker, url, reject, requestId };
+      solitaireSolverJob = job;
+      worker.onmessage = (event) => {
+        if (solitaireSolverJob !== job || solitaireDealRequest !== requestId) return;
+        if (event.data?.type === "progress") {
+          solitaire.dealAttempts = event.data.attempts;
+          renderSolitaireBoard();
+          return;
+        }
+        if (event.data?.type !== "solved") return;
+        finishSolitaireSolverJob(job);
+        resolve(event.data);
+      };
+      worker.onerror = (event) => {
+        finishSolitaireSolverJob(job);
+        reject(new Error(event.message || "Solitaire solver worker failed."));
+      };
+      worker.postMessage({ nodeLimit: 80000, timeLimitMs: 700 });
+    });
+  }
+
+  function createSolitaireDeck(cardOrder = null) {
+    const order = cardOrder ? cardOrder.slice() : Array.from({ length: 52 }, (_, index) => index);
+    if (!cardOrder) {
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
+      }
+    }
+    return order.map((cardIndex) => {
+      const suit = SOLITAIRE_SUITS[Math.floor(cardIndex / 13)];
+      const rank = cardIndex % 13 + 1;
+      return { id: `${suit.id}-${rank}`, suit: suit.id, rank, faceUp: false };
+    });
+  }
+
+  function dealSolitaireDeck(deck) {
     for (let column = 0; column < 7; column += 1) {
       for (let row = 0; row <= column; row += 1) {
         const card = deck.pop();
@@ -5990,6 +6482,33 @@
       }
     }
     solitaire.stock = deck;
+  }
+
+  async function startSolitaire() {
+    resetSolitaire();
+    const requestId = ++solitaireDealRequest;
+    solitaire.dealing = true;
+    solitaire.dealAttempts = 0;
+    renderSolitaireBoard();
+    renderSolitaireStats();
+
+    let result;
+    try {
+      result = await generateSolvableSolitaireDeck(requestId);
+    } catch (error) {
+      if (solitaireDealRequest !== requestId) return;
+      solitaire.dealing = false;
+      renderSolitaireBoard();
+      showToast("Deal Generator", "Could not verify a solvable deal. Please try again.", "fail");
+      console.error(error);
+      return;
+    }
+    if (solitaireDealRequest !== requestId) return;
+
+    solitaire.dealing = false;
+    solitaire.dealAttempts = result.attempts;
+    dealSolitaireDeck(createSolitaireDeck(result.deck));
+    ensureSolitaireIntegrity("initial deal");
     solitaire.running = true;
     solitaire.startedAt = Date.now();
     solitaireTimer = setInterval(renderSolitaireStats, 1000);
@@ -6004,6 +6523,7 @@
   }
 
   function stopSolitaire(render = true) {
+    cancelSolitaireSolver();
     if (solitaireTimer) {
       clearInterval(solitaireTimer);
       solitaireTimer = null;
@@ -6109,7 +6629,9 @@
     renderSolitairePileButton(el.solitaireStock, stockTop, "stock", {
       count: solitaire.stock.length,
       emptyText: solitaire.waste.length ? "↻" : "",
-      ariaLabel: solitaire.stock.length ? `${solitaire.stock.length} cards in stock` : "Recycle waste into stock"
+      ariaLabel: solitaire.stock.length
+        ? `${solitaire.stock.length} cards in stock`
+        : solitaire.waste.length ? "Recycle waste into stock" : "Empty stock pile"
     });
 
     const wasteTop = solitaire.waste[solitaire.waste.length - 1] || null;
@@ -6147,11 +6669,15 @@
     const baseBoardHeight = window.innerWidth <= 700 ? 440 : 560;
     el.solitaireBoard.style.minHeight = `${Math.ceil(Math.max(baseBoardHeight, cardHeight + maxTableauBottom + 60))}px`;
 
-    el.solitaireBoardOverlay.classList.toggle("hidden", solitaire.running && !solitaire.paused);
-    el.solitaireBoardOverlay.textContent = solitaire.paused ? "Paused" : "Press Start";
-    el.startSolitaireBtn.textContent = solitaire.running ? "End Game" : "Start Game";
+    el.solitaireBoardOverlay.classList.toggle("hidden", solitaire.running && !solitaire.paused && !solitaire.dealing);
+    el.solitaireBoardOverlay.textContent = solitaire.dealing
+      ? `Finding a solvable deal${solitaire.dealAttempts ? ` (${solitaire.dealAttempts} tested)` : ""}…`
+      : solitaire.paused ? "Paused" : "Press Start";
+    el.startSolitaireBtn.textContent = solitaire.dealing ? "Finding Deal…" : solitaire.running ? "End Game" : "Start Game";
+    el.startSolitaireBtn.disabled = solitaire.dealing;
+    el.restartSolitaireBtn.disabled = solitaire.dealing;
     el.solitairePauseBtn.textContent = solitaire.paused ? "Resume" : "Pause";
-    el.solitairePauseBtn.disabled = !solitaire.running;
+    el.solitairePauseBtn.disabled = !solitaire.running || solitaire.dealing;
     el.undoSolitaireBtn.disabled = !solitaire.running || solitaire.paused || solitaire.history.length === 0;
     el.hintSolitaireBtn.disabled = !solitaire.running || solitaire.paused;
   }
@@ -6205,6 +6731,7 @@
     solitaire.moves = previous.moves;
     solitaire.recycles = previous.recycles;
     solitaire.selected = null;
+    ensureSolitaireIntegrity("undo");
     playTone("tap");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6229,6 +6756,7 @@
       solitaire.score = Math.max(0, solitaire.score - 5);
     }
     solitaire.moves += 1;
+    ensureSolitaireIntegrity("stock draw or recycle");
     playTone("tap");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6236,6 +6764,44 @@
 
   function solitaireCardColor(card) {
     return getSolitaireSuit(card).color;
+  }
+
+  function hasValidSolitaireState(game = solitaire) {
+    const cards = [
+      ...game.stock,
+      ...game.waste,
+      ...SOLITAIRE_SUITS.flatMap((suit) => game.foundations[suit.id]),
+      ...game.tableau.flat()
+    ];
+    const expectedIds = new Set(SOLITAIRE_SUITS.flatMap((suit) => (
+      Array.from({ length: 13 }, (_, index) => `${suit.id}-${index + 1}`)
+    )));
+    if (cards.length !== 52 || new Set(cards.map((card) => card.id)).size !== 52) return false;
+    if (cards.some((card) => !expectedIds.has(card.id) || card.id !== `${card.suit}-${card.rank}`)) return false;
+    if (game.stock.some((card) => card.faceUp) || game.waste.some((card) => !card.faceUp)) return false;
+
+    for (const suit of SOLITAIRE_SUITS) {
+      const pile = game.foundations[suit.id];
+      if (pile.some((card, index) => !card.faceUp || card.suit !== suit.id || card.rank !== index + 1)) return false;
+    }
+
+    for (const pile of game.tableau) {
+      const firstFaceUp = pile.findIndex((card) => card.faceUp);
+      const faceUpIndex = firstFaceUp < 0 ? pile.length : firstFaceUp;
+      if (pile.slice(0, faceUpIndex).some((card) => card.faceUp)) return false;
+      if (pile.slice(faceUpIndex).some((card) => !card.faceUp)) return false;
+      for (let index = faceUpIndex; index < pile.length - 1; index += 1) {
+        const card = pile[index];
+        const next = pile[index + 1];
+        if (card.rank !== next.rank + 1 || solitaireCardColor(card) === solitaireCardColor(next)) return false;
+      }
+    }
+    return true;
+  }
+
+  function ensureSolitaireIntegrity(context) {
+    if (hasValidSolitaireState()) return;
+    throw new Error(`Invalid Solitaire card state after ${context}.`);
   }
 
   function canPlaceSolitaireTableau(card, target) {
@@ -6248,6 +6814,15 @@
     const pile = solitaire.foundations[suitId];
     const target = pile[pile.length - 1];
     return target ? card.rank === target.rank + 1 : card.rank === 1;
+  }
+
+  function isSafeSolitaireFoundationMove(card) {
+    const suit = getSolitaireSuit(card);
+    const oppositeColor = suit.color === "red" ? "black" : "red";
+    const oppositeRanks = SOLITAIRE_SUITS
+      .filter((item) => item.color === oppositeColor)
+      .map((item) => solitaire.foundations[item.id].length);
+    return card.rank <= Math.min(...oppositeRanks) + 1;
   }
 
   function isValidSolitaireSequence(cards) {
@@ -6285,6 +6860,7 @@
     solitaire.score = Math.max(0, solitaire.score + scoreDelta);
     solitaire.moves += 1;
     solitaire.selected = null;
+    ensureSolitaireIntegrity("card move");
     playTone("tap");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6295,6 +6871,15 @@
     }
   }
 
+  function exposeSolitaireTableauTop(column) {
+    if (!Number.isInteger(column)) return false;
+    const pile = solitaire.tableau[column];
+    const card = pile[pile.length - 1];
+    if (!card || card.faceUp) return false;
+    card.faceUp = true;
+    return true;
+  }
+
   function moveSelectedSolitaireToTableau(column) {
     const cards = getSelectedSolitaireCards();
     if (!cards.length || !isValidSolitaireSequence(cards)) return false;
@@ -6303,9 +6888,11 @@
     if (!canPlaceSolitaireTableau(cards[0], target)) return false;
     if (solitaire.selected.source === "tableau" && solitaire.selected.pile === column) return false;
     saveSolitaireHistory();
-    const fromFoundation = solitaire.selected.source === "foundation";
+    const source = { ...solitaire.selected };
+    const fromFoundation = source.source === "foundation";
     targetPile.push(...removeSelectedSolitaireCards());
-    finishSolitaireMove(fromFoundation ? -10 : 5);
+    const flipped = source.source === "tableau" && exposeSolitaireTableauTop(source.pile);
+    finishSolitaireMove((fromFoundation ? -10 : 5) + (flipped ? 5 : 0));
     return true;
   }
 
@@ -6314,8 +6901,10 @@
     if (cards.length !== 1 || !canPlaceSolitaireFoundation(cards[0], suitId)) return false;
     if (solitaire.selected.source === "foundation") return false;
     saveSolitaireHistory();
+    const source = { ...solitaire.selected };
     solitaire.foundations[suitId].push(...removeSelectedSolitaireCards());
-    finishSolitaireMove(10);
+    const flipped = source.source === "tableau" && exposeSolitaireTableauTop(source.pile);
+    finishSolitaireMove(10 + (flipped ? 5 : 0));
     return true;
   }
 
@@ -6328,6 +6917,7 @@
     solitaire.moves += 1;
     solitaire.score += 5;
     solitaire.selected = null;
+    ensureSolitaireIntegrity("manual tableau flip");
     playTone("win");
     renderSolitaireBoard();
     renderSolitaireStats();
@@ -6409,48 +6999,142 @@
     }
   }
 
-  function showSolitaireHint() {
-    if (!solitaire.running || solitaire.paused) return;
+  function findSolitaireLegalMoves() {
+    const moves = [];
+    solitaire.tableau.forEach((pile, column) => {
+      const card = pile[pile.length - 1];
+      if (card && !card.faceUp) {
+        moves.push({
+          type: "flip",
+          source: "tableau",
+          pile: column,
+          cardIndex: pile.length - 1,
+          card,
+          priority: 130,
+          message: `Flip the face-down card in column ${column + 1}.`
+        });
+      }
+    });
+
     const waste = solitaire.waste[solitaire.waste.length - 1];
     if (waste && canPlaceSolitaireFoundation(waste, waste.suit)) {
-      selectSolitaireSource("waste", "waste", solitaire.waste.length - 1);
-      showToast("Hint", `Move ${solitaireCardLabel(waste)} to its foundation.`, "win");
-      return;
+      moves.push({
+        type: "waste-foundation",
+        source: "waste",
+        pile: "waste",
+        cardIndex: solitaire.waste.length - 1,
+        card: waste,
+        priority: isSafeSolitaireFoundationMove(waste) ? 105 : 55,
+        message: `Move ${solitaireCardLabel(waste)} to its foundation.`
+      });
     }
-    for (let column = 0; column < 7; column += 1) {
-      const pile = solitaire.tableau[column];
-      const card = pile[pile.length - 1];
-      if (card?.faceUp && canPlaceSolitaireFoundation(card, card.suit)) {
-        selectSolitaireSource("tableau", column, pile.length - 1);
-        showToast("Hint", `Move ${solitaireCardLabel(card)} to its foundation.`, "win");
-        return;
-      }
-    }
-    const sources = [];
-    if (waste) sources.push({ source: "waste", pile: "waste", cardIndex: solitaire.waste.length - 1, cards: [waste] });
+
     solitaire.tableau.forEach((pile, column) => {
-      pile.forEach((card, cardIndex) => {
-        if (card.faceUp && isValidSolitaireSequence(pile.slice(cardIndex))) {
-          sources.push({ source: "tableau", pile: column, cardIndex, cards: pile.slice(cardIndex) });
-        }
+      const card = pile[pile.length - 1];
+      if (!card?.faceUp || !canPlaceSolitaireFoundation(card, card.suit)) return;
+      const revealsCard = pile.length > 1 && !pile[pile.length - 2].faceUp;
+      moves.push({
+        type: "tableau-foundation",
+        source: "tableau",
+        pile: column,
+        cardIndex: pile.length - 1,
+        card,
+        priority: revealsCard ? 125 : isSafeSolitaireFoundationMove(card) ? 100 : 50,
+        message: `Move ${solitaireCardLabel(card)} to its foundation.`
       });
     });
-    for (const source of sources) {
-      for (let column = 0; column < 7; column += 1) {
-        if (source.source === "tableau" && source.pile === column) continue;
-        const targetPile = solitaire.tableau[column];
-        if (canPlaceSolitaireTableau(source.cards[0], targetPile[targetPile.length - 1] || null)) {
-          selectSolitaireSource(source.source, source.pile, source.cardIndex);
-          showToast("Hint", `Move ${solitaireCardLabel(source.cards[0])} to column ${column + 1}.`, "win");
-          return;
-        }
-      }
+
+    const tableauSources = [];
+    solitaire.tableau.forEach((pile, column) => {
+      pile.forEach((card, cardIndex) => {
+        if (!card.faceUp || !isValidSolitaireSequence(pile.slice(cardIndex))) return;
+        tableauSources.push({
+          source: "tableau",
+          pile: column,
+          cardIndex,
+          cards: pile.slice(cardIndex),
+          revealsCard: cardIndex > 0 && !pile[cardIndex - 1].faceUp
+        });
+      });
+    });
+
+    const tableauTargets = (source, cards, priority, type) => {
+      solitaire.tableau.forEach((targetPile, column) => {
+        if (source.source === "tableau" && source.pile === column) return;
+        const target = targetPile[targetPile.length - 1] || null;
+        if (!canPlaceSolitaireTableau(cards[0], target)) return;
+        const relocatesWholeOpenKingPile = source.source === "tableau"
+          && source.cardIndex === 0
+          && cards[0].rank === 13
+          && !target;
+        moves.push({
+          type,
+          source: source.source,
+          pile: source.pile,
+          cardIndex: source.cardIndex,
+          card: cards[0],
+          targetColumn: column,
+          useful: !relocatesWholeOpenKingPile,
+          priority: source.revealsCard ? 120 : priority,
+          message: `Move ${solitaireCardLabel(cards[0])} to column ${column + 1}.`
+        });
+      });
+    };
+
+    if (waste) {
+      tableauTargets(
+        { source: "waste", pile: "waste", cardIndex: solitaire.waste.length - 1, revealsCard: false },
+        [waste],
+        90,
+        "waste-tableau"
+      );
     }
-    if (solitaire.stock.length || solitaire.waste.length) {
-      showToast("Hint", solitaire.stock.length ? "Draw the next stock card." : "Recycle the waste pile.", "win");
+    tableauSources.forEach((source) => tableauTargets(source, source.cards, 80, "tableau-tableau"));
+
+    SOLITAIRE_SUITS.forEach((suit) => {
+      const pile = solitaire.foundations[suit.id];
+      const card = pile[pile.length - 1];
+      if (!card) return;
+      tableauTargets(
+        { source: "foundation", pile: suit.id, cardIndex: pile.length - 1, revealsCard: false },
+        [card],
+        30,
+        "foundation-tableau"
+      );
+    });
+
+    return moves.sort((a, b) => b.priority - a.priority);
+  }
+
+  function usefulSolitaireStockAction() {
+    const buriedWaste = solitaire.waste.slice(0, -1);
+    const accessibleCards = [...solitaire.stock, ...buriedWaste];
+    const hasPlayableCard = accessibleCards.some((card) => {
+      if (canPlaceSolitaireFoundation(card, card.suit)) return true;
+      return solitaire.tableau.some((pile) => canPlaceSolitaireTableau(card, pile[pile.length - 1] || null));
+    });
+    if (!hasPlayableCard) return null;
+    if (solitaire.stock.length) return { type: "draw", message: "Draw from the stock to reach another playable card." };
+    if (solitaire.waste.length > 1) return { type: "recycle", message: "Recycle the waste pile to reach another playable card." };
+    return null;
+  }
+
+  function showSolitaireHint() {
+    if (!solitaire.running || solitaire.paused) return;
+    const move = findSolitaireLegalMoves().find((candidate) => candidate.useful !== false);
+    if (move) {
+      selectSolitaireSource(move.source, move.pile, move.cardIndex);
+      showToast("Hint", move.message, "win");
       return;
     }
-    showToast("No Move Found", "Undo a move or start a new deal.", "fail");
+    const stockAction = usefulSolitaireStockAction();
+    if (stockAction) {
+      solitaire.selected = null;
+      renderSolitaireBoard();
+      showToast("Hint", stockAction.message, "win");
+      return;
+    }
+    showToast("No More Moves", "No legal play or useful stock action remains. Undo a move or start a new solvable deal.", "fail");
   }
 
   function endSolitaireRun(reason = "manual") {
@@ -6554,6 +7238,7 @@
       radius: type.radius,
       angle: options.angle || 0,
       spin: options.spin ?? (Math.random() - 0.5) * spinRange,
+      rollBias: options.rollBias ?? (Math.random() < 0.5 ? -1 : 1),
       spawnedAt: options.spawnedAt || performance.now(),
       supported: false,
       settleFrames: 0,
@@ -6607,6 +7292,50 @@
       });
     });
     return deepest;
+  }
+
+  function fruitSupportState(body, tolerance = 1.5) {
+    const bodyParts = fruitCollisionParts(body);
+    const minX = Math.min(...bodyParts.map((part) => part.x - part.radius));
+    const maxX = Math.max(...bodyParts.map((part) => part.x + part.radius));
+    const maxY = Math.max(...bodyParts.map((part) => part.y + part.radius));
+    const onFloor = maxY >= FRUIT_BOUNDS.bottom - tolerance;
+
+    const supportNormals = [];
+    fruit.fruits.forEach((other) => {
+      if (other === body) return;
+      const otherParts = fruitCollisionParts(other);
+      bodyParts.forEach((bodyPart) => {
+        otherParts.forEach((otherPart) => {
+          const dx = otherPart.x - bodyPart.x;
+          const dy = otherPart.y - bodyPart.y;
+          const distance = Math.hypot(dx, dy);
+          const contactDistance = bodyPart.radius + otherPart.radius + tolerance;
+          if (distance > contactDistance) return;
+          if (distance < 0.001) {
+            if (other.y > body.y) supportNormals.push({ nx: 0, ny: 1 });
+            return;
+          }
+          const ny = dy / distance;
+          if (ny > 0.28) supportNormals.push({ nx: dx / distance, ny });
+        });
+      });
+    });
+
+    const supportedFromLeft = minX <= FRUIT_BOUNDS.left + tolerance
+      || supportNormals.some(({ nx, ny }) => nx < -0.16 && ny > 0.34);
+    const supportedFromRight = maxX >= FRUIT_BOUNDS.right - tolerance
+      || supportNormals.some(({ nx, ny }) => nx > 0.16 && ny > 0.34);
+    return {
+      stable: onFloor || (supportedFromLeft && supportedFromRight),
+      onFloor,
+      contacts: supportNormals
+    };
+  }
+
+  function wakeFruitBody(body) {
+    body.sleeping = false;
+    body.settleFrames = 0;
   }
 
   function resolveFruitBounds(body) {
@@ -6744,6 +7473,7 @@
 
   function stepFruitPhysics(dt, now) {
     fruit.fruits.forEach((body) => {
+      if (body.sleeping && !fruitSupportState(body).stable) wakeFruitBody(body);
       body.supported = false;
       if (body.sleeping) {
         body.vx = 0;
@@ -6780,20 +7510,12 @@
         }
 
         const { nx, ny, overlap } = contact;
-        const impactSpeed = Math.abs((b.vx - a.vx) * nx + (b.vy - a.vy) * ny);
-        const shouldWakeStack = (Math.abs(nx) > 0.58 && impactSpeed > 72) || overlap > 5;
+        const relativeVelocity = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        const shouldWakeStack = Math.abs(nx) > 0.58 && relativeVelocity < -72;
         if (shouldWakeStack) {
-          if (a.sleeping) {
-            a.sleeping = false;
-            a.settleFrames = 0;
-          }
-          if (b.sleeping) {
-            b.sleeping = false;
-            b.settleFrames = 0;
-          }
+          if (a.sleeping) wakeFruitBody(a);
+          if (b.sleeping) wakeFruitBody(b);
         }
-        if (ny > 0.46) a.supported = true;
-        if (ny < -0.46) b.supported = true;
         const invA = a.sleeping ? 0 : 1 / (a.radius * a.radius);
         const invB = b.sleeping ? 0 : 1 / (b.radius * b.radius);
         const invTotal = invA + invB;
@@ -6804,29 +7526,50 @@
         b.x += nx * correction * (invB / invTotal);
         b.y += ny * correction * (invB / invTotal);
 
-        const relativeVelocity = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        let normalImpulse = 0;
         if (relativeVelocity < 0) {
-          const impulse = (-(1.06) * relativeVelocity) / invTotal;
-          a.vx -= impulse * nx * invA;
-          a.vy -= impulse * ny * invA;
-          b.vx += impulse * nx * invB;
-          b.vy += impulse * ny * invB;
+          normalImpulse = (-(1.06) * relativeVelocity) / invTotal;
+          a.vx -= normalImpulse * nx * invA;
+          a.vy -= normalImpulse * ny * invA;
+          b.vx += normalImpulse * nx * invB;
+          b.vy += normalImpulse * ny * invB;
         }
         const tangentX = -ny;
         const tangentY = nx;
-        const tangentVelocity = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
-        const frictionImpulse = (-tangentVelocity * 0.09) / invTotal;
+        const linearTangentVelocity = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
+        const surfaceTangentVelocity = linearTangentVelocity - a.spin * a.radius - b.spin * b.radius;
+        const invInertiaA = a.sleeping ? 0 : (2 * invA) / (a.radius * a.radius);
+        const invInertiaB = b.sleeping ? 0 : (2 * invB) / (b.radius * b.radius);
+        const tangentInvTotal = invTotal
+          + a.radius * a.radius * invInertiaA
+          + b.radius * b.radius * invInertiaB;
+        const maxFriction = normalImpulse * 0.075;
+        const frictionImpulse = Math.max(
+          -maxFriction,
+          Math.min(maxFriction, -surfaceTangentVelocity / tangentInvTotal)
+        );
         a.vx -= frictionImpulse * tangentX * invA;
         a.vy -= frictionImpulse * tangentY * invA;
         b.vx += frictionImpulse * tangentX * invB;
         b.vy += frictionImpulse * tangentY * invB;
-        a.spin *= 0.88;
-        b.spin *= 0.88;
+        a.spin -= frictionImpulse * a.radius * invInertiaA;
+        b.spin -= frictionImpulse * b.radius * invInertiaB;
       }
     }
+
     fruit.fruits.forEach((body) => {
-      if (body.sleeping) return;
+      const support = fruitSupportState(body);
+      body.supported = support.stable;
+      if (body.sleeping) {
+        if (!body.supported) wakeFruitBody(body);
+        return;
+      }
       const speed = Math.hypot(body.vx, body.vy);
+      if (!support.onFloor && !support.stable && support.contacts.length === 1
+        && support.contacts[0].ny > 0.88 && speed < 32) {
+        const rollDirection = Math.abs(body.spin) > 0.025 ? Math.sign(body.spin) : body.rollBias;
+        body.vx += rollDirection * 48 * dt;
+      }
       const canSettle = body.supported && speed < 18 && Math.abs(body.spin) < 0.22 && now - body.spawnedAt > 240;
       if (!canSettle) {
         body.settleFrames = 0;

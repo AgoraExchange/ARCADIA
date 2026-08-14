@@ -1,6 +1,10 @@
 {
-  "version": "19.9.4.1",
+  "version": "19.9.6.0",
   "patchNotes": [
+    "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
+    "The Rewards Store adds Skips, a purchasable white, blue-eyed cat character for Crossy Road.",
+    "Solitaire now deals solver-verified winnable Draw-1 games, automatically flips newly exposed tableau cards, validates card integrity, and gives complete legal-move and stock-aware hints.",
+    "Fruit Blend restores its lively one-pass motion with spin-driven rolling, while sleep is limited to the floor and genuinely cradled fruit.",
     "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
     "Fruit Blend scoring now rewards every merge on a steep fruit-size ladder, adds visible point popups, and grants a massive escalating bonus for clearing maximum fruit.",
     "Crossy Road now travels through continuously generated lanes with seamless off-screen recycling instead of teleporting the player back to the middle.",

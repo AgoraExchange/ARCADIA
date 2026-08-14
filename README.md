@@ -28,7 +28,7 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Start, pause, restart, exit
   - Keyboard, swipe, and mobile controls
   - Six purchasable color skins, including the level-35 animated Rainbow Snake
-  - Tombstone resurrection booster with one wall rebound or self-collision ghost pass per run
+  - Shared Tombstone resurrection booster with one wall rebound or self-collision ghost pass per run
 - Block Grid game page
   - Eight-by-eight placement board with row and column clears
   - Run-only live score rail with Score, Lines, and High Score positioned above the board
@@ -39,6 +39,12 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Guaranteed connected island routes that prevent impossible tree-and-rock dead ends
   - Smooth forward camera pressure with a bottom danger edge for idle players
   - Continuous world progress and scoring without resetting the player to the middle
+  - Tombstone traffic revival and automatic ghost rescue to a safe center island
+  - Purchasable Skips character, a white cat with blue eyes
+- Solitaire game page
+  - Solver-verified winnable Draw-1 deals generated off the UI thread
+  - Automatic tableau exposure, unlimited ordered stock redeals, complete hints, and card-state integrity checks
+  - Seven fixed tableau columns that keep empty King destinations available
 - Fruit Blend game page
   - Physics-based fruit drops and same-tier merging
   - Stable resting stacks that sleep instead of jittering under compression
