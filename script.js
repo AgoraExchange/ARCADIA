@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.5.0";
+  const APP_VERSION = "19.9.6.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
+    "The Rewards Store adds Skips, a purchasable white, blue-eyed cat character for Crossy Road.",
     "Solitaire now deals solver-verified winnable Draw-1 games, automatically flips newly exposed tableau cards, validates card integrity, and gives complete legal-move and stock-aware hints.",
     "Fruit Blend restores its lively one-pass motion with spin-driven rolling, while sleep is limited to the floor and genuinely cradled fruit.",
     "Crossy Road terrain generation now protects a connected route through every island so trees and rocks can challenge the player without creating impossible dead ends.",
@@ -174,6 +176,7 @@
     equippedNameplate: null,
     equippedLaser: null,
     equippedSnakeSkin: null,
+    equippedCrossyCharacter: null,
     equippedBooster: null,
     boosterCooldowns: {},
     boosterPurchases: 0,
@@ -524,6 +527,17 @@
       text: "Cycle every snake segment through a living rainbow."
     },
     {
+      id: "crossy_skips",
+      title: "Skips",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 5,
+      cost: 650,
+      tags: ["crossy", "road", "character", "cat", "skips", "white", "blue eyes"],
+      text: "Cross the road as Skips, a bright white cat with vivid blue eyes."
+    },
+    {
       id: "xp_boost_2",
       title: "2X XP Booster",
       category: "boosters",
@@ -554,11 +568,11 @@
       type: "booster",
       boost: "tombstone_snake",
       effect: "tombstone",
-      game: "snake",
+      games: ["snake", "crossy"],
       level: 10,
       cost: 1500,
-      tags: ["booster", "snake", "tombstone", "resurrection", "revive", "ghost", "extra life"],
-      text: "Resurrect once in your next Snake run. Rebound from a wall or ghost through your own body instead of dying."
+      tags: ["booster", "snake", "crossy", "road", "tombstone", "resurrection", "revive", "ghost", "extra life"],
+      text: "Resurrect once in Snake or Crossy Road. Rebound, phase through danger, or ghost back to a safe island."
     },
     {
       id: "machine_gun_star",
@@ -901,6 +915,7 @@
       equippedNameplate: typeof saved?.equippedNameplate === "string" ? saved.equippedNameplate : null,
       equippedLaser: typeof saved?.equippedLaser === "string" ? saved.equippedLaser : null,
       equippedSnakeSkin: typeof saved?.equippedSnakeSkin === "string" ? saved.equippedSnakeSkin : null,
+      equippedCrossyCharacter: typeof saved?.equippedCrossyCharacter === "string" ? saved.equippedCrossyCharacter : null,
       equippedBooster: typeof saved?.equippedBooster === "string"
         ? saved.equippedBooster
         : typeof saved?.activeBoost === "string"
@@ -2050,6 +2065,7 @@
         { id: "all", label: "All" },
         { id: "universal", label: "Universal" },
         { id: "snake", label: "Snake" },
+        { id: "crossy", label: "Crossy Road" },
         { id: "block", label: "Block Grid" },
         { id: "star", label: "Star Invaders" },
         { id: "ready", label: "Ready" }
@@ -2059,18 +2075,25 @@
       { id: "all", label: "All" },
       { id: "profile", label: "Profile" },
       { id: "snake", label: "Snake" },
+      { id: "crossy", label: "Crossy Road" },
       { id: "star", label: "Star Invaders" },
       { id: "owned", label: "Owned" }
     ];
   }
 
+  function storeItemSupportsGame(item, game) {
+    if (Array.isArray(item.games)) return item.games.includes(game);
+    return item.game === game;
+  }
+
   function storeItemMatchesFilter(item, filter) {
     if (filter === "all") return true;
     if (filter === "profile") return item.slot === "nameplate";
-    if (filter === "snake") return item.slot === "snake_skin" || item.game === "snake";
-    if (filter === "block") return item.game === "block";
-    if (filter === "star") return item.slot === "laser" || item.game === "star";
-    if (filter === "universal") return item.type === "booster" && !item.game;
+    if (filter === "snake") return item.slot === "snake_skin" || storeItemSupportsGame(item, "snake");
+    if (filter === "crossy") return item.slot === "crossy_character" || storeItemSupportsGame(item, "crossy");
+    if (filter === "block") return storeItemSupportsGame(item, "block");
+    if (filter === "star") return item.slot === "laser" || storeItemSupportsGame(item, "star");
+    if (filter === "universal") return item.type === "booster" && !item.game && !item.games?.length;
     if (filter === "owned") return state.owned.includes(item.id);
     if (filter === "ready") return item.type === "booster" && state.owned.includes(item.id) && getBoosterCooldownRemaining(item) <= 0;
     return true;
@@ -2099,6 +2122,18 @@
       return `
         <div class="snake-skin-preview ${item.rainbow ? "rainbow" : ""}" style="${style}" aria-hidden="true">
           <span></span><span></span><span></span><span></span>
+        </div>
+      `;
+    }
+    if (item.slot === "crossy_character") {
+      return `
+        <div class="crossy-character-preview" aria-hidden="true">
+          <div class="skips-store-cat">
+            <span class="cat-ear left"></span><span class="cat-ear right"></span>
+            <span class="cat-face"><i></i><i></i><b></b></span>
+            <span class="cat-body"></span><span class="cat-tail"></span>
+          </div>
+          <strong>SKIPS</strong>
         </div>
       `;
     }
@@ -2146,6 +2181,7 @@
     if (item.slot === "nameplate") return state.equippedNameplate === item.id;
     if (item.slot === "laser") return state.equippedLaser === item.id;
     if (item.slot === "snake_skin") return state.equippedSnakeSkin === item.id;
+    if (item.slot === "crossy_character") return state.equippedCrossyCharacter === item.id;
     return false;
   }
 
@@ -2153,6 +2189,7 @@
     if (item.slot === "nameplate") state.equippedNameplate = state.equippedNameplate === item.id ? null : item.id;
     else if (item.slot === "laser") state.equippedLaser = state.equippedLaser === item.id ? null : item.id;
     else if (item.slot === "snake_skin") state.equippedSnakeSkin = state.equippedSnakeSkin === item.id ? null : item.id;
+    else if (item.slot === "crossy_character") state.equippedCrossyCharacter = state.equippedCrossyCharacter === item.id ? null : item.id;
     else return;
     saveState();
     renderAll();
@@ -2195,6 +2232,7 @@
       if (item.slot === "nameplate") state.equippedNameplate = item.id;
       if (item.slot === "laser") state.equippedLaser = item.id;
       if (item.slot === "snake_skin") state.equippedSnakeSkin = item.id;
+      if (item.slot === "crossy_character") state.equippedCrossyCharacter = item.id;
     }
     if (item.type === "booster") {
       state.owned.push(item.id);
@@ -4528,7 +4566,7 @@
 
   function activateSnakeTombstone(reason) {
     if (!snake.tombstoneArmed || snake.tombstoneUsed) return false;
-    const booster = getStoreItem("tombstone_snake");
+    const booster = consumeTombstoneBooster();
     if (!booster) return false;
 
     snake.tombstoneArmed = false;
@@ -4543,13 +4581,7 @@
       text: reason === "wall" ? "REBOUND!" : "GHOST!"
     });
 
-    state.boosterCooldowns[booster.boost] = Date.now() + 10 * 60 * 1000;
-    if (state.equippedBooster === booster.boost) state.equippedBooster = null;
-    state.boosterUses += 1;
-    if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
-    unlockEarnedAchievements();
-    saveState();
-    playSnakeResurrectionSound();
+    playTombstoneResurrectionSound();
     showToast(
       "Tombstone Resurrection",
       reason === "wall" ? "Fatal wall crash reversed. You are alive again." : "Fatal self-crash phased through. You are alive again.",
@@ -4559,7 +4591,19 @@
     return true;
   }
 
-  function playSnakeResurrectionSound() {
+  function consumeTombstoneBooster() {
+    const booster = getStoreItem("tombstone_snake");
+    if (!booster) return null;
+    state.boosterCooldowns[booster.boost] = Date.now() + 10 * 60 * 1000;
+    if (state.equippedBooster === booster.boost) state.equippedBooster = null;
+    state.boosterUses += 1;
+    if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    unlockEarnedAchievements();
+    saveState();
+    return booster;
+  }
+
+  function playTombstoneResurrectionSound() {
     playToneAt(180, 0.14, "sawtooth", 0.055);
     setTimeout(() => playToneAt(360, 0.12, "square", 0.06), 105);
     setTimeout(() => playToneAt(720, 0.18, "square", 0.065), 210);
@@ -4615,7 +4659,8 @@
     if (!state.equippedBooster) return null;
     const item = getStoreItem(state.equippedBooster);
     if (!item || getBoosterCooldownRemaining(item) > 0) return null;
-    if (item.game && item.game !== game) return null;
+    const supportedGames = Array.isArray(item.games) ? item.games : item.game ? [item.game] : [];
+    if (supportedGames.length && !supportedGames.includes(game)) return null;
     return item;
   }
 
@@ -5304,6 +5349,14 @@
       lanes: [],
       decor: [],
       particles: [],
+      tombstoneArmed: false,
+      tombstoneUsed: false,
+      ghostUntil: 0,
+      reviveFlashStartedAt: 0,
+      reviveFlashUntil: 0,
+      reviveReason: "",
+      rescuing: false,
+      rescueTarget: null,
       lastFrame: 0,
       startedAt: 0,
       pausedAt: 0,
@@ -5425,13 +5478,18 @@
 
   function startCrossy() {
     resetCrossy();
+    const booster = getEquippedBoosterItem("crossy");
     crossy.running = true;
+    crossy.tombstoneArmed = booster?.effect === "tombstone";
     crossy.startedAt = Date.now();
     crossy.lastFrame = performance.now();
     playTone("tap");
     playGameTheme("crossy", { restart: true, volume: 0.4 });
     crossyTimer = setInterval(tickCrossy, CROSSY_TICK_MS);
     renderCrossyStats();
+    if (crossy.tombstoneArmed) {
+      showToast("Tombstone Armed", "One traffic hit or danger-edge catch will resurrect your runner.", "win", 3600);
+    }
   }
 
   function restartCrossy() {
@@ -5478,7 +5536,13 @@
       crossy.pausedAt = Date.now();
     } else {
       if (crossy.pausedAt) {
-        crossy.pausedMs += Date.now() - crossy.pausedAt;
+        const pausedFor = Date.now() - crossy.pausedAt;
+        crossy.pausedMs += pausedFor;
+        if (crossy.ghostUntil) crossy.ghostUntil += pausedFor;
+        if (crossy.reviveFlashUntil) {
+          crossy.reviveFlashStartedAt += pausedFor;
+          crossy.reviveFlashUntil += pausedFor;
+        }
         crossy.pausedAt = 0;
       }
       crossy.lastFrame = performance.now();
@@ -5488,7 +5552,7 @@
   }
 
   function moveCrossy(direction) {
-    if (!crossy.running || crossy.paused || crossy.dying) return;
+    if (!crossy.running || crossy.paused || crossy.dying || crossy.rescuing) return;
     const player = crossy.player;
     const next = { col: player.col, depth: player.depth };
     if (direction === "up") next.depth += 1;
@@ -5543,6 +5607,12 @@
     p.targetY = crossyScreenY(p.depth);
     p.x += (p.targetX - p.x) * Math.min(1, dt * 16);
     p.y += (p.targetY - p.y) * Math.min(1, dt * 16);
+    if (crossy.rescuing && Math.abs(p.x - p.targetX) < 1.5 && Math.abs(p.y - p.targetY) < 1.5) {
+      p.x = p.targetX;
+      p.y = p.targetY;
+      crossy.rescuing = false;
+      crossy.rescueTarget = null;
+    }
     crossy.particles.forEach((part) => {
       part.x += part.vx * dt;
       part.y += part.vy * dt;
@@ -5550,11 +5620,11 @@
     });
     crossy.particles = crossy.particles.filter((part) => part.life > 0);
 
-    if (!crossy.dying && crossyHit()) {
+    if (!crossy.dying && !isCrossyGhostActive(now) && crossyHit()) {
       triggerCrossyDeath("crash");
       return;
     }
-    if (!crossy.dying && crossyPressureCaught()) {
+    if (!crossy.dying && !isCrossyGhostActive(now) && crossyPressureCaught()) {
       triggerCrossyDeath("caught");
       return;
     }
@@ -5584,6 +5654,79 @@
 
   function crossyPressureCaught() {
     return crossy.player.targetY > el.crossyCanvas.height - 16;
+  }
+
+  function isCrossyGhostActive(now = performance.now()) {
+    return crossy.rescuing || crossy.ghostUntil > now;
+  }
+
+  function findCrossyRescueCell() {
+    const lockDistance = (CROSSY_START_Y - CROSSY_CAMERA_LOCK_Y) / CROSSY_LANE_HEIGHT;
+    const desiredDepth = Math.max(crossy.player.depth + 1, Math.ceil(crossy.cameraDepth + lockDistance));
+    ensureCrossyWorld(desiredDepth + 16);
+    const nearby = crossy.lanes
+      .filter((lane) => lane.depth >= desiredDepth && lane.depth <= desiredDepth + 16 && lane.type !== "road")
+      .sort((a, b) => a.depth - b.depth || (a.type === "grass" ? 0 : 1) - (b.type === "grass" ? 0 : 1));
+    const lane = nearby[0] || crossy.lanes.find((candidate) => candidate.depth >= desiredDepth) || { depth: desiredDepth };
+    const columns = Array.from({ length: 9 }, (_, col) => col).sort((a, b) => Math.abs(a - 4) - Math.abs(b - 4));
+    const col = columns.find((candidate) => !isCrossyBlocked(lane.depth, candidate)) ?? 4;
+    return { depth: lane.depth, col };
+  }
+
+  function activateCrossyTombstone(reason) {
+    if (!crossy.tombstoneArmed || crossy.tombstoneUsed) return false;
+    const booster = consumeTombstoneBooster();
+    if (!booster) return false;
+
+    const now = performance.now();
+    crossy.tombstoneArmed = false;
+    crossy.tombstoneUsed = true;
+    crossy.reviveReason = reason;
+    crossy.reviveFlashStartedAt = now;
+    crossy.reviveFlashUntil = now + 1050;
+    crossy.ghostUntil = now + (reason === "caught" ? 2800 : 2400);
+    addCrossyGhostBurst(crossy.player.x, crossy.player.y);
+
+    if (reason === "caught") {
+      const target = findCrossyRescueCell();
+      crossy.rescuing = true;
+      crossy.rescueTarget = target;
+      crossy.player.col = target.col;
+      crossy.player.depth = target.depth;
+      crossy.player.targetX = 30 + target.col * 60;
+      crossy.player.targetY = crossyScreenY(target.depth);
+      crossy.furthestDepth = Math.max(crossy.furthestDepth, target.depth);
+      crossy.score = Math.max(crossy.score, crossy.furthestDepth);
+      crossy.section = Math.floor(crossy.score / 10);
+      crossy.bestLive = Math.max(Number(state.stats.crossyBest) || 0, crossy.score);
+    }
+
+    playTombstoneResurrectionSound();
+    renderCrossyStats();
+    showToast(
+      "Tombstone Resurrection",
+      reason === "caught"
+        ? "Ghost rescue active. Phasing through traffic to a safe island."
+        : "Traffic phased through. You are a ghost - keep crossing.",
+      "win",
+      4200
+    );
+    return true;
+  }
+
+  function addCrossyGhostBurst(x, y) {
+    for (let i = 0; i < 32; i += 1) {
+      const angle = (Math.PI * 2 * i) / 32;
+      const speed = 70 + Math.random() * 130;
+      crossy.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 30,
+        color: i % 3 ? "#8cf7ff" : "#c471ff"
+      });
+    }
   }
 
   function addCrossyCrashBurst(x, y) {
@@ -5621,6 +5764,10 @@
   }
 
   function triggerCrossyDeath(reason = "crash") {
+    if (activateCrossyTombstone(reason)) {
+      drawCrossy();
+      return;
+    }
     crossy.dying = true;
     crossy.deathReason = reason;
     crossy.deathStartedAt = performance.now();
@@ -5740,11 +5887,11 @@
     ctx.restore();
   }
 
-  function drawCrossyPlayer(ctx, p) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = "#ffffff";
+  function crossySkipsEquipped() {
+    return state.equippedCrossyCharacter === "crossy_skips" && state.owned.includes("crossy_skips");
+  }
+
+  function drawCrossyChicken(ctx) {
     drawCrossyBlock(ctx, -16, -16, 32, 32, 8, "#f7f4df", "rgba(188, 180, 145, 0.58)");
     drawCrossyBlock(ctx, -11, -35, 22, 20, 6, "#fff7d8", "rgba(188, 180, 145, 0.5)");
     ctx.shadowBlur = 0;
@@ -5755,6 +5902,98 @@
     ctx.fillRect(5, -28, 4, 4);
     ctx.fillStyle = "#ffd35a";
     ctx.fillRect(-5, -22, 10, 5);
+  }
+
+  function drawCrossySkips(ctx) {
+    drawCrossyBlock(ctx, 12, -17, 15, 8, 4, "#f8fbff", "rgba(160, 190, 210, 0.54)");
+    drawCrossyBlock(ctx, 20, -27, 8, 15, 4, "#ffffff", "rgba(160, 190, 210, 0.5)");
+    drawCrossyBlock(ctx, -17, -17, 34, 31, 8, "#f8fbff", "rgba(174, 201, 217, 0.58)");
+    drawCrossyBlock(ctx, -15, 7, 10, 10, 4, "#ffffff", "rgba(174, 201, 217, 0.5)");
+    drawCrossyBlock(ctx, 5, 7, 10, 10, 4, "#ffffff", "rgba(174, 201, 217, 0.5)");
+    drawCrossyBlock(ctx, -14, -38, 28, 25, 7, "#ffffff", "rgba(174, 201, 217, 0.54)");
+    drawCrossyBlock(ctx, -13, -47, 9, 12, 4, "#f8fbff", "rgba(174, 201, 217, 0.5)");
+    drawCrossyBlock(ctx, 4, -47, 9, 12, 4, "#f8fbff", "rgba(174, 201, 217, 0.5)");
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#38bfff";
+    ctx.shadowColor = "#49f4ff";
+    ctx.shadowBlur = 7;
+    ctx.fillRect(-8, -31, 5, 6);
+    ctx.fillRect(4, -31, 5, 6);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#0b1e39";
+    ctx.fillRect(-6, -29, 2, 3);
+    ctx.fillRect(6, -29, 2, 3);
+    ctx.fillStyle = "#ff9db7";
+    ctx.fillRect(-2, -23, 5, 4);
+    ctx.strokeStyle = "rgba(207, 235, 246, 0.94)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-3, -20);
+    ctx.lineTo(-17, -23);
+    ctx.moveTo(3, -20);
+    ctx.lineTo(17, -23);
+    ctx.stroke();
+  }
+
+  function drawCrossyPlayer(ctx, p) {
+    const now = performance.now();
+    const ghostActive = isCrossyGhostActive(now);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.shadowBlur = ghostActive ? 25 : 14;
+    ctx.shadowColor = ghostActive ? "#8cf7ff" : "#ffffff";
+    if (ghostActive) {
+      ctx.globalAlpha = 0.42 + Math.abs(Math.sin(now / 90)) * 0.18;
+      ctx.globalCompositeOperation = "screen";
+    }
+    if (crossySkipsEquipped()) drawCrossySkips(ctx);
+    else drawCrossyChicken(ctx);
+    if (ghostActive) {
+      ctx.fillStyle = "#dffcff";
+      ctx.globalAlpha = 0.24 + Math.abs(Math.sin(now / 110)) * 0.18;
+      ctx.fillRect(-18, 23, 8, 5);
+      ctx.fillRect(-3, 28, 7, 4);
+      ctx.fillRect(11, 21, 9, 5);
+    }
+    ctx.restore();
+  }
+
+  function drawCrossyTombstoneFlash(ctx, width, height, now) {
+    if (crossy.reviveFlashUntil <= now) return;
+    const duration = Math.max(1, crossy.reviveFlashUntil - crossy.reviveFlashStartedAt);
+    const strength = Math.max(0, Math.min(1, (crossy.reviveFlashUntil - now) / duration));
+    const label = crossy.reviveReason === "caught" ? "GHOST RESCUE" : "GHOST MODE";
+    ctx.save();
+    const overlay = ctx.createRadialGradient(width / 2, height / 2, 40, width / 2, height / 2, height * 0.7);
+    overlay.addColorStop(0, `rgba(231, 248, 255, ${0.1 + strength * 0.2})`);
+    overlay.addColorStop(1, `rgba(140, 247, 255, ${0.18 + strength * 0.34})`);
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = `rgba(196, 113, 255, ${0.48 + strength * 0.44})`;
+    ctx.lineWidth = 8;
+    ctx.strokeRect(5, 5, width - 10, height - 10);
+
+    const stoneWidth = 72;
+    const stoneHeight = 82;
+    const stoneX = width / 2 - stoneWidth / 2;
+    const stoneY = height * 0.18;
+    ctx.shadowColor = "#8cf7ff";
+    ctx.shadowBlur = 28;
+    ctx.fillStyle = "rgba(18, 12, 29, 0.91)";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(stoneX, stoneY, stoneWidth, stoneHeight, [32, 32, 9, 9]);
+    else ctx.rect(stoneX, stoneY, stoneWidth, stoneHeight);
+    ctx.fill();
+    ctx.strokeStyle = "#b9fbff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 19px Arial Black";
+    ctx.textAlign = "center";
+    ctx.fillText("RIP", width / 2, stoneY + 47);
+    ctx.font = "900 28px ByteBounce, Arial Black";
+    ctx.fillText(label, width / 2, stoneY + stoneHeight + 43);
     ctx.restore();
   }
 
@@ -5763,6 +6002,7 @@
     const ctx = el.crossyCanvas.getContext("2d");
     const w = el.crossyCanvas.width;
     const h = el.crossyCanvas.height;
+    const now = performance.now();
     ctx.clearRect(0, 0, w, h);
 
     ctx.fillStyle = "#6ecf52";
@@ -5835,11 +6075,16 @@
 
     drawCrossyPlayer(ctx, crossy.player);
 
+    drawCrossyTombstoneFlash(ctx, w, h, now);
+
     const previousBest = Number(state.stats.crossyBest) || 0;
     const liveBest = Math.max(previousBest, crossy.score);
     drawCrossyPill(ctx, 14, 14, "BEST", formatNumber(liveBest), crossy.score > previousBest ? "#ffd35a" : "#49f4ff");
     if (crossy.score <= previousBest) {
       drawCrossyPill(ctx, w - 160, 14, "SCORE", formatNumber(crossy.score), "#57ff9a");
+    }
+    if (isCrossyGhostActive(now)) {
+      drawCrossyPill(ctx, w / 2 - 73, 55, "TOMBSTONE", crossy.rescuing ? "RESCUING" : "GHOST MODE", "#8cf7ff");
     }
 
     if (crossy.paused) {
@@ -5883,7 +6128,7 @@
     const previousBest = Number(state.stats.crossyBest) || 0;
     const newBest = crossy.score > previousBest;
     const oldAchievements = new Set(state.achievements);
-    const boosterUsed = getEquippedBoosterItem();
+    const boosterUsed = getEquippedBoosterItem("crossy");
     const earned = applyRewardBooster(calculateCrossyXp());
     const coinsEarned = previewCrossyCoins(newBest);
     stopCrossy(false);
@@ -5897,7 +6142,8 @@
     state.stats.crossyTotalScore += crossy.score;
     state.stats.crossyBest = Math.max(previousBest, crossy.score);
 
-    if (boosterUsed) {
+    const shouldConsumeBooster = boosterUsed && boosterUsed.effect !== "tombstone";
+    if (shouldConsumeBooster) {
       state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
       state.equippedBooster = null;
       state.boosterUses += 1;
@@ -5910,7 +6156,7 @@
     state.coins += coinsEarned;
     state.level = deriveLevel(state.xp);
     unlockEarnedAchievements();
-    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    if (shouldConsumeBooster && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
     saveState();
     renderAll();
 
