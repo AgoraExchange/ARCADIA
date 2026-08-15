@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.15.0.0";
+  const APP_VERSION = "19.16.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Star Invaders adds twelve collectible beams spanning frosted, inferno, toxic, pulse, plasma, solar, cryo, luxury, and ultra flex tiers.",
+    "New beam cosmetics now animate in flight and on impact with embers, vapor, electric coils, ice shards, gold etching, gravity distortion, holograms, supernova bursts, and black-hole particle collapse.",
     "Crossy Road adds fourteen purchasable characters, from Fox, Duck, and Penguin through the level-110 Chrono Dragon flex skin.",
     "Premium Crossy characters now bring their Store designs into gameplay with animated materials, accessories, hop particles, holograms, landing bursts, shadow trails, and time ripples.",
     "Snake Store previews now face forward, and the Cowboy Snake preview spins its complete hat instead of moving only the brim.",
@@ -501,6 +503,162 @@
       cost: 2700,
       tags: ["star", "invaders", "laser", "rgb", "bullets"],
       text: "Cycle every Star Invaders shot through RGB colors."
+    },
+    {
+      id: "laser_ice_blue",
+      title: "Ice Blue Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 6,
+      cost: 500,
+      laserStyle: "ice-blue",
+      colors: ["#dffcff", "#6bdcff", "#ffffff"],
+      tags: ["star", "invaders", "laser", "beam", "ice", "blue", "frost", "thin"],
+      text: "A crisp, cold, thin blue beam wrapped in a bright frosted edge."
+    },
+    {
+      id: "laser_inferno_red",
+      title: "Inferno Red Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 9,
+      cost: 800,
+      laserStyle: "inferno-red",
+      colors: ["#fff08a", "#ff4038", "#ff8a2b"],
+      tags: ["star", "invaders", "laser", "beam", "inferno", "red", "fire", "ember", "animated"],
+      text: "A fiery red shot with a hot yellow core and drifting ember particles."
+    },
+    {
+      id: "laser_toxic_green",
+      title: "Toxic Green Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 13,
+      cost: 1300,
+      laserStyle: "toxic-green",
+      colors: ["#dfff65", "#35ff72", "#0b6b38"],
+      tags: ["star", "invaders", "laser", "beam", "toxic", "green", "vapor", "animated"],
+      text: "A radioactive neon-green beam that carries a faint curling vapor trail."
+    },
+    {
+      id: "laser_violet_pulse",
+      title: "Violet Pulse Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 18,
+      cost: 2200,
+      laserStyle: "violet-pulse",
+      colors: ["#f3c8ff", "#a84dff", "#53128f"],
+      tags: ["star", "invaders", "laser", "beam", "violet", "purple", "pulse", "heartbeat", "animated"],
+      text: "A violet energy beam that expands and contracts with a heartbeat-like pulse."
+    },
+    {
+      id: "laser_plasma_coil",
+      title: "Plasma Coil Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 28,
+      cost: 4500,
+      laserStyle: "plasma-coil",
+      colors: ["#f4ffff", "#49f4ff", "#c471ff"],
+      tags: ["star", "invaders", "laser", "beam", "plasma", "coil", "electric", "arcs", "animated", "flex"],
+      text: "Electric cyan and violet arcs spiral tightly around every plasma shot."
+    },
+    {
+      id: "laser_solar_flare",
+      title: "Solar Flare Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 36,
+      cost: 6500,
+      laserStyle: "solar-flare",
+      colors: ["#fffbd0", "#ff9d27", "#ff3d20"],
+      tags: ["star", "invaders", "laser", "beam", "solar", "orange", "flare", "eruption", "animated", "flex"],
+      text: "A brilliant orange beam with tiny solar eruptions dancing along its length."
+    },
+    {
+      id: "laser_cryo_shard",
+      title: "Cryo Shard Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 46,
+      cost: 9500,
+      laserStyle: "cryo-shard",
+      colors: ["#ffffff", "#8cf7ff", "#4a75ff"],
+      tags: ["star", "invaders", "laser", "beam", "cryo", "ice", "shard", "blue", "animated", "flex"],
+      text: "A blue-white beam that grows sharp ice shards and breaks them off mid-flight."
+    },
+    {
+      id: "laser_obsidian",
+      title: "Obsidian Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 62,
+      cost: 16000,
+      laserStyle: "obsidian",
+      colors: ["#020205", "#d9aa42", "#fff1a1"],
+      tags: ["star", "invaders", "laser", "beam", "obsidian", "black", "gold", "etching", "animated", "luxury"],
+      text: "A matte-black core covered in living gold micro-etched patterns."
+    },
+    {
+      id: "laser_dark_matter",
+      title: "Dark Matter Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 74,
+      cost: 24000,
+      laserStyle: "dark-matter",
+      colors: ["#020106", "#642299", "#d081ff"],
+      tags: ["star", "invaders", "laser", "beam", "dark matter", "purple", "black", "gravity", "distortion", "animated", "luxury"],
+      text: "A swirling purple-black mass that distorts the starlight around each shot."
+    },
+    {
+      id: "laser_supernova",
+      title: "Supernova Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 86,
+      cost: 34000,
+      laserStyle: "supernova",
+      colors: ["#ffffff", "#fff5a5", "#ff6949"],
+      tags: ["star", "invaders", "laser", "beam", "supernova", "white hot", "starburst", "impact", "animated", "luxury"],
+      text: "A white-hot beam that detonates into a radiant starburst on impact."
+    },
+    {
+      id: "laser_hologram",
+      title: "Hologram Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 98,
+      cost: 48000,
+      laserStyle: "hologram",
+      colors: ["rgba(255,255,255,.38)", "#6ff5ff", "#ff65dc"],
+      tags: ["star", "invaders", "laser", "beam", "hologram", "transparent", "pattern", "animated", "ultra", "rare"],
+      text: "A transparent projection filled with shifting cyan and magenta holographic patterns."
+    },
+    {
+      id: "laser_black_hole",
+      title: "Black Hole Beam",
+      category: "player",
+      type: "cosmetic",
+      slot: "laser",
+      level: 110,
+      cost: 70000,
+      laserStyle: "black-hole",
+      colors: ["#000000", "#b054ff", "#ffffff"],
+      tags: ["star", "invaders", "laser", "beam", "black hole", "collapse", "particles", "gravity", "animated", "ultra", "mythic"],
+      text: "The beam collapses inward as it travels, pulling nearby particles into its black core."
     },
     {
       id: "snake_cyber_blue",
@@ -2701,10 +2859,17 @@
         laser_black: "--laser-main:#05030b;--laser-edge:#8cf7ff;--laser-glow:rgba(73,244,255,.78)",
         laser_rgb: "--laser-main:#ff45bc;--laser-edge:#ffffff;--laser-glow:rgba(196,113,255,.86)"
       };
+      const colors = item.colors || [];
+      const dynamicStyle = colors.length
+        ? `--laser-main:${colors[0]};--laser-edge:${colors[1]};--laser-glow:${colors[2]}`
+        : "";
+      const previewClass = item.laserStyle ? `laser-${item.laserStyle}` : item.id === "laser_rgb" ? "laser-rgb" : "";
+      const tier = item.level >= 98 ? "ULTRA FIRE" : item.level >= 62 ? "ELITE FIRE" : item.level >= 28 ? "FLEX FIRE" : "FIRE TEST";
       return `
-        <div class="store-item-preview laser-store-preview ${item.id === "laser_rgb" ? "laser-rgb" : ""}" style="${laserStyles[item.id] || laserStyles.laser_yellow}" aria-hidden="true">
+        <div class="store-item-preview laser-store-preview ${previewClass}" style="${laserStyles[item.id] || dynamicStyle || laserStyles.laser_yellow}" aria-hidden="true">
+          <span class="laser-preview-field"><i></i><i></i><i></i></span>
           <b class="laser-preview-shot shot-one"></b><b class="laser-preview-shot shot-two"></b><b class="laser-preview-shot shot-three"></b>
-          <em>FIRE TEST</em>
+          <em>${tier}</em>
         </div>
       `;
     }
@@ -3747,6 +3912,7 @@
       powerups: [],
       stars: [],
       particles: [],
+      laserImpacts: [],
       score: 0,
       kills: 0,
       bossKills: 0,
@@ -3952,22 +4118,37 @@
     return boostDamage + gunBonus;
   }
 
-  function getStarLaserColor(options = {}) {
-    if (options.color) return options.color;
-    if (options.freefire) return "#ffd35a";
-    if (state.equippedLaser === "laser_yellow") return "#ffd35a";
-    if (state.equippedLaser === "laser_black") return "#05030b";
-    if (state.equippedLaser === "laser_rgb") {
+  function getEquippedStarLaser() {
+    if (!state.owned.includes(state.equippedLaser)) return null;
+    return storeItems.find((item) => item.id === state.equippedLaser && item.slot === "laser") || null;
+  }
+
+  function getStarLaserVisual(options = {}) {
+    if (options.color) return { color: options.color, edgeColor: options.color, accentColor: options.color, style: "default" };
+    if (options.freefire) return { color: "#ffd35a", edgeColor: "#fff6b5", accentColor: "#ff8a2b", style: "default" };
+    const item = getEquippedStarLaser();
+    if (item?.id === "laser_yellow") return { color: "#ffd35a", edgeColor: "#fff6b5", accentColor: "#ff8a2b", style: "default" };
+    if (item?.id === "laser_black") return { color: "#05030b", edgeColor: "#ff2fad", accentColor: "#49f4ff", style: "black" };
+    if (item?.id === "laser_rgb") {
       const colors = ["#49f4ff", "#ff2fad", "#57ff9a", "#ffd35a", "#b071ff"];
       const color = colors[star.laserCycle % colors.length];
       star.laserCycle += 1;
-      return color;
+      return { color, edgeColor: "#ffffff", accentColor: colors[(star.laserCycle + 1) % colors.length], style: "rgb" };
     }
-    return "#49f4ff";
+    if (item?.laserStyle) {
+      return {
+        color: item.colors?.[0] || "#49f4ff",
+        edgeColor: item.colors?.[1] || "#ffffff",
+        accentColor: item.colors?.[2] || item.colors?.[1] || "#c471ff",
+        style: item.laserStyle
+      };
+    }
+    return { color: "#49f4ff", edgeColor: "#dfffff", accentColor: "#168cff", style: "default" };
   }
 
   function fireStarBullet(x, y, options = {}) {
-    const color = getStarLaserColor(options);
+    const visual = getStarLaserVisual(options);
+    const bornAt = performance.now();
     star.bullets.push({
       x,
       y,
@@ -3975,9 +4156,109 @@
       vy: options.vy || -520,
       r: options.r || 4,
       damage: options.damage || getStarDamage(options),
-      color,
-      darkCore: state.equippedLaser === "laser_black" && !options.color
+      color: visual.color,
+      edgeColor: visual.edgeColor,
+      accentColor: visual.accentColor,
+      laserStyle: visual.style,
+      bornAt,
+      lastTrailAt: bornAt,
+      phase: Math.random() * Math.PI * 2,
+      darkCore: visual.style === "black"
     });
+  }
+
+  function addStarLaserTrailParticle(bullet, kind, color, options = {}) {
+    if (star.particles.length > 480) return;
+    const life = options.life || 18;
+    star.particles.push({
+      x: bullet.x + (Math.random() - 0.5) * (options.spread || 9),
+      y: bullet.y + 7 + Math.random() * 12,
+      vx: options.vx ?? (Math.random() - 0.5) * 28,
+      vy: options.vy ?? 28 + Math.random() * 34,
+      life,
+      totalLife: life,
+      size: options.size || 2 + Math.random() * 3,
+      spin: Math.random() * Math.PI,
+      kind,
+      color
+    });
+  }
+
+  function emitStarLaserTrail(bullet, now) {
+    const intervals = {
+      "inferno-red": 82,
+      "toxic-green": 105,
+      "solar-flare": 96,
+      "cryo-shard": 112,
+      "dark-matter": 115,
+      hologram: 108
+    };
+    const interval = intervals[bullet.laserStyle];
+    if (!interval || now - bullet.lastTrailAt < interval) return;
+    bullet.lastTrailAt = now;
+    if (bullet.laserStyle === "inferno-red") {
+      addStarLaserTrailParticle(bullet, "ember", Math.random() > 0.45 ? "#ff9d27" : "#ff4038", { life: 15, spread: 12, vy: 42 });
+    } else if (bullet.laserStyle === "toxic-green") {
+      addStarLaserTrailParticle(bullet, "vapor", "#35ff72", { life: 22, spread: 14, size: 5, vy: 24 });
+    } else if (bullet.laserStyle === "solar-flare") {
+      addStarLaserTrailParticle(bullet, "solar", Math.random() > 0.5 ? "#fffbd0" : "#ff9d27", { life: 14, spread: 15, vy: 38 });
+    } else if (bullet.laserStyle === "cryo-shard") {
+      addStarLaserTrailParticle(bullet, "shard", Math.random() > 0.5 ? "#ffffff" : "#8cf7ff", { life: 18, spread: 13, size: 4, vy: 30 });
+    } else if (bullet.laserStyle === "dark-matter") {
+      addStarLaserTrailParticle(bullet, "matter", Math.random() > 0.5 ? "#642299" : "#d081ff", { life: 20, spread: 18, size: 4, vy: 18 });
+    } else if (bullet.laserStyle === "hologram") {
+      addStarLaserTrailParticle(bullet, "hologram", Math.random() > 0.5 ? "#6ff5ff" : "#ff65dc", { life: 13, spread: 11, size: 5, vy: 34 });
+    }
+  }
+
+  function triggerStarLaserImpact(bullet, x, y) {
+    if (bullet.impacted || !bullet.laserStyle || bullet.laserStyle === "default") return;
+    bullet.impacted = true;
+    const duration = bullet.laserStyle === "supernova" ? 620 : bullet.laserStyle === "black-hole" ? 520 : 360;
+    star.laserImpacts.push({
+      x,
+      y,
+      style: bullet.laserStyle,
+      color: bullet.color,
+      edgeColor: bullet.edgeColor,
+      accentColor: bullet.accentColor,
+      startedAt: performance.now(),
+      duration,
+      phase: bullet.phase || 0
+    });
+    const burstMap = {
+      "ice-blue": ["#dffcff", "#6bdcff"],
+      "inferno-red": ["#fff08a", "#ff4038", "#ff8a2b"],
+      "toxic-green": ["#dfff65", "#35ff72"],
+      "violet-pulse": ["#f3c8ff", "#a84dff"],
+      "plasma-coil": ["#49f4ff", "#c471ff"],
+      "solar-flare": ["#fffbd0", "#ff9d27", "#ff3d20"],
+      "cryo-shard": ["#ffffff", "#8cf7ff", "#4a75ff"],
+      obsidian: ["#d9aa42", "#fff1a1"],
+      "dark-matter": ["#642299", "#d081ff"],
+      supernova: ["#ffffff", "#fff5a5", "#ff6949"],
+      hologram: ["#6ff5ff", "#ff65dc"],
+      "black-hole": ["#000000", "#b054ff", "#ffffff"]
+    };
+    const colors = burstMap[bullet.laserStyle] || [bullet.color || "#49f4ff"];
+    const count = bullet.laserStyle === "supernova" ? 28 : bullet.laserStyle === "black-hole" ? 18 : 9;
+    for (let index = 0; index < count; index += 1) {
+      const angle = (Math.PI * 2 * index) / count + Math.random() * 0.18;
+      const speed = bullet.laserStyle === "supernova" ? 90 + Math.random() * 170 : 34 + Math.random() * 75;
+      const life = bullet.laserStyle === "supernova" ? 28 : 18;
+      star.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life,
+        totalLife: life,
+        size: bullet.laserStyle === "supernova" ? 3 + Math.random() * 5 : 2 + Math.random() * 3,
+        spin: angle,
+        kind: bullet.laserStyle === "cryo-shard" || bullet.laserStyle === "ice-blue" ? "shard" : "laser-impact",
+        color: colors[index % colors.length]
+      });
+    }
   }
 
   function shootStar(options = {}) {
@@ -4319,6 +4600,7 @@
     star.bullets.forEach((b) => {
       b.x += (b.vx || 0) * dt;
       b.y += b.vy * dt;
+      emitStarLaserTrail(b, now);
     });
     star.enemyBullets.forEach((b) => b.y += b.vy * dt);
     star.enemies.forEach((e) => {
@@ -4344,23 +4626,30 @@
     star.enemyBullets = star.enemyBullets.filter((b) => b.y < 760);
     star.powerups = star.powerups.filter((p) => !p.dead && p.y < 780);
     star.particles = star.particles.filter((p) => p.life > 0);
+    star.laserImpacts = star.laserImpacts.filter((impact) => now - impact.startedAt < impact.duration);
 
     for (const bullet of star.bullets) {
       for (const enemy of star.enemies) {
         if (distance(bullet, enemy) < bullet.r + enemy.r) {
+          const impactX = bullet.x;
+          const impactY = bullet.y;
+          triggerStarLaserImpact(bullet, impactX, impactY);
           bullet.y = -999;
           enemy.hp -= bullet.damage || 1;
           markDamaged(enemy);
-          addStarExplosion(bullet.x, bullet.y, enemy.type === "boss" ? "#ffd35a" : "#49f4ff", 4);
+          addStarExplosion(impactX, impactY, enemy.type === "boss" ? "#ffd35a" : "#49f4ff", 4);
           if (enemy.hp <= 0) destroyStarEnemy(enemy);
         }
       }
       for (const meteor of star.meteors) {
         if (distance(bullet, meteor) < bullet.r + meteor.r) {
+          const impactX = bullet.x;
+          const impactY = bullet.y;
+          triggerStarLaserImpact(bullet, impactX, impactY);
           bullet.y = -999;
           meteor.hp -= bullet.damage || 1;
           markDamaged(meteor);
-          addStarExplosion(bullet.x, bullet.y, "#ffd35a", 4);
+          addStarExplosion(impactX, impactY, "#ffd35a", 4);
           if (meteor.hp <= 0) destroyMeteor(meteor);
         }
       }
@@ -4664,6 +4953,260 @@
     ctx.restore();
   }
 
+  function drawStarLaserBullet(ctx, bullet, now = performance.now()) {
+    const style = bullet.laserStyle || "default";
+    const age = Math.max(0, now - (bullet.bornAt || now));
+    const pulse = (Math.sin(age / 62 + (bullet.phase || 0)) + 1) / 2;
+    const width = Math.max(4, bullet.r || 4);
+    ctx.save();
+    ctx.translate(bullet.x, bullet.y);
+
+    if (style === "default" || style === "rgb" || style === "black") {
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = bullet.color || "#49f4ff";
+      ctx.fillStyle = bullet.color || "#49f4ff";
+      ctx.fillRect(-Math.max(2, width / 2), -12, width, 18);
+      if (style === "black" || bullet.darkCore) {
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = bullet.edgeColor || "#ff2fad";
+        ctx.strokeStyle = bullet.edgeColor || "#ff2fad";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(-Math.max(2, width / 2), -12, width, 18);
+      }
+      ctx.restore();
+      return;
+    }
+
+    if (style === "ice-blue") {
+      ctx.shadowColor = "#6bdcff";
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = "#dffcff";
+      ctx.fillRect(-1.5, -17, 3, 25);
+      ctx.strokeStyle = "rgba(255,255,255,.92)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-2.5, -17, 5, 25);
+      [-12, -2].forEach((shardY, index) => {
+        ctx.save();
+        ctx.translate(index ? 5 : -5, shardY);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = "rgba(223,252,255,.78)";
+        ctx.fillRect(-2, -2, 4, 4);
+        ctx.restore();
+      });
+    } else if (style === "inferno-red") {
+      const inferno = ctx.createLinearGradient(-5, 0, 5, 0);
+      inferno.addColorStop(0, "#ff4038");
+      inferno.addColorStop(0.5, "#fff08a");
+      inferno.addColorStop(1, "#ff4038");
+      ctx.shadowColor = "#ff4038";
+      ctx.shadowBlur = 17 + pulse * 7;
+      ctx.fillStyle = inferno;
+      ctx.fillRect(-3 - pulse, -17, 6 + pulse * 2, 25);
+    } else if (style === "toxic-green") {
+      ctx.fillStyle = `rgba(53,255,114,${0.12 + pulse * 0.1})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 7, 8 + pulse * 4, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowColor = "#35ff72";
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = "#dfff65";
+      ctx.fillRect(-2, -17, 4, 25);
+      ctx.strokeStyle = "#35ff72";
+      ctx.strokeRect(-3, -17, 6, 25);
+    } else if (style === "violet-pulse") {
+      const heartbeat = Math.sin(age / 92) > 0.48 ? 1.75 : Math.sin(age / 92) > 0.1 ? 1.15 : 0.8;
+      ctx.shadowColor = "#a84dff";
+      ctx.shadowBlur = 13 + heartbeat * 5;
+      ctx.fillStyle = "#f3c8ff";
+      ctx.fillRect(-2.5 * heartbeat, -17, 5 * heartbeat, 25);
+      ctx.fillStyle = "#a84dff";
+      ctx.fillRect(-1.5 * heartbeat, -17, 3 * heartbeat, 25);
+    } else if (style === "plasma-coil") {
+      ctx.shadowColor = "#49f4ff";
+      ctx.shadowBlur = 17;
+      ctx.fillStyle = "#f4ffff";
+      ctx.fillRect(-2, -18, 4, 27);
+      [0, Math.PI].forEach((offset, index) => {
+        ctx.strokeStyle = index ? "#c471ff" : "#49f4ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let y = -18; y <= 9; y += 2) {
+          const x = Math.sin(y * 0.55 + age / 48 + offset) * 7;
+          if (y === -18) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      });
+    } else if (style === "solar-flare") {
+      const solar = ctx.createLinearGradient(-5, 0, 5, 0);
+      solar.addColorStop(0, "#ff3d20");
+      solar.addColorStop(0.48, "#fffbd0");
+      solar.addColorStop(1, "#ff9d27");
+      ctx.shadowColor = "#ff9d27";
+      ctx.shadowBlur = 19;
+      ctx.fillStyle = solar;
+      ctx.fillRect(-4, -18, 8, 27);
+      for (let eruption = 0; eruption < 3; eruption += 1) {
+        const side = eruption % 2 ? -1 : 1;
+        const radius = 2 + ((age / 70 + eruption) % 3);
+        ctx.strokeStyle = eruption % 2 ? "#fffbd0" : "#ff9d27";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(side * (4 + radius), -14 + eruption * 9, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else if (style === "cryo-shard") {
+      const cryo = ctx.createLinearGradient(-5, 0, 5, 0);
+      cryo.addColorStop(0, "#4a75ff");
+      cryo.addColorStop(0.5, "#ffffff");
+      cryo.addColorStop(1, "#8cf7ff");
+      ctx.shadowColor = "#8cf7ff";
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = cryo;
+      ctx.fillRect(-3, -18, 6, 27);
+      [-12, -2, 6].forEach((shardY, index) => {
+        ctx.save();
+        ctx.translate((index % 2 ? -1 : 1) * (5 + pulse * 3), shardY);
+        ctx.rotate(Math.PI / 4 + age / 220);
+        ctx.fillStyle = index % 2 ? "#ffffff" : "#8cf7ff";
+        ctx.fillRect(-3, -3, 6, 6);
+        ctx.restore();
+      });
+    } else if (style === "obsidian") {
+      ctx.shadowColor = "#d9aa42";
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = "#020205";
+      ctx.strokeStyle = "#d9aa42";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(-4, -19, 8, 29);
+      ctx.strokeRect(-4, -19, 8, 29);
+      ctx.fillStyle = "#fff1a1";
+      for (let mark = -16; mark < 8; mark += 7) {
+        const offset = ((age / 35 + mark) % 7) - 3;
+        ctx.fillRect(-2, mark + offset, 4, 1.5);
+        ctx.fillRect(mark % 2 ? -4 : 2, mark + 2 + offset, 2, 2);
+      }
+    } else if (style === "dark-matter") {
+      const matter = ctx.createRadialGradient(0, -4, 1, 0, -4, 12 + pulse * 3);
+      matter.addColorStop(0, "#020106");
+      matter.addColorStop(0.45, "#32104f");
+      matter.addColorStop(0.72, "#642299");
+      matter.addColorStop(1, "rgba(208,129,255,0)");
+      ctx.fillStyle = matter;
+      ctx.beginPath();
+      ctx.ellipse(0, -4, 12 + pulse * 3, 21, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(208,129,255,${0.35 + pulse * 0.35})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(0, -4, 10 + pulse * 4, 16 + pulse * 3, age / 210, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "#020106";
+      ctx.fillRect(-3, -18, 6, 28);
+    } else if (style === "supernova") {
+      ctx.shadowColor = "#fff5a5";
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(-3, -19, 6, 29);
+      ctx.fillStyle = `rgba(255,245,165,${0.28 + pulse * 0.36})`;
+      ctx.fillRect(-7, -10, 14, 3);
+      ctx.fillRect(-1.5, -16, 3, 19);
+    } else if (style === "hologram") {
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = 0.58 + pulse * 0.2;
+      [-4, 0, 4].forEach((offset, index) => {
+        ctx.fillStyle = index === 0 ? "#6ff5ff" : index === 2 ? "#ff65dc" : "rgba(255,255,255,.55)";
+        for (let segment = -18; segment < 9; segment += 6) {
+          ctx.fillRect(offset - 1.5 + (index === 1 ? Math.sin(age / 45) * 2 : 0), segment + ((age / 24) % 6), 3, 4);
+        }
+      });
+    } else if (style === "black-hole") {
+      ctx.shadowColor = "#b054ff";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#000000";
+      ctx.strokeStyle = "#b054ff";
+      ctx.lineWidth = 2;
+      ctx.fillRect(-4 + pulse * 2, -20, 8 - pulse * 4, 31);
+      ctx.strokeRect(-5 + pulse, -20, 10 - pulse * 2, 31);
+      for (let orbit = 0; orbit < 7; orbit += 1) {
+        const cycle = ((age / 460) + orbit / 7) % 1;
+        const radius = 18 * (1 - cycle);
+        const angle = age / 120 + orbit * 1.7;
+        ctx.fillStyle = orbit % 3 === 0 ? "#ffffff" : "#b054ff";
+        ctx.globalAlpha = 0.25 + cycle * 0.75;
+        ctx.fillRect(Math.cos(angle) * radius - 1.5, -4 + Math.sin(angle) * radius * 0.82 - 1.5, 3, 3);
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
+  function drawStarLaserImpacts(ctx, now = performance.now()) {
+    star.laserImpacts.forEach((impact) => {
+      const progress = Math.max(0, Math.min(1, (now - impact.startedAt) / impact.duration));
+      const fade = 1 - progress;
+      ctx.save();
+      ctx.translate(impact.x, impact.y);
+      ctx.globalAlpha = fade;
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = impact.edgeColor || impact.color;
+      if (impact.style === "supernova") {
+        const radius = 8 + progress * 58;
+        ctx.strokeStyle = progress < 0.45 ? "#ffffff" : "#ff6949";
+        ctx.lineWidth = 5 - progress * 3.5;
+        for (let ray = 0; ray < 12; ray += 1) {
+          const angle = (Math.PI * 2 * ray) / 12;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * radius * 0.18, Math.sin(angle) * radius * 0.18);
+          ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+          ctx.stroke();
+        }
+        ctx.fillStyle = `rgba(255,255,255,${fade * 0.72})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, 18 * fade, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (impact.style === "black-hole") {
+        ctx.strokeStyle = "#b054ff";
+        ctx.lineWidth = 3;
+        for (let ring = 0; ring < 3; ring += 1) {
+          const radius = Math.max(2, 34 * (1 - progress) + ring * 7);
+          ctx.globalAlpha = fade * (0.85 - ring * 0.2);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, radius, radius * 0.42, progress * Math.PI + ring, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(0, 0, 11 * fade, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (impact.style === "dark-matter") {
+        ctx.strokeStyle = "#d081ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 8 + progress * 30, 5 + progress * 13, progress * 3.2, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (impact.style === "cryo-shard" || impact.style === "ice-blue") {
+        ctx.fillStyle = impact.edgeColor || "#8cf7ff";
+        for (let shard = 0; shard < 8; shard += 1) {
+          const angle = (Math.PI * 2 * shard) / 8;
+          const distance = 4 + progress * 28;
+          ctx.save();
+          ctx.translate(Math.cos(angle) * distance, Math.sin(angle) * distance);
+          ctx.rotate(angle + Math.PI / 4);
+          ctx.fillRect(-3, -3, 6, 6);
+          ctx.restore();
+        }
+      } else {
+        ctx.strokeStyle = impact.edgeColor || impact.color || "#49f4ff";
+        ctx.lineWidth = 4 - progress * 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 5 + progress * 28, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
+  }
+
   function drawStar() {
     if (!el.starCanvas) return;
     const ctx = el.starCanvas.getContext("2d");
@@ -4712,19 +5255,8 @@
 
     star.powerups.forEach((p) => drawStarPowerup(ctx, p));
 
-    star.bullets.forEach((b) => {
-      ctx.shadowBlur = 16;
-      ctx.shadowColor = b.color || "#49f4ff";
-      ctx.fillStyle = b.color || "#49f4ff";
-      ctx.fillRect(b.x - Math.max(2, b.r / 2), b.y - 12, Math.max(4, b.r), 18);
-      if (b.darkCore) {
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = "#ff2fad";
-        ctx.strokeStyle = "#ff2fad";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(b.x - Math.max(2, b.r / 2), b.y - 12, Math.max(4, b.r), 18);
-      }
-    });
+    const laserNow = performance.now();
+    star.bullets.forEach((b) => drawStarLaserBullet(ctx, b, laserNow));
     star.enemyBullets.forEach((b) => {
       ctx.shadowBlur = 14;
       ctx.shadowColor = "#ff5275";
@@ -4732,11 +5264,39 @@
       ctx.fillRect(b.x - 2, b.y - 2, 4, 16);
     });
     ctx.shadowBlur = 0;
+    drawStarLaserImpacts(ctx, laserNow);
 
     star.particles.forEach((p) => {
-      ctx.globalAlpha = Math.max(0, p.life / 24);
+      const totalLife = p.totalLife || 24;
+      const lifeRatio = Math.max(0, p.life / totalLife);
+      ctx.globalAlpha = lifeRatio;
       ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, 3, 3);
+      if (p.kind === "vapor") {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, (p.size || 4) * (1.35 - lifeRatio * 0.45), 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.kind === "shard") {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.spin || 0) + (1 - lifeRatio) * Math.PI);
+        const size = p.size || 3;
+        ctx.fillRect(-size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else if (p.kind === "matter") {
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, (p.size || 3) * lifeRatio, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      } else if (p.kind === "hologram") {
+        ctx.globalCompositeOperation = "screen";
+        ctx.fillRect(p.x - (p.size || 4), p.y, (p.size || 4) * 2, 2);
+        ctx.globalCompositeOperation = "source-over";
+      } else {
+        const size = p.size || 3;
+        ctx.fillRect(p.x, p.y, size, size);
+      }
     });
     ctx.globalAlpha = 1;
 
