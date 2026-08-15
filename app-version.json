@@ -1,6 +1,8 @@
 {
-  "version": "19.13.0.0",
+  "version": "19.14.0.0",
   "patchNotes": [
+    "The Snake collection adds ten high-level character, milestone, evolution, and luxury skins with faces and reactive pellet effects.",
+    "Star Invaders laser previews now fire cleanly from the bottom of each Store showcase without displaying a spaceship.",
     "The Rewards Store now previews every nameplate, Star Invaders laser, and booster with compact animated artwork while keeping complete item descriptions readable.",
     "Blackstorm no longer stretches the Player Profile or disrupts the notification bell and unread badge layout.",
     "The Rewards Store adds the level-75 Blackstorm Nameplate with moving black clouds, a circling lightning border, and intermittent lightning flashes.",

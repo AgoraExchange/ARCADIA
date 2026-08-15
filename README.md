@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.14.0.0 adds ten premium reactive Snake cosmetics and removes the spaceship artwork from laser Store previews.
 - Version 19.13.0.0 repairs Blackstorm profile and bell layouts and adds animated previews for every nameplate, laser cosmetic, and booster.
 - Version 19.12.0.0 adds the animated level-75 Blackstorm Nameplate with moving storm clouds and circulating lightning.
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
