@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.16.0.0";
+  const APP_VERSION = "19.16.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Inferno Red, Violet Pulse, Hologram, and Black Hole Store previews now visibly fire across the full showcase instead of sticking near the launcher edge.",
     "Star Invaders adds twelve collectible beams spanning frosted, inferno, toxic, pulse, plasma, solar, cryo, luxury, and ultra flex tiers.",
     "New beam cosmetics now animate in flight and on impact with embers, vapor, electric coils, ice shards, gold etching, gravity distortion, holograms, supernova bursts, and black-hole particle collapse.",
     "Crossy Road adds fourteen purchasable characters, from Fox, Duck, and Penguin through the level-110 Chrono Dragon flex skin.",

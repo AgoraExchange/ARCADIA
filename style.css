@@ -3330,10 +3330,10 @@ input:focus {
 }
 
 @keyframes laserPreviewFire {
-  0% { opacity: 0; transform: translateY(4px) scaleY(0.6); }
-  16% { opacity: 1; }
-  78% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-38px) scaleY(1.08); }
+  0% { bottom: -17px; opacity: 0; }
+  12% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { bottom: 55px; opacity: 0; }
 }
 
 @keyframes laserPreviewRgb {
