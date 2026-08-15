@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.14.1.0";
+  const APP_VERSION = "19.15.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Crossy Road adds fourteen purchasable characters, from Fox, Duck, and Penguin through the level-110 Chrono Dragon flex skin.",
+    "Premium Crossy characters now bring their Store designs into gameplay with animated materials, accessories, hop particles, holograms, landing bursts, shadow trails, and time ripples.",
     "Snake Store previews now face forward, and the Cowboy Snake preview spins its complete hat instead of moving only the brim.",
     "Casper now shares Snake's tail-vacate collision rule and favors routes with a reachable tail and safe next move.",
     "Reactive Snake milestones are rebalanced by rarity, with Cyber and Obsidian at 10 pellets, Quantum and Void at 12, and a flashing Void body outline.",
@@ -725,6 +727,97 @@
       text: "Cross the road as Skips, a bright white cat with vivid blue eyes."
     },
     {
+      id: "crossy_fox",
+      title: "Fox",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 8,
+      cost: 900,
+      crossyStyle: "fox",
+      colors: ["#ff8a32", "#fff1d0", "#642719"],
+      tags: ["crossy", "road", "character", "fox", "animal"],
+      text: "A bright woodland fox with a white-tipped tail and sharp little ears."
+    },
+    {
+      id: "crossy_duck",
+      title: "Duck",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 12,
+      cost: 1450,
+      crossyStyle: "duck",
+      colors: ["#ffe85b", "#ff9a32", "#fff9b5"],
+      tags: ["crossy", "road", "character", "duck", "animal"],
+      text: "A sunny yellow duck with an orange bill and a confident traffic waddle."
+    },
+    {
+      id: "crossy_penguin",
+      title: "Penguin",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 18,
+      cost: 2250,
+      crossyStyle: "penguin",
+      colors: ["#121827", "#f5fbff", "#ffae3d"],
+      tags: ["crossy", "road", "character", "penguin", "animal"],
+      text: "A polished little penguin with a snowy belly and bright orange feet."
+    },
+    {
+      id: "crossy_sheriff_raccoon",
+      title: "Sheriff Raccoon",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 28,
+      cost: 4600,
+      crossyStyle: "sheriff-raccoon",
+      colors: ["#8b96a8", "#252a35", "#f2c05f"],
+      tags: ["crossy", "road", "character", "raccoon", "sheriff", "hat", "star"],
+      text: "A masked lawkeeper wearing a tiny frontier hat and a shining sheriff star."
+    },
+    {
+      id: "crossy_samurai_rabbit",
+      title: "Samurai Rabbit",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 38,
+      cost: 7400,
+      crossyStyle: "samurai-rabbit",
+      colors: ["#f4f1f8", "#ff405f", "#73efff"],
+      tags: ["crossy", "road", "character", "rabbit", "samurai", "headband", "katana"],
+      text: "A focused rabbit with a red headband and a glowing katana across its back."
+    },
+    {
+      id: "crossy_astronaut_hamster",
+      title: "Astronaut Hamster",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 48,
+      cost: 10500,
+      crossyStyle: "astronaut-hamster",
+      colors: ["#c98248", "#e8f8ff", "#63dcff"],
+      tags: ["crossy", "road", "character", "hamster", "astronaut", "helmet", "jetpack", "animated"],
+      text: "A bubble-helmet hamster whose pocket jetpack showers sparks on every hop."
+    },
+    {
+      id: "crossy_ninja_ferret",
+      title: "Ninja Ferret",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 58,
+      cost: 14500,
+      crossyStyle: "ninja-ferret",
+      colors: ["#4a4054", "#08080d", "#d9d1e3"],
+      tags: ["crossy", "road", "character", "ferret", "ninja", "bandana", "smoke", "animated"],
+      text: "A black-bandana ferret that vanishes into a compact smoke poof when it jumps."
+    },
+    {
       id: "crossy_galaxy_frog",
       title: "Galaxy Frog",
       category: "player",
@@ -734,6 +827,97 @@
       cost: 12500,
       tags: ["crossy", "road", "character", "frog", "galaxy", "space", "animated", "reactive"],
       text: "Leap through traffic with a living galaxy that drifts against every sideways move."
+    },
+    {
+      id: "crossy_void_panther",
+      title: "Void Panther",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 72,
+      cost: 22000,
+      crossyStyle: "void-panther",
+      colors: ["#000000", "#ffffff", "#7133a8"],
+      tags: ["crossy", "road", "character", "panther", "void", "particles", "shadow", "animated", "rare"],
+      text: "Pure darkness with white eyes, void particles on every hop, and a fading shadow trail."
+    },
+    {
+      id: "crossy_quantum_hare",
+      title: "Quantum Hare",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 78,
+      cost: 28000,
+      crossyStyle: "quantum-hare",
+      colors: ["#6feeff", "#c65cff", "#ffffff"],
+      tags: ["crossy", "road", "character", "hare", "quantum", "hologram", "glitch", "animated", "rare"],
+      text: "Flickers between positions, projects 0.2-second holograms, and leaves a glitch trail."
+    },
+    {
+      id: "crossy_obsidian_wolf",
+      title: "Obsidian Wolf",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 84,
+      cost: 36000,
+      crossyStyle: "obsidian-wolf",
+      colors: ["#09090c", "#d8a93d", "#fff0a1"],
+      tags: ["crossy", "road", "character", "wolf", "obsidian", "gold", "sparks", "flare", "luxury"],
+      text: "Matte obsidian with gold micro-etching, landing sparks, and a subtle head flare."
+    },
+    {
+      id: "crossy_cyber_oni_cat",
+      title: "Cyber Oni Cat",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 90,
+      cost: 45000,
+      crossyStyle: "cyber-oni-cat",
+      colors: ["#131126", "#ff3ab8", "#49f4ff"],
+      tags: ["crossy", "road", "character", "cat", "oni", "cyber", "horns", "circuits", "neon", "luxury"],
+      text: "Neon oni horns, pulsing circuit markings, and a tail transformed into a glowing wire."
+    },
+    {
+      id: "crossy_prism_deer",
+      title: "Prism Deer",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 96,
+      cost: 56000,
+      crossyStyle: "prism-deer",
+      colors: ["#73efff", "#ff72d0", "#fff2a8"],
+      tags: ["crossy", "road", "character", "deer", "prism", "crystal", "refraction", "burst", "luxury"],
+      text: "A crystal body that refracts with movement and bursts into prismatic light on landing."
+    },
+    {
+      id: "crossy_rgb_tiger",
+      title: "RGB Tiger",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 102,
+      cost: 68000,
+      crossyStyle: "rgb-tiger",
+      colors: ["#ff456f", "#57ff9a", "#49f4ff"],
+      tags: ["crossy", "road", "character", "tiger", "rgb", "stripes", "animated", "ultra rare"],
+      text: "A midnight tiger carrying endlessly color-shifting RGB stripes inside its body."
+    },
+    {
+      id: "crossy_chrono_dragon",
+      title: "Chrono Dragon",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 110,
+      cost: 85000,
+      crossyStyle: "chrono-dragon",
+      colors: ["#55e8ff", "#8b56ff", "#ffd65a"],
+      tags: ["crossy", "road", "character", "dragon", "chrono", "time", "gears", "ripple", "animated", "mythic"],
+      text: "Time-shifting scales and living clockwork gears. Every hop releases a temporal ripple."
     },
     {
       id: "xp_boost_2",
@@ -2546,6 +2730,25 @@
               <i class="frog-eye left"></i><i class="frog-eye right"></i>
             </div>
             <strong>GALAXY FROG</strong>
+          </div>
+        `;
+      }
+      if (item.crossyStyle) {
+        const colors = item.colors || ["#8cf7ff", "#ffffff", "#c471ff"];
+        const style = `--crossy-a:${colors[0]};--crossy-b:${colors[1]};--crossy-c:${colors[2]}`;
+        return `
+          <div class="store-item-preview crossy-character-preview crossy-animal-preview crossy-preview-${item.crossyStyle}" style="${style}" aria-hidden="true">
+            <div class="crossy-preview-stage">
+              <span class="crossy-preview-echo echo-one"></span><span class="crossy-preview-echo echo-two"></span>
+              <div class="crossy-preview-animal">
+                <span class="crossy-preview-tail"></span><span class="crossy-preview-body"></span>
+                <span class="crossy-preview-leg leg-one"></span><span class="crossy-preview-leg leg-two"></span>
+                <span class="crossy-preview-head"><i></i><i></i><b></b></span>
+                <span class="crossy-preview-ear ear-one"></span><span class="crossy-preview-ear ear-two"></span>
+                <span class="crossy-preview-accessory"></span>
+              </div>
+            </div>
+            <strong>${item.title}</strong>
           </div>
         `;
       }
@@ -6700,11 +6903,23 @@
       bestLive: 0,
       galaxyOffsetX: 0,
       galaxyOffsetY: 0,
-      player: { col: 4, depth: 0, x: 270, y: CROSSY_START_Y, targetX: 270, targetY: CROSSY_START_Y, size: 34 },
+      player: {
+        col: 4,
+        depth: 0,
+        x: 270,
+        y: CROSSY_START_Y,
+        targetX: 270,
+        targetY: CROSSY_START_Y,
+        size: 34,
+        hopActive: false,
+        hopStartedAt: 0,
+        facing: 1
+      },
       cars: [],
       lanes: [],
       decor: [],
       particles: [],
+      cosmeticEffects: [],
       tombstoneArmed: false,
       tombstoneUsed: false,
       ghostUntil: 0,
@@ -6928,6 +7143,11 @@
     player.col = next.col;
     player.depth = next.depth;
     player.targetX = 30 + player.col * 60;
+    if (direction === "left") player.facing = -1;
+    if (direction === "right") player.facing = 1;
+    player.hopActive = true;
+    player.hopStartedAt = performance.now();
+    triggerCrossyCosmeticHop(player);
     if (direction === "up") {
       crossy.furthestDepth = Math.max(crossy.furthestDepth, player.depth);
       crossy.score = Math.max(crossy.score, crossy.furthestDepth);
@@ -7052,6 +7272,13 @@
       part.life -= 1;
     });
     crossy.particles = crossy.particles.filter((part) => part.life > 0);
+    crossy.cosmeticEffects = crossy.cosmeticEffects.filter((effect) => now - effect.startedAt < effect.duration);
+    if (p.hopActive && Math.abs(p.x - p.targetX) < 1.5 && Math.abs(p.y - p.targetY) < 1.5) {
+      p.x = p.targetX;
+      p.y = p.targetY;
+      p.hopActive = false;
+      triggerCrossyCosmeticLanding(p);
+    }
 
     if (!crossy.dying && !isCrossyGhostActive(now) && crossyHit()) {
       triggerCrossyDeath("crash");
@@ -7320,12 +7547,9 @@
     ctx.restore();
   }
 
-  function crossySkipsEquipped() {
-    return state.equippedCrossyCharacter === "crossy_skips" && state.owned.includes("crossy_skips");
-  }
-
-  function crossyGalaxyFrogEquipped() {
-    return state.equippedCrossyCharacter === "crossy_galaxy_frog" && state.owned.includes("crossy_galaxy_frog");
+  function getEquippedCrossyCharacter() {
+    if (!state.owned.includes(state.equippedCrossyCharacter)) return null;
+    return storeItems.find((item) => item.id === state.equippedCrossyCharacter && item.slot === "crossy_character") || null;
   }
 
   function drawCrossyChicken(ctx) {
@@ -7457,19 +7681,423 @@
     ctx.restore();
   }
 
+  function drawCrossyAnimalEar(ctx, x, y, width, height, color, outline, rounded = false) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (rounded) {
+      if (ctx.roundRect) ctx.roundRect(x, y, width, height, 5);
+      else ctx.rect(x, y, width, height);
+    } else {
+      ctx.moveTo(x + width / 2, y);
+      ctx.lineTo(x + width, y + height);
+      ctx.lineTo(x, y + height);
+      ctx.closePath();
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCrossyAnimal(ctx, item, now, options = {}) {
+    const style = item?.crossyStyle || "fox";
+    const colors = item?.colors || ["#ff8a32", "#fff1d0", "#642719"];
+    const phase = now / 1000;
+    const isDuck = style === "duck";
+    const isPenguin = style === "penguin";
+    const isRabbit = style === "samurai-rabbit" || style === "quantum-hare";
+    const isHamster = style === "astronaut-hamster";
+    const isDeer = style === "prism-deer";
+    const isDragon = style === "chrono-dragon";
+    const isVoid = style === "void-panther";
+    const isQuantum = style === "quantum-hare";
+    const isObsidian = style === "obsidian-wolf";
+    const isCyber = style === "cyber-oni-cat";
+    const isRgb = style === "rgb-tiger";
+    const outline = isVoid ? "rgba(139, 73, 185, 0.42)" : isObsidian ? "#b58a32" : isCyber ? "#49f4ff" : "rgba(224, 242, 255, 0.72)";
+    let bodyColor = isVoid ? "#000000" : colors[0];
+
+    ctx.save();
+    if (isQuantum && !options.echo) ctx.translate(Math.sin(now / 52) > 0.72 ? 2 : 0, 0);
+    if (isVoid) {
+      ctx.shadowColor = "#7133a8";
+      ctx.shadowBlur = options.echo ? 5 : 13;
+    } else if (isObsidian) {
+      ctx.shadowColor = "#ffd65a";
+      ctx.shadowBlur = 7 + Math.max(0, Math.sin(phase * 2.5)) * 5;
+    } else if (isCyber || isQuantum || isDragon) {
+      ctx.shadowColor = colors[1];
+      ctx.shadowBlur = 11;
+    }
+
+    if (!isDuck && !isPenguin) {
+      ctx.save();
+      ctx.strokeStyle = isCyber ? "#49f4ff" : bodyColor;
+      ctx.lineWidth = isCyber ? 5 : 7;
+      ctx.lineCap = "square";
+      ctx.beginPath();
+      ctx.moveTo(14, -11);
+      ctx.quadraticCurveTo(29, -19, 25, -2);
+      ctx.stroke();
+      if (style === "fox") {
+        ctx.strokeStyle = "#fff1d0";
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.moveTo(24, -5);
+        ctx.lineTo(26, -1);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    if (isDragon) {
+      ctx.save();
+      ctx.fillStyle = "rgba(85, 232, 255, 0.45)";
+      ctx.strokeStyle = "#ffd65a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-3, -20);
+      ctx.lineTo(20, -35);
+      ctx.lineTo(14, -5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (isRgb) {
+      const rgbGradient = ctx.createLinearGradient(-18, -20, 18, 12);
+      rgbGradient.addColorStop(0, `hsl(${(now / 12) % 360} 100% 62%)`);
+      rgbGradient.addColorStop(0.5, `hsl(${(now / 12 + 120) % 360} 100% 62%)`);
+      rgbGradient.addColorStop(1, `hsl(${(now / 12 + 240) % 360} 100% 62%)`);
+      bodyColor = "#080910";
+      drawCrossyBlock(ctx, -18, -16, 36, 29, 8, bodyColor, "#020207");
+      ctx.fillStyle = rgbGradient;
+      for (let stripe = -13; stripe <= 10; stripe += 8) {
+        ctx.save();
+        ctx.translate(stripe, -18);
+        ctx.rotate(-0.28);
+        ctx.fillRect(0, 0, 4, 27);
+        ctx.restore();
+      }
+    } else if (isDeer || isDragon) {
+      const shifting = ctx.createLinearGradient(-20 + Math.sin(phase) * 10, -30, 24, 15);
+      shifting.addColorStop(0, colors[0]);
+      shifting.addColorStop(0.45, colors[1]);
+      shifting.addColorStop(0.72, colors[2]);
+      shifting.addColorStop(1, colors[0]);
+      drawCrossyBlock(ctx, -18, -16, 36, 29, 8, shifting, "rgba(36, 16, 70, 0.48)");
+    } else {
+      drawCrossyBlock(ctx, isHamster ? -17 : -18, -16, isHamster ? 34 : 36, 29, 8, bodyColor, isVoid ? "#050208" : "rgba(25, 17, 37, 0.42)");
+    }
+
+    drawCrossyBlock(ctx, -14, 7, 10, 10, 4, isPenguin ? "#ffae3d" : bodyColor, "rgba(0,0,0,.3)");
+    drawCrossyBlock(ctx, 5, 7, 10, 10, 4, isPenguin ? "#ffae3d" : bodyColor, "rgba(0,0,0,.3)");
+
+    if (isPenguin) {
+      ctx.fillStyle = "#f5fbff";
+      ctx.beginPath();
+      ctx.ellipse(0, -5, 10, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (isObsidian) {
+      ctx.strokeStyle = "#d8a93d";
+      ctx.lineWidth = 1.4;
+      for (let line = -12; line < 14; line += 8) {
+        ctx.beginPath();
+        ctx.moveTo(line, -21);
+        ctx.lineTo(line + 9, 5);
+        ctx.stroke();
+      }
+    }
+
+    if (isCyber) {
+      ctx.strokeStyle = "#ff3ab8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-14, -8);
+      ctx.lineTo(-4, -8);
+      ctx.lineTo(-4, 2);
+      ctx.lineTo(10, 2);
+      ctx.stroke();
+      ctx.fillStyle = "#49f4ff";
+      ctx.fillRect(-16, -10, 4, 4);
+      ctx.fillRect(9, 0, 4, 4);
+    }
+
+    if (isDragon) {
+      ctx.strokeStyle = "#ffd65a";
+      ctx.lineWidth = 2;
+      [-8, 8].forEach((gearX, index) => {
+        ctx.beginPath();
+        ctx.arc(gearX, -5 + index * 2, 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(gearX, -5 + index * 2);
+        ctx.lineTo(gearX + Math.cos(phase * 4 + index) * 4, -5 + index * 2 + Math.sin(phase * 4 + index) * 4);
+        ctx.stroke();
+      });
+    }
+
+    let headColor = bodyColor;
+    if (isDeer || isDragon) {
+      const headGradient = ctx.createLinearGradient(-15, -44, 15, -16);
+      headGradient.addColorStop(0, colors[0]);
+      headGradient.addColorStop(0.5, colors[1]);
+      headGradient.addColorStop(1, colors[2]);
+      headColor = headGradient;
+    }
+    drawCrossyBlock(ctx, -14, -39, 28, 25, 7, headColor, isVoid ? "#050208" : "rgba(25, 17, 37, 0.4)");
+
+    if (!isDuck && !isPenguin) {
+      if (isRabbit) {
+        drawCrossyAnimalEar(ctx, -12, -61, 9, 24, bodyColor, outline, true);
+        drawCrossyAnimalEar(ctx, 3, -61, 9, 24, bodyColor, outline, true);
+      } else if (isDeer) {
+        ctx.save();
+        ctx.strokeStyle = "#eaffff";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "square";
+        [-1, 1].forEach((side) => {
+          ctx.beginPath();
+          ctx.moveTo(side * 8, -38);
+          ctx.lineTo(side * 10, -54);
+          ctx.lineTo(side * 17, -60);
+          ctx.moveTo(side * 10, -52);
+          ctx.lineTo(side * 4, -58);
+          ctx.stroke();
+        });
+        ctx.restore();
+      } else {
+        drawCrossyAnimalEar(ctx, -13, isCyber ? -56 : -49, 11, isCyber ? 20 : 13, isCyber ? "#49f4ff" : bodyColor, outline);
+        drawCrossyAnimalEar(ctx, 2, isCyber ? -56 : -49, 11, isCyber ? 20 : 13, isCyber ? "#ff3ab8" : bodyColor, outline);
+      }
+    }
+
+    if (style === "sheriff-raccoon") {
+      ctx.fillStyle = "#252a35";
+      ctx.fillRect(-13, -33, 26, 10);
+      drawCrossyBlock(ctx, -18, -52, 36, 7, 3, "#5b321d", "#2b140c");
+      drawCrossyBlock(ctx, -8, -61, 16, 11, 4, "#6b3b22", "#2b140c");
+      ctx.fillStyle = "#ffe380";
+      ctx.font = "900 15px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("★", 0, -1);
+    }
+
+    if (style === "samurai-rabbit") {
+      ctx.save();
+      ctx.strokeStyle = "#73efff";
+      ctx.shadowColor = "#49f4ff";
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-17, 5);
+      ctx.lineTo(19, -29);
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = "#ff405f";
+      ctx.fillRect(-17, -35, 34, 7);
+      ctx.fillRect(13, -33, 13, 3);
+    }
+
+    if (isHamster) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(225, 250, 255, 0.92)";
+      ctx.fillStyle = "rgba(99, 220, 255, 0.11)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, -29, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      drawCrossyBlock(ctx, 16, -16, 9, 18, 4, "#66859b", "#263846");
+    }
+
+    if (style === "ninja-ferret") {
+      ctx.fillStyle = "#050509";
+      ctx.fillRect(-17, -35, 34, 8);
+      ctx.save();
+      ctx.translate(15, -30);
+      ctx.rotate(0.35);
+      ctx.fillRect(0, 0, 17, 4);
+      ctx.restore();
+    }
+
+    if (isRgb) {
+      const faceStripe = ctx.createLinearGradient(-14, -37, 14, -18);
+      faceStripe.addColorStop(0, "#ff456f");
+      faceStripe.addColorStop(0.5, "#57ff9a");
+      faceStripe.addColorStop(1, "#49f4ff");
+      ctx.fillStyle = faceStripe;
+      ctx.fillRect(-11, -35, 4, 18);
+      ctx.fillRect(7, -35, 4, 18);
+    }
+
+    if (isPenguin) {
+      ctx.fillStyle = "#f5fbff";
+      ctx.fillRect(-9, -33, 18, 13);
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = isVoid ? "#ffffff" : isObsidian ? "#fff0a1" : isCyber ? "#49f4ff" : "#10131c";
+    if (isVoid || isObsidian || isCyber) {
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 7;
+    }
+    ctx.fillRect(-9, -32, 5, 6);
+    ctx.fillRect(4, -32, 5, 6);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = isDuck || isPenguin ? "#ff9a32" : style === "fox" ? "#30131a" : colors[2];
+    if (isDuck || isPenguin) ctx.fillRect(-5, -24, 10, 6);
+    else ctx.fillRect(-3, -24, 6, 4);
+
+    if (isObsidian && !options.echo) {
+      const flare = Math.max(0, Math.sin(phase * 2.3) - 0.72) / 0.28;
+      if (flare > 0) {
+        ctx.globalAlpha = flare;
+        ctx.fillStyle = "#fff8cf";
+        ctx.fillRect(-20, -34, 40, 2);
+        ctx.fillRect(-1, -52, 2, 38);
+      }
+    }
+    ctx.restore();
+  }
+
+  function createCrossyCosmeticBurst(kind, x, y, colors, count = 12, duration = 520) {
+    crossy.cosmeticEffects.push({
+      kind,
+      x,
+      y,
+      colors,
+      startedAt: performance.now(),
+      duration,
+      particles: Array.from({ length: count }, (_, index) => ({
+        angle: (Math.PI * 2 * index) / Math.max(1, count) + Math.random() * 0.25,
+        speed: 16 + Math.random() * 38,
+        size: 2 + Math.random() * 4,
+        color: colors[index % colors.length]
+      }))
+    });
+  }
+
+  function triggerCrossyCosmeticHop(player) {
+    const item = getEquippedCrossyCharacter();
+    const style = item?.crossyStyle;
+    if (!style) return;
+    const now = performance.now();
+    if (style === "astronaut-hamster") createCrossyCosmeticBurst("jet", player.x + player.facing * 17, player.y + 5, ["#ffd65a", "#ff713c", "#63dcff"], 9, 430);
+    if (style === "ninja-ferret") crossy.cosmeticEffects.push({ kind: "smoke", x: player.x, y: player.y + 8, startedAt: now, duration: 480 });
+    if (style === "void-panther") {
+      crossy.cosmeticEffects.push({ kind: "shadow", x: player.x, y: player.y, item, startedAt: now, duration: 650 });
+      createCrossyCosmeticBurst("void", player.x, player.y - 8, ["#000000", "#7133a8", "#c68cff"], 12, 620);
+    }
+    if (style === "quantum-hare") {
+      crossy.cosmeticEffects.push({ kind: "hologram", x: player.x, y: player.y, item, startedAt: now, duration: 200 });
+      createCrossyCosmeticBurst("glitch", player.x, player.y, ["#6feeff", "#c65cff", "#ffffff"], 10, 420);
+    }
+    if (style === "chrono-dragon") crossy.cosmeticEffects.push({ kind: "time-ripple", x: player.x, y: player.y, startedAt: now, duration: 720 });
+  }
+
+  function triggerCrossyCosmeticLanding(player) {
+    const style = getEquippedCrossyCharacter()?.crossyStyle;
+    if (style === "obsidian-wolf") createCrossyCosmeticBurst("gold", player.x, player.y + 10, ["#ffd65a", "#fff3a8", "#a67518"], 15, 620);
+    if (style === "prism-deer") createCrossyCosmeticBurst("prism", player.x, player.y + 3, ["#73efff", "#ff72d0", "#fff2a8", "#ffffff"], 20, 760);
+  }
+
+  function drawCrossyCosmeticEffects(ctx, now) {
+    crossy.cosmeticEffects.forEach((effect) => {
+      const progress = Math.max(0, Math.min(1, (now - effect.startedAt) / effect.duration));
+      const fade = 1 - progress;
+      ctx.save();
+      if (effect.kind === "shadow") {
+        ctx.globalAlpha = fade * 0.32;
+        ctx.translate(effect.x - progress * 18, effect.y + progress * 5);
+        ctx.scale(1 + progress * 0.12, 1 - progress * 0.08);
+        drawCrossyAnimal(ctx, effect.item, now, { echo: true });
+      } else if (effect.kind === "hologram") {
+        [-1, 1].forEach((side) => {
+          ctx.save();
+          ctx.globalAlpha = fade * 0.52;
+          ctx.globalCompositeOperation = "screen";
+          ctx.translate(effect.x + side * (7 + progress * 9), effect.y - side * 3);
+          ctx.filter = side < 0 ? "hue-rotate(75deg)" : "hue-rotate(-55deg)";
+          drawCrossyAnimal(ctx, effect.item, now, { echo: true });
+          ctx.restore();
+        });
+      } else if (effect.kind === "smoke") {
+        ctx.fillStyle = `rgba(218, 211, 227, ${fade * 0.55})`;
+        for (let puff = 0; puff < 7; puff += 1) {
+          const angle = (Math.PI * 2 * puff) / 7;
+          const distance = progress * (18 + (puff % 3) * 5);
+          ctx.beginPath();
+          ctx.arc(effect.x + Math.cos(angle) * distance, effect.y + Math.sin(angle) * distance * 0.45 - progress * 7, 3 + progress * 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (effect.kind === "time-ripple") {
+        ctx.globalAlpha = fade * 0.82;
+        ctx.strokeStyle = progress < 0.5 ? "#55e8ff" : "#ffd65a";
+        ctx.lineWidth = 4 - progress * 2;
+        ctx.beginPath();
+        ctx.ellipse(effect.x, effect.y + 5, 8 + progress * 58, 4 + progress * 24, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let tick = 0; tick < 12; tick += 1) {
+          const angle = (Math.PI * 2 * tick) / 12;
+          const radius = 10 + progress * 46;
+          ctx.fillStyle = tick % 3 ? "#55e8ff" : "#ffd65a";
+          ctx.fillRect(effect.x + Math.cos(angle) * radius - 1, effect.y + 5 + Math.sin(angle) * radius * 0.42 - 1, 3, 3);
+        }
+      } else {
+        effect.particles?.forEach((particle, index) => {
+          const distance = particle.speed * progress;
+          let px = effect.x + Math.cos(particle.angle) * distance;
+          let py = effect.y + Math.sin(particle.angle) * distance;
+          if (effect.kind === "jet") py += progress * 18;
+          if (effect.kind === "gold" || effect.kind === "prism") py += progress * progress * 18;
+          if (effect.kind === "glitch") {
+            px += (index % 2 ? -1 : 1) * progress * 12;
+            py = effect.y + (index - 5) * 3;
+          }
+          ctx.globalAlpha = fade;
+          ctx.fillStyle = particle.color;
+          ctx.shadowColor = particle.color;
+          ctx.shadowBlur = effect.kind === "void" ? 8 : 5;
+          if (effect.kind === "prism") {
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(particle.angle);
+            ctx.fillRect(-particle.size, -1, particle.size * 2.8, 3);
+            ctx.restore();
+          } else {
+            ctx.fillRect(px, py, particle.size, particle.size);
+          }
+        });
+      }
+      ctx.restore();
+    });
+  }
+
   function drawCrossyPlayer(ctx, p) {
     const now = performance.now();
     const ghostActive = isCrossyGhostActive(now);
+    const character = getEquippedCrossyCharacter();
+    const hopProgress = Math.max(0, Math.min(1, (now - p.hopStartedAt) / 280));
+    const hopLift = p.hopActive ? Math.sin(hopProgress * Math.PI) * 10 : 0;
     ctx.save();
-    ctx.translate(p.x, p.y);
+    ctx.translate(p.x, p.y - hopLift);
+    ctx.scale(p.facing || 1, 1);
     ctx.shadowBlur = ghostActive ? 25 : 14;
     ctx.shadowColor = ghostActive ? "#8cf7ff" : "#ffffff";
     if (ghostActive) {
       ctx.globalAlpha = 0.42 + Math.abs(Math.sin(now / 90)) * 0.18;
       ctx.globalCompositeOperation = "screen";
     }
-    if (crossyGalaxyFrogEquipped()) drawCrossyGalaxyFrog(ctx, now);
-    else if (crossySkipsEquipped()) drawCrossySkips(ctx);
+    if (character?.id === "crossy_galaxy_frog") drawCrossyGalaxyFrog(ctx, now);
+    else if (character?.id === "crossy_skips") drawCrossySkips(ctx);
+    else if (character?.crossyStyle) drawCrossyAnimal(ctx, character, now);
     else drawCrossyChicken(ctx);
     if (ghostActive) {
       ctx.fillStyle = "#dffcff";
@@ -7596,6 +8224,7 @@
     });
     ctx.globalAlpha = 1;
 
+    drawCrossyCosmeticEffects(ctx, now);
     drawCrossyPlayer(ctx, crossy.player);
 
     drawCrossyTombstoneFlash(ctx, w, h, now);

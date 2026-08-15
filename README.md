@@ -1,6 +1,6 @@
 # ARCADIA
 
-- Version 19.14.1.0 corrects Snake Store hat and eye previews, fixes Casper's tail collision mismatch, rebalances reactive milestones, and adds a flashing Void outline.
+- Version 19.15.0.0 adds fourteen Crossy Road characters with a level-and-price flex progression, animated Store previews, and matching in-game hop, landing, trail, hologram, and material effects.
 - Version 19.14.0.0 adds ten premium reactive Snake cosmetics and removes the spaceship artwork from laser Store previews.
 - Version 19.13.0.0 repairs Blackstorm profile and bell layouts and adds animated previews for every nameplate, laser cosmetic, and booster.
 - Version 19.12.0.0 adds the animated level-75 Blackstorm Nameplate with moving storm clouds and circulating lightning.
