@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.12.0.0";
+  const APP_VERSION = "19.13.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "The Rewards Store now previews every nameplate, Star Invaders laser, and booster with compact animated artwork while keeping complete item descriptions readable.",
+    "Blackstorm no longer stretches the Player Profile or disrupts the notification bell and unread badge layout.",
     "The Rewards Store adds the level-75 Blackstorm Nameplate with moving black clouds, a circling lightning border, and intermittent lightning flashes.",
     "The notification bell now inherits the equipped player nameplate's background, border, glow, and animated RGB or Redline effects.",
     "A new notification bell opens a scrollable player inbox with unread activity, detailed multi-level progress, and update history with version notes.",
@@ -361,6 +363,26 @@
   ];
 
   const rivalNames = ["NOVA", "PIXEL", "ACE", "VOLT", "GLITCH", "BYTE", "JUNO", "ZERO"];
+
+  const NAMEPLATE_CLASS_BY_ITEM = Object.freeze({
+    neon_badge: "nameplate-neon",
+    blue_nameplate: "nameplate-blue",
+    black_nameplate: "nameplate-black",
+    purple_nameplate: "nameplate-purple",
+    rgb_nameplate: "nameplate-rgb",
+    redline_nameplate: "nameplate-redline",
+    blackstorm_nameplate: "nameplate-blackstorm"
+  });
+
+  const NAMEPLATE_PREVIEW_LABELS = Object.freeze({
+    neon_badge: "NEON",
+    blue_nameplate: "BLUE",
+    black_nameplate: "BLACK",
+    purple_nameplate: "PURPLE",
+    rgb_nameplate: "RGB",
+    redline_nameplate: "REDLINE",
+    blackstorm_nameplate: "BLACKSTORM"
+  });
 
   const storeItems = [
     {
@@ -1752,16 +1774,8 @@
     const target = progressForXp(state.xp);
     const from = progressForXp(headerSeenXp);
     const xpDelta = Math.max(0, (Number(state.xp) || 0) - headerSeenXp);
-    const nameplateClasses = ["nameplate-neon", "nameplate-blue", "nameplate-black", "nameplate-purple", "nameplate-rgb", "nameplate-redline", "nameplate-blackstorm"];
-    const activeNameplateClass = {
-      neon_badge: "nameplate-neon",
-      blue_nameplate: "nameplate-blue",
-      black_nameplate: "nameplate-black",
-      purple_nameplate: "nameplate-purple",
-      rgb_nameplate: "nameplate-rgb",
-      redline_nameplate: "nameplate-redline",
-      blackstorm_nameplate: "nameplate-blackstorm"
-    }[state.equippedNameplate] || "";
+    const nameplateClasses = Object.values(NAMEPLATE_CLASS_BY_ITEM);
+    const activeNameplateClass = NAMEPLATE_CLASS_BY_ITEM[state.equippedNameplate] || "";
     el.playerHandle.textContent = name.toUpperCase();
     el.headerCoins.textContent = formatCompactNumber(state.coins);
     nameplateClasses.forEach((className) => {
@@ -2267,11 +2281,12 @@
       const cooldown = item.type === "booster" ? getBoosterCooldownRemaining(item) : 0;
       const card = document.createElement("div");
       card.className = `store-card ${locked ? "locked" : ""} ${equipped || boosterEquipped ? "equipped" : ""}`;
+      card.dataset.storeItemId = item.id;
       card.innerHTML = `
         <p class="system-line">${locked ? `Unlocked at Level ${item.level}` : item.type === "booster" ? cooldown ? `Cooldown ${formatCountdown(cooldown)}` : "Reusable Booster" : "Player Cosmetic"}</p>
         <h3>${item.title}</h3>
         ${renderStoreItemPreview(item)}
-        <p>${item.text}</p>
+        <p class="store-item-description">${item.text}</p>
         <div class="store-card-foot">
           <span>${owned ? item.type === "booster" ? cooldown ? formatCountdown(cooldown) : "Ready" : "Owned" : `${formatNumber(item.cost)} Coins`}</span>
           ${renderStoreAction(item, { owned, locked, affordable, equipped, boosterEquipped, cooldown })}
@@ -2341,10 +2356,26 @@
   }
 
   function renderStoreItemPreview(item) {
-    if (item.id === "blackstorm_nameplate") {
+    if (item.slot === "nameplate") {
+      const nameplateClass = NAMEPLATE_CLASS_BY_ITEM[item.id] || "";
+      const label = NAMEPLATE_PREVIEW_LABELS[item.id] || "PLAYER";
       return `
-        <div class="storm-store-preview nameplate-blackstorm" aria-hidden="true">
-          <strong>BLACKSTORM</strong>
+        <div class="store-item-preview nameplate-store-preview ${nameplateClass}" aria-hidden="true">
+          <strong>${label}</strong><span>PLAYER</span>
+        </div>
+      `;
+    }
+    if (item.slot === "laser") {
+      const laserStyles = {
+        laser_yellow: "--laser-main:#ffd35a;--laser-edge:#fff6b5;--laser-glow:rgba(255,211,90,.88)",
+        laser_black: "--laser-main:#05030b;--laser-edge:#8cf7ff;--laser-glow:rgba(73,244,255,.78)",
+        laser_rgb: "--laser-main:#ff45bc;--laser-edge:#ffffff;--laser-glow:rgba(196,113,255,.86)"
+      };
+      return `
+        <div class="store-item-preview laser-store-preview ${item.id === "laser_rgb" ? "laser-rgb" : ""}" style="${laserStyles[item.id] || laserStyles.laser_yellow}" aria-hidden="true">
+          <span class="laser-preview-ship"><i></i><i></i></span>
+          <b class="laser-preview-shot shot-one"></b><b class="laser-preview-shot shot-two"></b><b class="laser-preview-shot shot-three"></b>
+          <em>FIRE TEST</em>
         </div>
       `;
     }
@@ -2352,7 +2383,7 @@
       const colors = item.colors || ["#ff4fc8", "#8a5cff", "#49f4ff"];
       const style = `--skin-a:${colors[0]};--skin-b:${colors[1]};--skin-c:${colors[2]}`;
       return `
-        <div class="snake-skin-preview ${item.rainbow ? "rainbow" : ""}" style="${style}" aria-hidden="true">
+        <div class="store-item-preview snake-skin-preview ${item.rainbow ? "rainbow" : ""}" style="${style}" aria-hidden="true">
           <span></span><span></span><span></span><span></span>
         </div>
       `;
@@ -2360,7 +2391,7 @@
     if (item.slot === "crossy_character") {
       if (item.id === "crossy_galaxy_frog") {
         return `
-          <div class="crossy-character-preview galaxy-frog-preview" aria-hidden="true">
+          <div class="store-item-preview crossy-character-preview galaxy-frog-preview" aria-hidden="true">
             <div class="galaxy-store-frog">
               <span class="frog-foot left"></span><span class="frog-foot right"></span>
               <span class="frog-body"></span><span class="frog-face"></span>
@@ -2371,7 +2402,7 @@
         `;
       }
       return `
-        <div class="crossy-character-preview" aria-hidden="true">
+        <div class="store-item-preview crossy-character-preview" aria-hidden="true">
           <div class="skips-store-cat">
             <span class="cat-ear left"></span><span class="cat-ear right"></span>
             <span class="cat-face"><i></i><i></i><b></b></span>
@@ -2381,8 +2412,29 @@
         </div>
       `;
     }
+    if (item.multiplier) {
+      return `
+        <div class="store-item-preview xp-store-preview" aria-hidden="true">
+          <span>XP</span><strong>&times;${item.multiplier}</strong><i>COINS TOO</i>
+        </div>
+      `;
+    }
+    if (item.effect === "tombstone") {
+      return `
+        <div class="store-item-preview tombstone-store-preview" aria-hidden="true">
+          <span><strong>RIP</strong></span><i>+1 LIFE</i>
+        </div>
+      `;
+    }
+    if (item.effect === "machine_gun") {
+      return `
+        <div class="store-item-preview machine-gun-store-preview" aria-hidden="true">
+          <span class="machine-gun-art"><i></i><b></b></span><em></em><em></em><em></em><strong>AUTO FIRE</strong>
+        </div>
+      `;
+    }
     if (item.effect === "earthquake") {
-      return `<div class="earthquake-store-preview" aria-hidden="true"><span></span><strong>QUAKE</strong><span></span></div>`;
+      return `<div class="store-item-preview earthquake-store-preview" aria-hidden="true"><span></span><strong>QUAKE</strong><span></span></div>`;
     }
     return "";
   }
