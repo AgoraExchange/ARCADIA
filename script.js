@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.13.0.0";
+  const APP_VERSION = "19.14.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "The Snake collection adds ten high-level character, milestone, evolution, and luxury skins with faces and reactive pellet effects.",
+    "Star Invaders laser previews now fire cleanly from the bottom of each Store showcase without displaying a spaceship.",
     "The Rewards Store now previews every nameplate, Star Invaders laser, and booster with compact animated artwork while keeping complete item descriptions readable.",
     "Blackstorm no longer stretches the Player Profile or disrupts the notification bell and unread badge layout.",
     "The Rewards Store adds the level-75 Blackstorm Nameplate with moving black clouds, a circling lightning border, and intermittent lightning flashes.",
@@ -566,6 +568,147 @@
       rainbow: true,
       tags: ["snake", "skin", "color", "rainbow", "rgb", "animated"],
       text: "Cycle every snake segment through a living rainbow."
+    },
+    {
+      id: "snake_cowboy",
+      title: "Cowboy Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 42,
+      cost: 7600,
+      colors: ["#fff0b8", "#c97932", "#63321f"],
+      preview: "cowboy",
+      milestone: 10,
+      tags: ["snake", "skin", "cowboy", "hat", "western", "yeehaw", "animated", "milestone"],
+      text: "Wear a cowboy hat. Every 10 pellets it spins, kicks up dust, and calls YEEHAW."
+    },
+    {
+      id: "snake_cyber",
+      title: "Cyber Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 48,
+      cost: 9200,
+      colors: ["#eaffff", "#49f4ff", "#ff2fad"],
+      preview: "cyber",
+      milestone: 5,
+      tags: ["snake", "skin", "cyber", "glitch", "pixel", "animated", "milestone"],
+      text: "Every 5 pellets the snake erupts into a flickering pixel-glitch distortion."
+    },
+    {
+      id: "snake_plasma",
+      title: "Plasma Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 54,
+      cost: 11000,
+      colors: ["#ffffff", "#8cf7ff", "#8a5cff"],
+      preview: "plasma",
+      milestone: 10,
+      tags: ["snake", "skin", "plasma", "shockwave", "ripple", "animated", "milestone"],
+      text: "Every 10 pellets the tail emits a luminous shockwave ripple for two seconds."
+    },
+    {
+      id: "snake_samurai",
+      title: "Samurai Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 62,
+      cost: 14500,
+      colors: ["#fff7f3", "#ff526f", "#230712"],
+      preview: "samurai",
+      milestone: 10,
+      tags: ["snake", "skin", "samurai", "katana", "slash", "cherry blossom", "animated", "milestone"],
+      text: "Every 10 pellets unleashes a katana slash and two seconds of falling cherry blossoms."
+    },
+    {
+      id: "snake_hacker",
+      title: "Hacker Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 68,
+      cost: 17500,
+      colors: ["#d8ffd8", "#42ff76", "#03140a"],
+      preview: "hacker",
+      milestone: 10,
+      tags: ["snake", "skin", "hacker", "matrix", "terminal", "hex", "loading", "animated", "milestone"],
+      text: "Every 10 pellets triggers Matrix text rain, a loading head, and scrolling tail hex."
+    },
+    {
+      id: "snake_royal",
+      title: "Royal Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 74,
+      cost: 21000,
+      colors: ["#fff7ad", "#ffd13d", "#7d35c8"],
+      preview: "royal",
+      milestone: 10,
+      tags: ["snake", "skin", "royal", "crown", "gold", "fanfare", "animated", "milestone"],
+      text: "Every 10 pellets the crown flares, gold rains from the body, and a soft fanfare plays."
+    },
+    {
+      id: "snake_dragon",
+      title: "Dragon Evolution Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 80,
+      cost: 30000,
+      colors: ["#fff08a", "#ff7040", "#76162f"],
+      preview: "dragon",
+      milestone: 6,
+      evolution: true,
+      tags: ["snake", "skin", "dragon", "evolution", "scales", "horns", "wings", "fire", "ultra rare", "animated"],
+      text: "Evolves every 6 pellets: scales, horns, folded wings, glowing eyes, then a full flame aura."
+    },
+    {
+      id: "snake_obsidian",
+      title: "Obsidian Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 85,
+      cost: 36000,
+      colors: ["#4a433d", "#09090c", "#020204"],
+      preview: "obsidian",
+      milestone: 5,
+      tags: ["snake", "skin", "obsidian", "matte black", "gold", "glyph", "luxury", "animated"],
+      text: "Matte obsidian with gold micro-etching. Every 5 pellets, living glyphs race along the body."
+    },
+    {
+      id: "snake_quantum",
+      title: "Quantum Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 90,
+      cost: 44000,
+      colors: ["#ffffff", "#62e8ff", "#8a48ff"],
+      preview: "quantum",
+      milestone: 5,
+      tags: ["snake", "skin", "quantum", "dimensions", "shadows", "particles", "luxury", "animated"],
+      text: "Flickers between dimensions. Every 5 pellets it splits into three collapsing quantum shadows."
+    },
+    {
+      id: "snake_void",
+      title: "Void Snake",
+      category: "player",
+      type: "cosmetic",
+      slot: "snake_skin",
+      level: 95,
+      cost: 52000,
+      colors: ["#15101f", "#020204", "#000000"],
+      preview: "void",
+      milestone: 5,
+      tags: ["snake", "skin", "void", "black", "white eyes", "vignette", "luxury", "animated"],
+      text: "A pure-black silhouette with white eyes. Every 5 pellets, void energy consumes the screen edges."
     },
     {
       id: "crossy_skips",
@@ -2373,7 +2516,6 @@
       };
       return `
         <div class="store-item-preview laser-store-preview ${item.id === "laser_rgb" ? "laser-rgb" : ""}" style="${laserStyles[item.id] || laserStyles.laser_yellow}" aria-hidden="true">
-          <span class="laser-preview-ship"><i></i><i></i></span>
           <b class="laser-preview-shot shot-one"></b><b class="laser-preview-shot shot-two"></b><b class="laser-preview-shot shot-three"></b>
           <em>FIRE TEST</em>
         </div>
@@ -2382,9 +2524,11 @@
     if (item.slot === "snake_skin") {
       const colors = item.colors || ["#ff4fc8", "#8a5cff", "#49f4ff"];
       const style = `--skin-a:${colors[0]};--skin-b:${colors[1]};--skin-c:${colors[2]}`;
+      const premiumClass = item.preview ? `snake-preview-${item.preview} premium-snake` : "";
+      const face = item.preview ? "<i></i><i></i>" : "";
       return `
-        <div class="store-item-preview snake-skin-preview ${item.rainbow ? "rainbow" : ""}" style="${style}" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
+        <div class="store-item-preview snake-skin-preview ${item.rainbow ? "rainbow" : ""} ${premiumClass}" style="${style}" aria-hidden="true">
+          <span class="snake-preview-head">${face}</span><span></span><span></span><span></span>
         </div>
       `;
     }
@@ -4907,6 +5051,8 @@
       ],
       food: { x: 14, y: 10 },
       particles: [],
+      cosmeticParticles: [],
+      cosmeticEvent: null,
       popups: [],
       tombstoneArmed: false,
       tombstoneUsed: false,
@@ -5092,6 +5238,7 @@
       addFoodParticles(next);
       snake.popups.push({ x: next.x, y: next.y, life: 12, text: "+1" });
       playTone("eat");
+      triggerSnakeSkinMilestone(snake.score);
       placeFood();
     } else {
       snake.body.pop();
@@ -5109,6 +5256,16 @@
     snake.popups = snake.popups
       .map((p) => ({ ...p, y: p.y - 0.08, life: p.life - 1 }))
       .filter((p) => p.life > 0);
+    snake.cosmeticParticles = snake.cosmeticParticles
+      .map((p) => ({
+        ...p,
+        x: p.x + p.vx,
+        y: p.y + p.vy,
+        rotation: (p.rotation || 0) + (p.spin || 0),
+        life: p.life - 1
+      }))
+      .filter((p) => p.life > 0);
+    if (snake.cosmeticEvent && performance.now() >= snake.cosmeticEvent.endsAt) snake.cosmeticEvent = null;
     if (snake.ghostTicks > 0) snake.ghostTicks -= 1;
     if (snake.reviveFlashTicks > 0) snake.reviveFlashTicks -= 1;
   }
@@ -5168,6 +5325,126 @@
         vy: Math.sin(angle) * 0.08,
         life: 12
       });
+    }
+  }
+
+  function getEquippedSnakeSkin() {
+    const skin = getStoreItem(state.equippedSnakeSkin);
+    return skin?.slot === "snake_skin" && state.owned.includes(skin.id) ? skin : null;
+  }
+
+  function snakeEvolutionStage(skin = getEquippedSnakeSkin()) {
+    if (!skin?.evolution) return 0;
+    return Math.min(5, Math.floor(snake.score / 6) + 1);
+  }
+
+  function addSnakeCosmeticParticle(particle) {
+    const life = Math.max(1, Number(particle.life) || 12);
+    snake.cosmeticParticles.push({
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      rotation: 0,
+      spin: 0,
+      size: 0.16,
+      color: "#ffffff",
+      shape: "dot",
+      ...particle,
+      life,
+      maxLife: life
+    });
+  }
+
+  function playRoyalSnakeFanfare() {
+    [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+      setTimeout(() => playToneAt(frequency, index === 3 ? 0.22 : 0.13, "triangle", 0.028), index * 105);
+    });
+  }
+
+  function triggerSnakeSkinMilestone(score) {
+    const skin = getEquippedSnakeSkin();
+    const milestone = Number(skin?.milestone) || 0;
+    if (!skin || !milestone || score <= 0 || score % milestone !== 0) return;
+
+    const durations = {
+      snake_cowboy: 720,
+      snake_cyber: 900,
+      snake_plasma: 2000,
+      snake_samurai: 2000,
+      snake_hacker: 2000,
+      snake_royal: 2000,
+      snake_dragon: 1500,
+      snake_obsidian: 1700,
+      snake_quantum: 1800,
+      snake_void: 1800
+    };
+    const startedAt = performance.now();
+    snake.cosmeticEvent = {
+      skinId: skin.id,
+      score,
+      startedAt,
+      endsAt: startedAt + (durations[skin.id] || 1400)
+    };
+
+    const tail = snake.body[snake.body.length - 1] || snake.body[0];
+    if (skin.id === "snake_cowboy") {
+      for (let index = 0; index < 22; index += 1) {
+        addSnakeCosmeticParticle({
+          x: tail.x + 0.5,
+          y: tail.y + 0.6,
+          vx: (Math.random() - 0.5) * 0.22,
+          vy: -0.02 - Math.random() * 0.07,
+          life: 8 + Math.floor(Math.random() * 9),
+          size: 0.1 + Math.random() * 0.18,
+          color: index % 2 ? "#d79757" : "#7a482b",
+          shape: "dust"
+        });
+      }
+    } else if (skin.id === "snake_samurai") {
+      for (let index = 0; index < 30; index += 1) {
+        addSnakeCosmeticParticle({
+          x: Math.random() * GRID_SIZE,
+          y: -Math.random() * 7,
+          vx: -0.04 + Math.random() * 0.09,
+          vy: 0.18 + Math.random() * 0.16,
+          life: 17 + Math.floor(Math.random() * 12),
+          size: 0.12 + Math.random() * 0.11,
+          rotation: Math.random() * Math.PI,
+          spin: 0.18 + Math.random() * 0.2,
+          color: index % 3 ? "#ff9fc5" : "#fff1f7",
+          shape: "petal"
+        });
+      }
+    } else if (skin.id === "snake_royal") {
+      for (let index = 0; index < 28; index += 1) {
+        const part = snake.body[index % snake.body.length];
+        addSnakeCosmeticParticle({
+          x: part.x + 0.25 + Math.random() * 0.5,
+          y: part.y + 0.6,
+          vx: (Math.random() - 0.5) * 0.045,
+          vy: 0.1 + Math.random() * 0.1,
+          life: 12 + Math.floor(Math.random() * 9),
+          size: 0.07 + Math.random() * 0.1,
+          color: index % 3 ? "#ffd13d" : "#ffffff",
+          shape: "gold"
+        });
+      }
+      playRoyalSnakeFanfare();
+    } else if (["snake_dragon", "snake_quantum"].includes(skin.id)) {
+      for (let index = 0; index < 24; index += 1) {
+        const angle = (Math.PI * 2 * index) / 24;
+        addSnakeCosmeticParticle({
+          x: tail.x + 0.5,
+          y: tail.y + 0.5,
+          vx: Math.cos(angle) * (0.05 + Math.random() * 0.15),
+          vy: Math.sin(angle) * (0.05 + Math.random() * 0.15),
+          life: 10 + Math.floor(Math.random() * 8),
+          size: 0.07 + Math.random() * 0.11,
+          color: skin.id === "snake_dragon" ? (index % 2 ? "#ffcf4a" : "#ff4f2f") : (index % 2 ? "#62e8ff" : "#b25cff"),
+          shape: skin.id === "snake_dragon" ? "flame" : "quantum"
+        });
+      }
     }
   }
 
@@ -5238,8 +5515,8 @@
   }
 
   function snakeSegmentColors(index, now) {
-    const skin = getStoreItem(state.equippedSnakeSkin);
-    if (!skin || skin.slot !== "snake_skin" || !state.owned.includes(skin.id)) {
+    const skin = getEquippedSnakeSkin();
+    if (!skin) {
       return index === 0
         ? { start: "#49f4ff", end: "#ff2fad", glow: "#ff2fad" }
         : { start: "#57ff9a", end: "#1fd36f", glow: "#57ff9a" };
@@ -5252,10 +5529,434 @@
         glow: `hsl(${(hue + 28) % 360} 100% 64%)`
       };
     }
+    if (skin.id === "snake_quantum") {
+      const phase = Math.sin(now / 82 + index * 1.7);
+      return phase > 0
+        ? { start: "#f8ffff", end: "#51e4ff", glow: "#51e4ff" }
+        : { start: "#dfbaff", end: "#793cff", glow: "#b25cff" };
+    }
+    if (skin.id === "snake_void") {
+      return { start: index === 0 ? "#17131f" : "#07070a", end: "#000000", glow: index === 0 ? "#ffffff" : "#381354" };
+    }
+    if (skin.id === "snake_obsidian") {
+      return { start: index === 0 ? "#40382e" : "#181619", end: "#030305", glow: "#d5a93b" };
+    }
+    if (skin.id === "snake_dragon") {
+      const stage = snakeEvolutionStage(skin);
+      const stageColors = [
+        ["#fff08a", "#ff994d", "#7b2637"],
+        ["#fff1a1", "#ff7549", "#791633"],
+        ["#ffe86b", "#ff593d", "#611127"],
+        ["#fff8cb", "#ff4938", "#3e0a1d"],
+        ["#ffffff", "#ffca40", "#9b1325"]
+      ][Math.max(0, stage - 1)];
+      return index === 0
+        ? { start: stageColors[0], end: stageColors[1], glow: stage >= 4 ? "#ffffff" : stageColors[1] }
+        : { start: stageColors[1], end: stageColors[2], glow: stage >= 5 ? "#ff5a2f" : stageColors[1] };
+    }
     const colors = skin.colors || ["#49f4ff", "#57ff9a", "#1fd36f"];
     return index === 0
       ? { start: colors[0], end: colors[1], glow: colors[0] }
       : { start: colors[1], end: colors[2], glow: colors[1] };
+  }
+
+  function snakeCosmeticEventProgress(event, now) {
+    if (!event || event.endsAt <= event.startedAt) return 1;
+    return Math.max(0, Math.min(1, (now - event.startedAt) / (event.endsAt - event.startedAt)));
+  }
+
+  function drawSnakeCosmeticBackdrop(ctx, size, cell, skin, event, now) {
+    if (!skin || !event || event.skinId !== skin.id) return;
+    const progress = snakeCosmeticEventProgress(event, now);
+    const fade = Math.sin(Math.PI * progress);
+    ctx.save();
+
+    if (skin.id === "snake_cyber") {
+      const frame = Math.floor(now / 58);
+      for (let index = 0; index < 24; index += 1) {
+        const x = ((index * 83 + frame * 31) % 457) + 4;
+        const y = ((index * 47 + frame * 19) % 451) + 4;
+        const width = 5 + ((index * 7) % 31);
+        ctx.globalAlpha = (0.16 + (index % 4) * 0.08) * fade;
+        ctx.fillStyle = index % 2 ? "#49f4ff" : "#ff2fad";
+        ctx.fillRect(x, y, width, 2 + (index % 3));
+      }
+      ctx.globalAlpha = 0.2 * fade;
+      ctx.fillStyle = frame % 2 ? "#49f4ff" : "#ff2fad";
+      ctx.fillRect(0, (frame * 37) % size, size, 4);
+    }
+
+    if (skin.id === "snake_cowboy" && progress < 0.72) {
+      const head = snake.body[0];
+      const bubbleX = Math.min(size - 112, Math.max(8, (head.x + 0.5) * cell + 14));
+      const bubbleY = Math.max(36, (head.y + 0.5) * cell - 32);
+      ctx.globalAlpha = Math.min(1, fade * 2.2);
+      ctx.fillStyle = "rgba(255, 247, 214, 0.94)";
+      ctx.strokeStyle = "#7a482b";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(bubbleX, bubbleY - 27, 100, 30, 9);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#3a1e12";
+      ctx.font = "900 15px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText("YEEHAW!", bubbleX + 50, bubbleY - 7);
+    }
+
+    if (skin.id === "snake_samurai") {
+      ctx.globalAlpha = 0.3 + fade * 0.7;
+      const sweep = -size * 0.35 + progress * size * 1.7;
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate(-0.55);
+      const slash = ctx.createLinearGradient(sweep - 80, 0, sweep + 80, 0);
+      slash.addColorStop(0, "rgba(255,255,255,0)");
+      slash.addColorStop(0.48, "#ffffff");
+      slash.addColorStop(0.55, "#ff4f80");
+      slash.addColorStop(1, "rgba(255,79,128,0)");
+      ctx.strokeStyle = slash;
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur = 22;
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(sweep - 130, -size);
+      ctx.lineTo(sweep + 130, size);
+      ctx.stroke();
+    }
+
+    if (skin.id === "snake_hacker") {
+      const glyphs = ["01", "FF", "A7", "0X", "C4", "10", "E9", "7B"];
+      ctx.font = "700 12px Consolas, monospace";
+      ctx.textAlign = "center";
+      for (let column = 0; column < 15; column += 1) {
+        const x = (column + 0.5) * (size / 15);
+        for (let row = 0; row < 8; row += 1) {
+          const y = ((row * 73 + now * (0.08 + column * 0.002) + column * 31) % (size + 80)) - 40;
+          ctx.globalAlpha = (0.12 + row * 0.035) * fade;
+          ctx.fillStyle = row === 7 ? "#eaffea" : "#42ff76";
+          ctx.fillText(glyphs[(column + row) % glyphs.length], x, y);
+        }
+      }
+    }
+
+    if (skin.id === "snake_dragon") {
+      const stage = snakeEvolutionStage(skin);
+      ctx.globalAlpha = fade * 0.75;
+      const aura = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * 0.62);
+      aura.addColorStop(0, "rgba(255,239,126,0.1)");
+      aura.addColorStop(0.72, "rgba(255,66,36,0.13)");
+      aura.addColorStop(1, "rgba(255,35,72,0)");
+      ctx.fillStyle = aura;
+      ctx.fillRect(0, 0, size, size);
+      ctx.globalAlpha = Math.min(1, fade * 1.8);
+      ctx.fillStyle = "#fff4bd";
+      ctx.shadowColor = "#ff572f";
+      ctx.shadowBlur = 18;
+      ctx.font = "900 20px Arial Black";
+      ctx.textAlign = "center";
+      ctx.fillText(`EVOLUTION STAGE ${stage}`, size / 2, 34);
+    }
+    ctx.restore();
+  }
+
+  function drawQuantumSnakeShadows(ctx, cell, event, now) {
+    if (!event || event.skinId !== "snake_quantum") return;
+    const progress = snakeCosmeticEventProgress(event, now);
+    const collapse = Math.sin(Math.PI * progress);
+    [
+      { x: -8 * collapse, y: 3 * collapse, color: "#ff43bc" },
+      { x: 8 * collapse, y: -3 * collapse, color: "#49f4ff" },
+      { x: 0, y: 8 * collapse, color: "#9d64ff" }
+    ].forEach((shadow) => {
+      ctx.save();
+      ctx.globalAlpha = 0.12 + collapse * 0.32;
+      ctx.fillStyle = shadow.color;
+      ctx.shadowColor = shadow.color;
+      ctx.shadowBlur = 13;
+      snake.body.forEach((part) => {
+        ctx.fillRect(part.x * cell + 3 + shadow.x, part.y * cell + 3 + shadow.y, cell - 6, cell - 6);
+      });
+      ctx.restore();
+    });
+  }
+
+  function drawSnakeCosmeticParticles(ctx, cell) {
+    snake.cosmeticParticles.forEach((particle) => {
+      const alpha = Math.max(0, particle.life / (particle.maxLife || particle.life || 1));
+      const x = particle.x * cell;
+      const y = particle.y * cell;
+      const radius = Math.max(2, particle.size * cell);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      ctx.rotate(particle.rotation || 0);
+      ctx.fillStyle = particle.color;
+      ctx.shadowColor = particle.color;
+      ctx.shadowBlur = particle.shape === "dust" ? 4 : 10;
+      ctx.beginPath();
+      if (particle.shape === "petal") {
+        ctx.ellipse(0, 0, radius * 1.35, radius * 0.62, 0, 0, Math.PI * 2);
+      } else if (particle.shape === "flame") {
+        ctx.moveTo(0, -radius * 1.5);
+        ctx.lineTo(radius, radius);
+        ctx.lineTo(0, radius * 0.55);
+        ctx.lineTo(-radius, radius);
+        ctx.closePath();
+      } else if (particle.shape === "quantum") {
+        ctx.rect(-radius, -radius * 0.35, radius * 2, radius * 0.7);
+      } else {
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      }
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawSnakeSegmentDetails(ctx, part, index, cell, skin, event, now) {
+    if (!skin) return;
+    const x = part.x * cell + 3;
+    const y = part.y * cell + 3;
+    const inner = cell - 6;
+    const eventActive = event?.skinId === skin.id;
+
+    if (skin.id === "snake_cyber" && eventActive) {
+      const shift = ((index + Math.floor(now / 55)) % 3 - 1) * 4;
+      ctx.fillStyle = index % 2 ? "rgba(73,244,255,.72)" : "rgba(255,47,173,.72)";
+      ctx.fillRect(x + shift, y + (index % 3) * 4, inner, 3);
+    }
+
+    if (skin.id === "snake_hacker" && index > 0 && eventActive) {
+      ctx.fillStyle = "#eaffea";
+      ctx.font = `800 ${Math.max(7, cell * 0.29)}px Consolas, monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(((index * 37 + Math.floor(now / 140)) % 256).toString(16).padStart(2, "0").toUpperCase(), x + inner / 2, y + inner / 2);
+    }
+
+    if (skin.id === "snake_obsidian") {
+      ctx.strokeStyle = "rgba(239,196,82,.5)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 4, y + inner * 0.72);
+      ctx.lineTo(x + inner * 0.45, y + 4);
+      ctx.lineTo(x + inner - 4, y + inner * 0.65);
+      ctx.stroke();
+      if (eventActive) {
+        const glyphs = ["◇", "⌁", "ϟ", "△", "◈"];
+        ctx.fillStyle = "#ffd86a";
+        ctx.shadowColor = "#ffd13d";
+        ctx.shadowBlur = 9;
+        ctx.font = `900 ${Math.max(8, cell * 0.42)}px serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(glyphs[(index + Math.floor(now / 110)) % glyphs.length], x + inner / 2, y + inner / 2);
+      }
+    }
+
+    if (skin.id === "snake_dragon") {
+      const stage = snakeEvolutionStage(skin);
+      ctx.strokeStyle = stage >= 5 ? "rgba(255,243,166,.8)" : "rgba(255,226,111,.44)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x + inner * 0.12, y + inner * 0.62);
+      ctx.lineTo(x + inner * 0.5, y + inner * 0.2);
+      ctx.lineTo(x + inner * 0.88, y + inner * 0.62);
+      ctx.stroke();
+      if (stage >= 3 && (index === 1 || index === 2)) {
+        ctx.fillStyle = "rgba(255,190,80,.78)";
+        ctx.beginPath();
+        ctx.moveTo(x + inner * 0.48, y + inner * 0.45);
+        ctx.lineTo(x - inner * 0.45, y - inner * 0.18);
+        ctx.lineTo(x + inner * 0.12, y + inner * 0.82);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + inner * 0.52, y + inner * 0.45);
+        ctx.lineTo(x + inner * 1.45, y - inner * 0.18);
+        ctx.lineTo(x + inner * 0.88, y + inner * 0.82);
+        ctx.fill();
+      }
+    }
+  }
+
+  function drawSnakeHeadCosmetic(ctx, cell, skin, event, now) {
+    if (!skin?.preview || !snake.body.length) return;
+    const head = snake.body[0];
+    const centerX = (head.x + 0.5) * cell;
+    const centerY = (head.y + 0.5) * cell;
+    const direction = snake.direction || { x: 1, y: 0 };
+    const eventActive = event?.skinId === skin.id;
+    const forward = cell * 0.17;
+    const spread = cell * 0.15;
+    const eyePairs = direction.x
+      ? [[centerX + direction.x * forward, centerY - spread], [centerX + direction.x * forward, centerY + spread]]
+      : [[centerX - spread, centerY + direction.y * forward], [centerX + spread, centerY + direction.y * forward]];
+
+    ctx.save();
+    eyePairs.forEach(([x, y]) => {
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = skin.id === "snake_void" ? "#ffffff" : "rgba(255,255,255,.65)";
+      ctx.shadowBlur = skin.id === "snake_void" ? 10 : 4;
+      ctx.beginPath();
+      ctx.arc(x, y, skin.id === "snake_void" ? cell * 0.07 : cell * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+      if (skin.id !== "snake_void") {
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = skin.id === "snake_dragon" && snakeEvolutionStage(skin) >= 4 ? "#ff2b1f" : "#12051b";
+        ctx.beginPath();
+        ctx.arc(x + direction.x * 1.3, y + direction.y * 1.3, cell * 0.035, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    if (skin.id === "snake_cowboy") {
+      ctx.translate(centerX, centerY - cell * 0.42);
+      if (eventActive) ctx.rotate((now - event.startedAt) / 42);
+      ctx.fillStyle = "#532b1d";
+      ctx.strokeStyle = "#f2c06d";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, cell * 0.58, cell * 0.16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillRect(-cell * 0.26, -cell * 0.34, cell * 0.52, cell * 0.34);
+      ctx.strokeRect(-cell * 0.26, -cell * 0.34, cell * 0.52, cell * 0.34);
+    } else if (skin.id === "snake_samurai") {
+      ctx.fillStyle = "#fff4ed";
+      ctx.fillRect(centerX - cell * 0.42, centerY - cell * 0.31, cell * 0.84, cell * 0.16);
+      ctx.fillStyle = "#ff365d";
+      ctx.fillRect(centerX - cell * 0.42, centerY - cell * 0.25, cell * 0.84, cell * 0.07);
+      ctx.beginPath();
+      ctx.moveTo(centerX + cell * 0.4, centerY - cell * 0.24);
+      ctx.lineTo(centerX + cell * 0.68, centerY - cell * 0.42);
+      ctx.lineTo(centerX + cell * 0.55, centerY - cell * 0.1);
+      ctx.fill();
+    } else if (skin.id === "snake_hacker" && eventActive) {
+      const angle = (now - event.startedAt) / 120;
+      ctx.strokeStyle = "#d8ffd8";
+      ctx.shadowColor = "#42ff76";
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, cell * 0.37, angle, angle + Math.PI * 1.45);
+      ctx.stroke();
+    } else if (skin.id === "snake_royal") {
+      const flare = eventActive ? Math.sin(Math.PI * snakeCosmeticEventProgress(event, now)) : 0;
+      ctx.fillStyle = "#ffd13d";
+      ctx.strokeStyle = "#fff5ae";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - cell * 0.42, centerY - cell * 0.35);
+      ctx.lineTo(centerX - cell * 0.28, centerY - cell * 0.7);
+      ctx.lineTo(centerX, centerY - cell * 0.43);
+      ctx.lineTo(centerX + cell * 0.28, centerY - cell * 0.7);
+      ctx.lineTo(centerX + cell * 0.42, centerY - cell * 0.35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      if (flare > 0.04) {
+        ctx.strokeStyle = `rgba(255,255,255,${flare})`;
+        ctx.shadowColor = "#fff4a0";
+        ctx.shadowBlur = 20;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - cell, centerY - cell * 0.53);
+        ctx.lineTo(centerX + cell, centerY - cell * 0.53);
+        ctx.moveTo(centerX, centerY - cell * 1.15);
+        ctx.lineTo(centerX, centerY + cell * 0.1);
+        ctx.stroke();
+      }
+    } else if (skin.id === "snake_dragon" && snakeEvolutionStage(skin) >= 2) {
+      ctx.fillStyle = "#fff0a0";
+      ctx.beginPath();
+      ctx.moveTo(centerX - cell * 0.36, centerY - cell * 0.28);
+      ctx.lineTo(centerX - cell * 0.56, centerY - cell * 0.78);
+      ctx.lineTo(centerX - cell * 0.08, centerY - cell * 0.42);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(centerX + cell * 0.36, centerY - cell * 0.28);
+      ctx.lineTo(centerX + cell * 0.56, centerY - cell * 0.78);
+      ctx.lineTo(centerX + cell * 0.08, centerY - cell * 0.42);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawSnakeSkinOverlay(ctx, size, cell, skin, event, now) {
+    if (!skin) return;
+    const eventActive = event?.skinId === skin.id;
+    if (eventActive && skin.id === "snake_plasma") {
+      const tail = snake.body[snake.body.length - 1];
+      const progress = snakeCosmeticEventProgress(event, now);
+      for (let ring = 0; ring < 3; ring += 1) {
+        const phase = (progress + ring / 3) % 1;
+        ctx.save();
+        ctx.globalAlpha = 1 - phase;
+        ctx.strokeStyle = ring % 2 ? "#8cf7ff" : "#b56cff";
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = 18;
+        ctx.lineWidth = 4 - phase * 2;
+        ctx.beginPath();
+        ctx.arc((tail.x + 0.5) * cell, (tail.y + 0.5) * cell, cell * (0.4 + phase * 3.4), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    if (eventActive && skin.id === "snake_samurai" && snake.body.length > 2) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,.82)";
+      ctx.shadowColor = "#ff416f";
+      ctx.shadowBlur = 13;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      snake.body.slice(1).forEach((part, index) => {
+        const x = (part.x + 0.5) * cell;
+        const y = (part.y + 0.5) * cell;
+        if (!index) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (skin.id === "snake_dragon" && snakeEvolutionStage(skin) >= 5) {
+      const tail = snake.body[snake.body.length - 1];
+      const flicker = 0.72 + Math.sin(now / 55) * 0.18;
+      ctx.save();
+      ctx.globalAlpha = flicker;
+      ctx.fillStyle = "#ffca38";
+      ctx.shadowColor = "#ff3727";
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.moveTo((tail.x + 0.5) * cell, (tail.y + 0.5) * cell);
+      ctx.lineTo((tail.x + 0.12 - snake.direction.x * 0.9) * cell, (tail.y + 0.14 - snake.direction.y * 0.9) * cell);
+      ctx.lineTo((tail.x + 0.88 - snake.direction.x * 0.9) * cell, (tail.y + 0.86 - snake.direction.y * 0.9) * cell);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (eventActive && skin.id === "snake_void") {
+      const progress = snakeCosmeticEventProgress(event, now);
+      const fade = Math.sin(Math.PI * progress);
+      const voidGradient = ctx.createRadialGradient(size / 2, size / 2, size * (0.34 - progress * 0.05), size / 2, size / 2, size * 0.7);
+      voidGradient.addColorStop(0, "rgba(4, 2, 9, 0)");
+      voidGradient.addColorStop(0.58, `rgba(20, 4, 38, ${0.12 + fade * 0.12})`);
+      voidGradient.addColorStop(1, `rgba(0, 0, 0, ${0.72 + fade * 0.22})`);
+      ctx.save();
+      ctx.fillStyle = voidGradient;
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = `rgba(180, 99, 255, ${0.22 + fade * 0.5})`;
+      ctx.lineWidth = 8 + fade * 9;
+      ctx.strokeRect(2, 2, size - 4, size - 4);
+      ctx.restore();
+    }
+
+    drawSnakeCosmeticParticles(ctx, cell);
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
   }
 
   function drawSnake() {
@@ -5280,7 +5981,12 @@
       ctx.stroke();
     }
 
+    const skin = getEquippedSnakeSkin();
+    const cosmeticEvent = snake.cosmeticEvent;
+    drawSnakeCosmeticBackdrop(ctx, size, cell, skin, cosmeticEvent, now);
+
     const ghostActive = snake.ghostTicks > 0;
+    if (!ghostActive && skin?.id === "snake_quantum") drawQuantumSnakeShadows(ctx, cell, cosmeticEvent, now);
     ctx.save();
     if (ghostActive) {
       ctx.globalAlpha = 0.3 + Math.abs(Math.sin(now / 85)) * 0.24;
@@ -5299,8 +6005,11 @@
       ctx.shadowColor = colors.glow;
       ctx.shadowBlur = index === 0 ? 20 : 9;
       ctx.fillRect(x, y, cell - 6, cell - 6);
+      if (!ghostActive) drawSnakeSegmentDetails(ctx, part, index, cell, skin, cosmeticEvent, now);
     });
     ctx.restore();
+    if (!ghostActive) drawSnakeHeadCosmetic(ctx, cell, skin, cosmeticEvent, now);
+    if (!ghostActive) drawSnakeSkinOverlay(ctx, size, cell, skin, cosmeticEvent, now);
 
     const pulse = 0.24 + Math.sin(now / 120) * 0.08;
     ctx.shadowBlur = 22;
