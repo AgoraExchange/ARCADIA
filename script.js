@@ -3,10 +3,13 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.14.0.0";
+  const APP_VERSION = "19.14.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Snake Store previews now face forward, and the Cowboy Snake preview spins its complete hat instead of moving only the brim.",
+    "Casper now shares Snake's tail-vacate collision rule and favors routes with a reachable tail and safe next move.",
+    "Reactive Snake milestones are rebalanced by rarity, with Cyber and Obsidian at 10 pellets, Quantum and Void at 12, and a flashing Void body outline.",
     "The Snake collection adds ten high-level character, milestone, evolution, and luxury skins with faces and reactive pellet effects.",
     "Star Invaders laser previews now fire cleanly from the bottom of each Store showcase without displaying a spaceship.",
     "The Rewards Store now previews every nameplate, Star Invaders laser, and booster with compact animated artwork while keeping complete item descriptions readable.",
@@ -579,9 +582,9 @@
       cost: 7600,
       colors: ["#fff0b8", "#c97932", "#63321f"],
       preview: "cowboy",
-      milestone: 10,
+      milestone: 6,
       tags: ["snake", "skin", "cowboy", "hat", "western", "yeehaw", "animated", "milestone"],
-      text: "Wear a cowboy hat. Every 10 pellets it spins, kicks up dust, and calls YEEHAW."
+      text: "Wear a cowboy hat. Every 6 pellets it spins, kicks up dust, and calls YEEHAW."
     },
     {
       id: "snake_cyber",
@@ -593,9 +596,9 @@
       cost: 9200,
       colors: ["#eaffff", "#49f4ff", "#ff2fad"],
       preview: "cyber",
-      milestone: 5,
+      milestone: 10,
       tags: ["snake", "skin", "cyber", "glitch", "pixel", "animated", "milestone"],
-      text: "Every 5 pellets the snake erupts into a flickering pixel-glitch distortion."
+      text: "Every 10 pellets the snake erupts into a flickering pixel-glitch distortion."
     },
     {
       id: "snake_plasma",
@@ -607,9 +610,9 @@
       cost: 11000,
       colors: ["#ffffff", "#8cf7ff", "#8a5cff"],
       preview: "plasma",
-      milestone: 10,
+      milestone: 6,
       tags: ["snake", "skin", "plasma", "shockwave", "ripple", "animated", "milestone"],
-      text: "Every 10 pellets the tail emits a luminous shockwave ripple for two seconds."
+      text: "Every 6 pellets the tail emits a luminous shockwave ripple for two seconds."
     },
     {
       id: "snake_samurai",
@@ -678,9 +681,9 @@
       cost: 36000,
       colors: ["#4a433d", "#09090c", "#020204"],
       preview: "obsidian",
-      milestone: 5,
+      milestone: 10,
       tags: ["snake", "skin", "obsidian", "matte black", "gold", "glyph", "luxury", "animated"],
-      text: "Matte obsidian with gold micro-etching. Every 5 pellets, living glyphs race along the body."
+      text: "Matte obsidian with gold micro-etching. Every 10 pellets, living glyphs race along the body."
     },
     {
       id: "snake_quantum",
@@ -692,9 +695,9 @@
       cost: 44000,
       colors: ["#ffffff", "#62e8ff", "#8a48ff"],
       preview: "quantum",
-      milestone: 5,
+      milestone: 12,
       tags: ["snake", "skin", "quantum", "dimensions", "shadows", "particles", "luxury", "animated"],
-      text: "Flickers between dimensions. Every 5 pellets it splits into three collapsing quantum shadows."
+      text: "Flickers between dimensions. Every 12 pellets it splits into three collapsing quantum shadows."
     },
     {
       id: "snake_void",
@@ -706,9 +709,9 @@
       cost: 52000,
       colors: ["#15101f", "#020204", "#000000"],
       preview: "void",
-      milestone: 5,
+      milestone: 12,
       tags: ["snake", "skin", "void", "black", "white eyes", "vignette", "luxury", "animated"],
-      text: "A pure-black silhouette with white eyes. Every 5 pellets, void energy consumes the screen edges."
+      text: "A pure-black silhouette with white eyes. Every 12 pellets, void energy flashes across its outline and the screen edges."
     },
     {
       id: "crossy_skips",
@@ -2525,7 +2528,8 @@
       const colors = item.colors || ["#ff4fc8", "#8a5cff", "#49f4ff"];
       const style = `--skin-a:${colors[0]};--skin-b:${colors[1]};--skin-c:${colors[2]}`;
       const premiumClass = item.preview ? `snake-preview-${item.preview} premium-snake` : "";
-      const face = item.preview ? "<i></i><i></i>" : "";
+      const accessory = item.preview === "cowboy" ? '<b class="cowboy-preview-hat"></b>' : "";
+      const face = item.preview ? `${accessory}<i></i><i></i>` : "";
       return `
         <div class="store-item-preview snake-skin-preview ${item.rainbow ? "rainbow" : ""} ${premiumClass}" style="${style}" aria-hidden="true">
           <span class="snake-preview-head">${face}</span><span></span><span></span><span></span>
@@ -5164,6 +5168,56 @@
     return seen.size;
   }
 
+  function snakeCollisionBody(next) {
+    const eating = next.x === snake.food.x && next.y === snake.food.y;
+    return eating ? snake.body : snake.body.slice(0, -1);
+  }
+
+  function snakeHitsSelf(next) {
+    return snakeCollisionBody(next).some((part) => part.x === next.x && part.y === next.y);
+  }
+
+  function casperSnakeCanReach(start, target, occupied) {
+    const targetKey = `${target.x}:${target.y}`;
+    const blocked = new Set(occupied);
+    blocked.delete(targetKey);
+    const startKey = `${start.x}:${start.y}`;
+    if (blocked.has(startKey)) return false;
+    const queue = [start];
+    const seen = new Set([startKey]);
+    for (let index = 0; index < queue.length; index += 1) {
+      const cell = queue[index];
+      if (cell.x === target.x && cell.y === target.y) return true;
+      [
+        { x: cell.x + 1, y: cell.y },
+        { x: cell.x - 1, y: cell.y },
+        { x: cell.x, y: cell.y + 1 },
+        { x: cell.x, y: cell.y - 1 }
+      ].forEach((next) => {
+        const key = `${next.x}:${next.y}`;
+        if (next.x < 0 || next.y < 0 || next.x >= GRID_SIZE || next.y >= GRID_SIZE || blocked.has(key) || seen.has(key)) return;
+        seen.add(key);
+        queue.push(next);
+      });
+    }
+    return false;
+  }
+
+  function casperSnakeFutureExitCount(next, direction, bodyAfterMove) {
+    const occupied = new Set(bodyAfterMove.slice(0, -1).map((part) => `${part.x}:${part.y}`));
+    occupied.delete(`${next.x}:${next.y}`);
+    return [
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: -1, y: 0 },
+      { x: 0, y: -1 }
+    ].filter((candidate) => {
+      if (candidate.x + direction.x === 0 && candidate.y + direction.y === 0) return false;
+      const cell = { x: next.x + candidate.x, y: next.y + candidate.y };
+      return cell.x >= 0 && cell.y >= 0 && cell.x < GRID_SIZE && cell.y < GRID_SIZE && !occupied.has(`${cell.x}:${cell.y}`);
+    }).length;
+  }
+
   function runCasperSnake() {
     if (!casperHasGameplayControl("snake")) return;
     const head = snake.body[0];
@@ -5179,17 +5233,23 @@
       const next = { x: head.x + direction.x, y: head.y + direction.y };
       if (next.x < 0 || next.y < 0 || next.x >= GRID_SIZE || next.y >= GRID_SIZE) return [];
       const eating = next.x === snake.food.x && next.y === snake.food.y;
-      const body = eating ? snake.body : snake.body.slice(0, -1);
+      const body = snakeCollisionBody(next);
       const occupied = new Set(body.map((part) => `${part.x}:${part.y}`));
       if (occupied.has(`${next.x}:${next.y}`) && snake.ghostTicks <= 0) return [];
       occupied.delete(`${next.x}:${next.y}`);
       const area = casperSnakeOpenArea(next, occupied);
+      const tail = snake.body[snake.body.length - 1];
+      const tailReachable = casperSnakeCanReach(next, tail, occupied);
+      const bodyAfterMove = [next, ...body];
+      const futureExitCount = casperSnakeFutureExitCount(next, direction, bodyAfterMove);
       const distanceToFood = Math.abs(next.x - snake.food.x) + Math.abs(next.y - snake.food.y);
       const roomNeeded = Math.min(GRID_SIZE * GRID_SIZE - snake.body.length, snake.body.length + 4);
       const crampedPenalty = area < roomNeeded ? 900 : 0;
+      const tailPenalty = snake.body.length > 6 && !tailReachable ? 1200 : 0;
+      const exitPenalty = futureExitCount === 0 ? 2400 : futureExitCount === 1 ? 120 : 0;
       const edgePenalty = (next.x === 0 || next.y === 0 || next.x === GRID_SIZE - 1 || next.y === GRID_SIZE - 1) ? 8 : 0;
       const straightBonus = direction.x === current.x && direction.y === current.y ? 3 : 0;
-      const score = Math.min(120, area) * 5 - distanceToFood * 11 + (eating ? 360 : 0) - crampedPenalty - edgePenalty + straightBonus;
+      const score = Math.min(120, area) * 5 - distanceToFood * 11 + (eating ? 360 : 0) - crampedPenalty - tailPenalty - exitPenalty - edgePenalty + straightBonus;
       return [{ direction, score }];
     });
     if (!options.length) return;
@@ -5211,7 +5271,7 @@
     const head = snake.body[0];
     let next = { x: head.x + snake.direction.x, y: head.y + snake.direction.y };
     let hitWall = next.x < 0 || next.y < 0 || next.x >= GRID_SIZE || next.y >= GRID_SIZE;
-    let hitSelf = !hitWall && snake.body.some((part) => part.x === next.x && part.y === next.y);
+    let hitSelf = !hitWall && snakeHitsSelf(next);
 
     if (hitWall && activateSnakeTombstone("wall")) {
       const rebound = { x: -snake.direction.x, y: -snake.direction.y };
@@ -5220,7 +5280,7 @@
       snake.directionQueue = [];
       next = { x: head.x + rebound.x, y: head.y + rebound.y };
       hitWall = false;
-      hitSelf = snake.body.some((part) => part.x === next.x && part.y === next.y);
+      hitSelf = snakeHitsSelf(next);
     } else if (hitSelf && snake.ghostTicks <= 0) {
       activateSnakeTombstone("self");
     }
@@ -5751,6 +5811,18 @@
         ctx.textBaseline = "middle";
         ctx.fillText(glyphs[(index + Math.floor(now / 110)) % glyphs.length], x + inner / 2, y + inner / 2);
       }
+    }
+
+    if (skin.id === "snake_void" && eventActive) {
+      const pulse = 0.52 + Math.abs(Math.sin(now / 74)) * 0.48;
+      ctx.save();
+      ctx.globalAlpha = pulse;
+      ctx.strokeStyle = index === 0 ? "#ffffff" : index % 2 ? "#c46cff" : "#7337ad";
+      ctx.shadowColor = index === 0 ? "#ffffff" : "#9f4fe2";
+      ctx.shadowBlur = 10 + pulse * 14;
+      ctx.lineWidth = 1.5 + pulse * 2.2;
+      ctx.strokeRect(x - 1, y - 1, inner + 2, inner + 2);
+      ctx.restore();
     }
 
     if (skin.id === "snake_dragon") {

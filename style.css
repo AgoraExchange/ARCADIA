@@ -2048,7 +2048,7 @@ input:focus {
   position: absolute;
   z-index: 4;
   top: 8px;
-  right: 5px;
+  left: 5px;
   width: 5px;
   height: 6px;
   border: 1px solid rgba(5, 3, 11, 0.7);
@@ -2061,27 +2061,35 @@ input:focus {
   top: 19px;
 }
 
-.snake-preview-cowboy .snake-preview-head::before {
-  content: "";
+.snake-preview-cowboy .cowboy-preview-hat {
   position: absolute;
   z-index: 6;
   left: -8px;
-  top: -7px;
+  top: -15px;
+  width: 46px;
+  height: 23px;
+  transform-origin: 50% 72%;
+  animation: cowboyPreviewHat 3s ease-in-out infinite;
+}
+
+.snake-preview-cowboy .cowboy-preview-hat::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
   width: 46px;
   height: 10px;
   border: 2px solid #f2c06d;
   border-radius: 50%;
   background: #542d1d;
   box-shadow: 0 0 8px rgba(242, 192, 109, 0.42);
-  animation: cowboyPreviewHat 3s ease-in-out infinite;
 }
 
-.snake-preview-cowboy .snake-preview-head::after {
+.snake-preview-cowboy .cowboy-preview-hat::after {
   content: "";
   position: absolute;
-  z-index: 5;
-  left: 4px;
-  top: -15px;
+  left: 12px;
+  top: 0;
   width: 22px;
   height: 13px;
   border: 2px solid #f2c06d;
