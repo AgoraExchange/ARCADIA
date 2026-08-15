@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
 ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play eight arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
