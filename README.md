@@ -54,6 +54,7 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Maximum-fruit clears that disappear for escalating high-score bonuses
   - Overflow danger line, high scores, XP, coins, and achievements
   - Mouse, keyboard, and touch controls with rotating music
+- Dev Mode Casper autopilot for all eight games
 
 ## Visual Direction
 

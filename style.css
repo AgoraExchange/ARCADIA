@@ -3036,6 +3036,84 @@ input:focus {
   text-align: right;
 }
 
+.dev-casper-btn {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-color: rgba(140, 247, 255, 0.42);
+}
+
+.dev-casper-btn span {
+  color: rgba(241, 247, 255, 0.78);
+}
+
+.dev-casper-btn strong {
+  color: rgba(241, 247, 255, 0.62);
+  font-family: var(--font-numbers);
+  text-align: right;
+}
+
+.dev-casper-btn.is-active {
+  border-color: rgba(140, 247, 255, 0.86);
+  background:
+    linear-gradient(135deg, rgba(140, 247, 255, 0.2), rgba(196, 113, 255, 0.2)),
+    rgba(255, 255, 255, 0.055);
+  box-shadow: 0 0 22px rgba(140, 247, 255, 0.16);
+}
+
+.dev-casper-btn.is-active strong {
+  color: #8cf7ff;
+  text-shadow: 0 0 12px rgba(140, 247, 255, 0.72);
+}
+
+.game-screen.casper-active .canvas-shell,
+.game-screen.casper-active .block-board,
+.game-screen.casper-active .star-canvas-shell,
+.game-screen.casper-active .stack-canvas-shell,
+.game-screen.casper-active .flappy-canvas-shell,
+.game-screen.casper-active .crossy-canvas-shell,
+.game-screen.casper-active .solitaire-board,
+.game-screen.casper-active .fruit-canvas-shell {
+  position: relative;
+}
+
+.game-screen.casper-active .canvas-shell::after,
+.game-screen.casper-active .block-board::after,
+.game-screen.casper-active .star-canvas-shell::after,
+.game-screen.casper-active .stack-canvas-shell::after,
+.game-screen.casper-active .flappy-canvas-shell::after,
+.game-screen.casper-active .crossy-canvas-shell::after,
+.game-screen.casper-active .solitaire-board::after,
+.game-screen.casper-active .fruit-canvas-shell::after {
+  content: "CASPER AUTOPILOT";
+  position: absolute;
+  z-index: 50;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border: 1px solid rgba(140, 247, 255, 0.72);
+  border-radius: 999px;
+  color: #e7fcff;
+  background: rgba(8, 12, 28, 0.8);
+  box-shadow: 0 0 18px rgba(140, 247, 255, 0.3);
+  font-family: var(--font-numbers);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+}
+
+.game-screen.casper-active .star-controls,
+.game-screen.casper-active .block-tray {
+  opacity: 0.58;
+  filter: saturate(0.7);
+}
+
 .backdoor-btn {
   min-height: 34px;
   border-color: rgba(255, 211, 90, 0.42);
