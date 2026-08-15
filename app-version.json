@@ -1,6 +1,9 @@
 {
-  "version": "19.14.0.0",
+  "version": "19.14.1.0",
   "patchNotes": [
+    "Snake Store previews now face forward, and the Cowboy Snake preview spins its complete hat instead of moving only the brim.",
+    "Casper now shares Snake's tail-vacate collision rule and favors routes with a reachable tail and safe next move.",
+    "Reactive Snake milestones are rebalanced by rarity, with Cyber and Obsidian at 10 pellets, Quantum and Void at 12, and a flashing Void body outline.",
     "The Snake collection adds ten high-level character, milestone, evolution, and luxury skins with faces and reactive pellet effects.",
     "Star Invaders laser previews now fire cleanly from the bottom of each Store showcase without displaying a spaceship.",
     "The Rewards Store now previews every nameplate, Star Invaders laser, and booster with compact animated artwork while keeping complete item descriptions readable.",
