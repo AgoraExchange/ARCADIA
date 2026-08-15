@@ -1,6 +1,7 @@
 {
-  "version": "19.9.6.0",
+  "version": "19.9.7.0",
   "patchNotes": [
+    "Fruit Blend now uses a streamlined 10-fruit chain, removing Peach and Dragon Fruit so Watermelon and maximum-fruit clears are more achievable before the container fills.",
     "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
     "The Rewards Store adds Skips, a purchasable white, blue-eyed cat character for Crossy Road.",
     "Solitaire now deals solver-verified winnable Draw-1 games, automatically flips newly exposed tableau cards, validates card integrity, and gives complete legal-move and stock-aware hints.",

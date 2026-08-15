@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.6.0";
+  const APP_VERSION = "19.9.7.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Fruit Blend now uses a streamlined 10-fruit chain, removing Peach and Dragon Fruit so Watermelon and maximum-fruit clears are more achievable before the container fills.",
     "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
     "The Rewards Store adds Skips, a purchasable white, blue-eyed cat character for Crossy Road.",
     "Solitaire now deals solver-verified winnable Draw-1 games, automatically flips newly exposed tableau cards, validates card integrity, and gives complete legal-move and stock-aware hints.",
@@ -119,16 +120,16 @@
     { name: "Tangerine", radius: 35, color: "#ff8a3d", accent: "#ffd35a", points: 50 },
     { name: "Apple", radius: 43, color: "#78df52", accent: "#d9ff8c", points: 90 },
     { name: "Pear", radius: 52, color: "#cbe944", accent: "#f3ff9a", points: 150 },
-    { name: "Peach", radius: 62, color: "#ff8ca1", accent: "#ffd1bf", points: 240 },
     { name: "Banana", radius: 70, color: "#ffe14c", accent: "#fff6a0", points: 380 },
     { name: "Pineapple", radius: 79, color: "#ffc83d", accent: "#fff19a", points: 600 },
     { name: "Coconut", radius: 89, color: "#7c4b37", accent: "#e8c89f", points: 950 },
-    { name: "Dragon Fruit", radius: 99, color: "#ff2f8c", accent: "#ff9fce", points: 1500 },
     { name: "Watermelon", radius: 110, color: "#54cb62", accent: "#b8ff8c", points: 2400 }
   ];
-  const FRUIT_DROP_WEIGHTS = [18, 16, 14, 12, 10, 8, 7, 8, 7];
-  const FRUIT_BANANA_TIER = 7;
-  const FRUIT_PINEAPPLE_TIER = 8;
+  const FRUIT_DROP_WEIGHTS = [18, 16, 14, 12, 10, 8, 8, 7];
+  const FRUIT_BANANA_TIER = 6;
+  const FRUIT_PINEAPPLE_TIER = 7;
+  const FRUIT_COCONUT_TIER = 8;
+  const FRUIT_WATERMELON_TIER = 9;
   const FRUIT_BOUNDS = { left: 48, right: 492, top: 126, bottom: 680, danger: 154 };
   const GAME_OVER_SFX = "assets/audio/sfx/game-over.mp3";
   const LEVEL_UP_SFX = "assets/audio/sfx/level-up.mp3";
@@ -7888,13 +7889,13 @@
       ctx.bezierCurveTo(radius * 0.38, -radius * 0.84, radius * 0.82, -radius * 0.6, radius * 0.8, -radius * 0.18);
       ctx.bezierCurveTo(radius * 0.78, radius * 0.42, radius * 0.2, radius * 0.78, 0, radius * 0.96);
       ctx.closePath();
-    } else if (body.tier === 7) {
+    } else if (body.tier === FRUIT_BANANA_TIER) {
       ctx.moveTo(-radius * 0.88, -radius * 0.34);
       ctx.bezierCurveTo(-radius * 0.68, radius * 0.58, radius * 0.3, radius * 0.82, radius * 0.9, -radius * 0.08);
       ctx.bezierCurveTo(radius * 0.58, radius * 0.22, radius * 0.02, radius * 0.34, -radius * 0.58, -radius * 0.3);
       ctx.bezierCurveTo(-radius * 0.7, -radius * 0.42, -radius * 0.82, -radius * 0.42, -radius * 0.88, -radius * 0.34);
       ctx.closePath();
-    } else if (body.tier === 8) {
+    } else if (body.tier === FRUIT_PINEAPPLE_TIER) {
       ctx.ellipse(0, radius * 0.08, radius * 0.78, radius * 0.94, 0, 0, Math.PI * 2);
     } else {
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
@@ -7905,7 +7906,7 @@
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    if ([0, 3, 4, 5, 6].includes(body.tier)) {
+    if ([0, 3, 4, 5].includes(body.tier)) {
       ctx.strokeStyle = "#6e3d25";
       ctx.lineWidth = Math.max(2, radius * 0.08);
       ctx.beginPath();
@@ -7949,7 +7950,7 @@
       });
     }
 
-    if (body.tier === 7) {
+    if (body.tier === FRUIT_BANANA_TIER) {
       ctx.strokeStyle = "rgba(255, 249, 176, 0.8)";
       ctx.lineWidth = Math.max(2, radius * 0.045);
       ctx.beginPath();
@@ -7963,7 +7964,7 @@
       ctx.fill();
     }
 
-    if (body.tier === 8) {
+    if (body.tier === FRUIT_PINEAPPLE_TIER) {
       ctx.save();
       ctx.beginPath();
       ctx.ellipse(0, radius * 0.08, radius * 0.76, radius * 0.92, 0, 0, Math.PI * 2);
@@ -8002,7 +8003,7 @@
       }
     }
 
-    if (body.tier === 9) {
+    if (body.tier === FRUIT_COCONUT_TIER) {
       ctx.strokeStyle = "rgba(35, 15, 11, 0.48)";
       ctx.lineWidth = Math.max(2, radius * 0.045);
       for (let i = -2; i <= 2; i += 1) {
@@ -8013,23 +8014,7 @@
       }
     }
 
-    if (body.tier === 10) {
-      ctx.fillStyle = "#57ff9a";
-      for (let i = 0; i < 9; i += 1) {
-        const angle = (Math.PI * 2 * i) / 9;
-        ctx.save();
-        ctx.rotate(angle);
-        ctx.beginPath();
-        ctx.moveTo(radius * 0.7, -radius * 0.16);
-        ctx.lineTo(radius * 1.1, 0);
-        ctx.lineTo(radius * 0.7, radius * 0.16);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    if (body.tier === 11) {
+    if (body.tier === FRUIT_WATERMELON_TIER) {
       ctx.strokeStyle = "rgba(20, 92, 44, 0.7)";
       ctx.lineWidth = Math.max(3, radius * 0.065);
       for (let i = -2; i <= 2; i += 1) {
@@ -8040,7 +8025,7 @@
       }
     }
 
-    const faceOffsetY = body.tier === 7 ? radius * 0.35 : body.tier === 1 ? radius * 0.08 : 0;
+    const faceOffsetY = body.tier === FRUIT_BANANA_TIER ? radius * 0.35 : body.tier === 1 ? radius * 0.08 : 0;
     const eyeY = faceOffsetY - radius * 0.08;
     const eyeX = radius * 0.28;
     ctx.fillStyle = "#100817";
