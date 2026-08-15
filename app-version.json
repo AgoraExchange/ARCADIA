@@ -1,6 +1,7 @@
 {
-  "version": "19.9.7.0",
+  "version": "19.10.0.0",
   "patchNotes": [
+    "Dev Mode adds Casper, an eight-game autopilot that plays through normal mechanics with predictive strategies while locking only direct gameplay input.",
     "Fruit Blend now uses a streamlined 10-fruit chain, removing Peach and Dragon Fruit so Watermelon and maximum-fruit clears are more achievable before the container fills.",
     "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
     "The Rewards Store adds Skips, a purchasable white, blue-eyed cat character for Crossy Road.",

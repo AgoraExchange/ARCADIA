@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.9.7.0";
+  const APP_VERSION = "19.10.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Dev Mode adds Casper, an eight-game autopilot that plays through normal mechanics with predictive strategies while locking only direct gameplay input.",
     "Fruit Blend now uses a streamlined 10-fruit chain, removing Peach and Dragon Fruit so Watermelon and maximum-fruit clears are more achievable before the container fills.",
     "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
     "The Rewards Store adds Skips, a purchasable white, blue-eyed cat character for Crossy Road.",
@@ -186,6 +187,7 @@
     muteSfx: false,
     muteMusic: false,
     devModeEnabled: false,
+    casperEnabled: false,
     activityLog: [],
     stats: {
       gamesPlayed: 0,
@@ -611,6 +613,7 @@
   let snake = createSnakeState();
   let block = createBlockState();
   let blockEarthquakeTimer = null;
+  let casperBlockTimer = null;
   let star = createStarState();
   let starTimer = null;
   let stack = createStackState();
@@ -623,6 +626,7 @@
   let crossyCrashAudio = null;
   let solitaire = createSolitaireState();
   let solitaireTimer = null;
+  let casperSolitaireTimer = null;
   let solitaireDealRequest = 0;
   let solitaireSolverJob = null;
   let fruit = createFruitState();
@@ -645,6 +649,13 @@
   const toastQueue = [];
   const activeToasts = new Set();
   const toastCooldowns = new Map();
+  const casperRuntime = {
+    blockMoveAt: 0,
+    crossyMoveAt: 0,
+    solitaireMoveAt: 0,
+    solitaireStates: new Map(),
+    fruitDropAt: 0
+  };
 
   const el = {
     bootScreen: $("bootScreen"),
@@ -813,6 +824,8 @@
     checkUpdatesBtn: $("checkUpdatesBtn"),
     openRenameBtn: $("openRenameBtn"),
     devUnlockedControls: $("devUnlockedControls"),
+    casperToggleBtn: $("casperToggleBtn"),
+    casperToggleValue: $("casperToggleValue"),
     editLevelBtn: $("editLevelBtn"),
     editCoinsBtn: $("editCoinsBtn"),
     devLevelValue: $("devLevelValue"),
@@ -929,6 +942,7 @@
       muteSfx: Boolean(saved?.muteSfx),
       muteMusic: Boolean(saved?.muteMusic),
       devModeEnabled: Boolean(saved?.devModeEnabled),
+      casperEnabled: Boolean(saved?.casperEnabled),
       stats: { ...clone(defaultState.stats), ...(saved?.stats || {}) },
       owned: Array.isArray(saved?.owned) ? saved.owned : [],
       achievements: Array.isArray(saved?.achievements) ? saved.achievements : [],
@@ -1376,12 +1390,96 @@
     el.appVersionText.textContent = `Version ${APP_VERSION}`;
   }
 
+  function casperHasGameplayControl(game = currentGame) {
+    if (!state.devModeEnabled || !state.casperEnabled) return false;
+    if (game === "snake") return Boolean(snake.running && !snake.paused);
+    if (game === "block") return Boolean(block.running && !block.paused && !block.starting);
+    if (game === "star") return Boolean(star.running && !star.paused);
+    if (game === "stack") return Boolean(stack.running && !stack.paused);
+    if (game === "flappy") return Boolean(flappy.running && !flappy.paused && flappy.countdown <= 0);
+    if (game === "crossy") return Boolean(crossy.running && !crossy.paused && !crossy.dying);
+    if (game === "solitaire") return Boolean(solitaire.running && !solitaire.paused && !solitaire.dealing);
+    if (game === "fruit") return Boolean(fruit.running && !fruit.paused);
+    return false;
+  }
+
+  function casperRunIsArmed(game) {
+    if (!state.devModeEnabled || !state.casperEnabled) return false;
+    if (game === "snake") return Boolean(snake.running);
+    if (game === "block") return Boolean(block.running);
+    if (game === "star") return Boolean(star.running);
+    if (game === "stack") return Boolean(stack.running);
+    if (game === "flappy") return Boolean(flappy.running);
+    if (game === "crossy") return Boolean(crossy.running);
+    if (game === "solitaire") return Boolean(solitaire.running || solitaire.dealing);
+    if (game === "fruit") return Boolean(fruit.running);
+    return false;
+  }
+
+  function syncCasperPresentation() {
+    const screens = [
+      ["snake", el.gameScreen],
+      ["block", el.blockScreen],
+      ["star", el.starScreen],
+      ["stack", el.stackScreen],
+      ["flappy", el.flappyScreen],
+      ["crossy", el.crossyScreen],
+      ["solitaire", el.solitaireScreen],
+      ["fruit", el.fruitScreen]
+    ];
+    screens.forEach(([game, screen]) => screen?.classList.toggle("casper-active", casperRunIsArmed(game)));
+  }
+
+  function prepareCasperRun(game) {
+    if (game === "block") casperRuntime.blockMoveAt = performance.now() + 180;
+    if (game === "crossy") casperRuntime.crossyMoveAt = performance.now() + 120;
+    if (game === "solitaire") {
+      casperRuntime.solitaireMoveAt = performance.now() + 420;
+      casperRuntime.solitaireStates.clear();
+    }
+    if (game === "fruit") casperRuntime.fruitDropAt = performance.now() + 380;
+    syncCasperPresentation();
+    if (state.devModeEnabled && state.casperEnabled) {
+      const title = games.find((item) => item.id === game)?.title || game;
+      showToast("Casper Active", `${title} gameplay is now under autopilot control.`, "win", 3200);
+    }
+  }
+
+  function releaseCasperRun() {
+    star.shootHeld = false;
+    if (star.input) star.input = { x: 0, y: 0 };
+    syncCasperPresentation();
+  }
+
+  function toggleCasper() {
+    if (!state.devModeEnabled) return;
+    state.casperEnabled = !state.casperEnabled;
+    if (!state.casperEnabled) releaseCasperRun();
+    saveState();
+    renderDeveloperTools();
+    showToast(
+      "Casper",
+      state.casperEnabled
+        ? "Autopilot armed. Start any game to watch Casper play."
+        : "Autopilot disabled. Gameplay controls restored.",
+      state.casperEnabled ? "win" : "tap",
+      4200
+    );
+  }
+
   function renderDeveloperTools() {
     if (!el.devUnlockedControls) return;
     el.devUnlockedControls.classList.toggle("hidden", !state.devModeEnabled);
     if (el.devModeToggle) el.devModeToggle.checked = Boolean(state.devModeEnabled);
+    if (el.casperToggleBtn) {
+      const enabled = Boolean(state.devModeEnabled && state.casperEnabled);
+      el.casperToggleBtn.classList.toggle("is-active", enabled);
+      el.casperToggleBtn.setAttribute("aria-pressed", enabled ? "true" : "false");
+      if (el.casperToggleValue) el.casperToggleValue.textContent = enabled ? "On" : "Off";
+    }
     if (el.devLevelValue) el.devLevelValue.textContent = formatNumber(state.level);
     if (el.devCoinsValue) el.devCoinsValue.textContent = formatNumber(state.coins);
+    syncCasperPresentation();
   }
 
   function normalizeVersion(value) {
@@ -2449,6 +2547,9 @@
     }
     playBlockSfx("start");
     playGameTheme("block", { restart: true });
+    prepareCasperRun("block");
+    if (casperBlockTimer) clearInterval(casperBlockTimer);
+    casperBlockTimer = setInterval(runCasperBlock, 120);
     renderBlock();
     const runId = block.runId;
     setTimeout(() => {
@@ -2501,6 +2602,10 @@
 
   function stopBlock(render = true) {
     clearBlockEarthquakeTimer();
+    if (casperBlockTimer) {
+      clearInterval(casperBlockTimer);
+      casperBlockTimer = null;
+    }
     if (block.paused && block.pausedAt) {
       block.pausedMs += Date.now() - block.pausedAt;
       block.pausedAt = 0;
@@ -2514,6 +2619,7 @@
     cleanupBlockDrag();
     el.blockScreen?.classList.remove("earthquake-active");
     el.blockEarthquakeBanner?.setAttribute("aria-hidden", "true");
+    releaseCasperRun();
     if (render) renderBlock();
   }
 
@@ -2534,6 +2640,107 @@
       const c = col + x;
       return r >= 0 && c >= 0 && r < BLOCK_GRID_SIZE && c < BLOCK_GRID_SIZE && !block.board[r][c];
     });
+  }
+
+  function canPlaceCasperBlock(board, piece, row, col) {
+    return blockCells(piece).every(({ x, y }) => {
+      const targetRow = row + y;
+      const targetCol = col + x;
+      return targetRow >= 0
+        && targetCol >= 0
+        && targetRow < BLOCK_GRID_SIZE
+        && targetCol < BLOCK_GRID_SIZE
+        && !board[targetRow][targetCol];
+    });
+  }
+
+  function simulateCasperBlockPlacement(board, piece, row, col) {
+    const next = board.map((line) => line.slice());
+    blockCells(piece).forEach(({ x, y }) => { next[row + y][col + x] = 1; });
+    const fullRows = [];
+    const fullCols = [];
+    for (let index = 0; index < BLOCK_GRID_SIZE; index += 1) {
+      if (next[index].every(Boolean)) fullRows.push(index);
+      if (next.every((line) => line[index])) fullCols.push(index);
+    }
+    fullRows.forEach((targetRow) => next[targetRow].fill(0));
+    fullCols.forEach((targetCol) => next.forEach((line) => { line[targetCol] = 0; }));
+    return { board: next, clears: fullRows.length + fullCols.length };
+  }
+
+  function scoreCasperBlockBoard(board, clears = 0) {
+    const rowCounts = board.map((row) => row.filter(Boolean).length);
+    const colCounts = Array.from({ length: BLOCK_GRID_SIZE }, (_, col) => board.filter((row) => row[col]).length);
+    const occupied = rowCounts.reduce((total, count) => total + count, 0);
+    const pressure = [...rowCounts, ...colCounts].reduce((total, count) => total + count * count, 0);
+    let crampedCells = 0;
+    for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+      for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+        if (board[row][col]) continue;
+        const neighbors = [
+          row <= 0 || board[row - 1][col],
+          row >= BLOCK_GRID_SIZE - 1 || board[row + 1][col],
+          col <= 0 || board[row][col - 1],
+          col >= BLOCK_GRID_SIZE - 1 || board[row][col + 1]
+        ].filter(Boolean).length;
+        if (neighbors >= 3) crampedCells += 1;
+      }
+    }
+    return clears * 2400 + pressure * 2.2 - occupied * 5 - crampedCells * 42;
+  }
+
+  function casperBlockCandidates(board, pieces) {
+    const candidates = [];
+    pieces.forEach(({ piece, index }) => {
+      for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+        for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+          if (!canPlaceCasperBlock(board, piece, row, col)) continue;
+          const result = simulateCasperBlockPlacement(board, piece, row, col);
+          candidates.push({
+            index,
+            row,
+            col,
+            board: result.board,
+            score: scoreCasperBlockBoard(result.board, result.clears),
+            clears: result.clears
+          });
+        }
+      }
+    });
+    return candidates.sort((a, b) => b.score - a.score);
+  }
+
+  function searchCasperBlockPlan(board, pieces, depth = 3) {
+    const candidates = casperBlockCandidates(board, pieces);
+    if (!candidates.length) return null;
+    let best = null;
+    for (const candidate of candidates.slice(0, 14)) {
+      let score = candidate.score;
+      if (depth > 1 && pieces.length > 1) {
+        const remaining = pieces.filter((item) => item.index !== candidate.index);
+        const future = searchCasperBlockPlan(candidate.board, remaining, depth - 1);
+        score += future ? future.totalScore * 0.58 : -1800;
+      }
+      if (!best || score > best.totalScore) best = { ...candidate, totalScore: score };
+    }
+    return best;
+  }
+
+  function runCasperBlock() {
+    if (!casperHasGameplayControl("block") || !blockCanInteract()) return;
+    const now = performance.now();
+    if (now < casperRuntime.blockMoveAt) return;
+    const pieces = block.pieces
+      .map((piece, index) => ({ piece, index }))
+      .filter(({ piece }) => !piece.used);
+    const move = searchCasperBlockPlan(block.board.map((row) => row.map(Boolean)), pieces, Math.min(3, pieces.length));
+    if (!move) {
+      if (!anyBlockFits()) endBlockRun("crash");
+      return;
+    }
+    block.selected = move.index;
+    casperRuntime.blockMoveAt = now + (move.clears ? 620 : 260);
+    placeBlock(move.row, move.col);
   }
 
   function anyBlockFits() {
@@ -2787,6 +2994,7 @@
   }
 
   function startBlockDrag(index, event) {
+    if (casperHasGameplayControl("block")) return;
     if (!blockCanInteract()) {
       showToast("Start Game", "Press Start Game before choosing pieces.");
       return;
@@ -2860,7 +3068,10 @@
         cell.style.setProperty("--quake-delay", `${r * 18 + (c % 3) * 22}ms`);
         cell.className = `block-cell ${block.starting ? `intro ${blockIntroColor(r, c)}` : ""} ${block.board[r][c] ? `filled ${block.board[r][c]}` : ""} ${clearing ? `clearing ${clearing.color}` : ""} ${earthquake ? "earthquake-fall" : ""} ${preview ? `preview ${preview}` : ""}`;
         cell.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}`);
-        cell.addEventListener("click", () => placeBlock(r, c));
+        cell.addEventListener("click", () => {
+          if (casperHasGameplayControl("block")) return;
+          placeBlock(r, c);
+        });
         el.blockBoard.appendChild(cell);
       }
     }
@@ -2884,6 +3095,7 @@
       button.addEventListener("pointerup", endBlockDrag);
       button.addEventListener("pointercancel", () => cleanupBlockDrag(true));
       button.addEventListener("click", () => {
+        if (casperHasGameplayControl("block")) return;
         if (piece.used) return;
         if (!blockCanInteract()) {
           showToast("Start Game", "Press Start Game before choosing pieces.");
@@ -3063,6 +3275,7 @@
     playTone("tap");
     playStarTheme("normal", { restart: true });
     starTimer = setInterval(tickStar, STAR_TICK_MS);
+    prepareCasperRun("star");
     renderStarStats();
     if (star.machineGunChargeReady) showToast("Machine Gun Armed", "Tap MG when you want 30 seconds of auto-fire.", "win");
   }
@@ -3084,6 +3297,7 @@
     star.paused = false;
     star.shootHeld = false;
     resetJoystickVisual();
+    releaseCasperRun();
     if (render) {
       renderStarStats();
       drawStar();
@@ -3438,6 +3652,65 @@
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
 
+  function scoreCasperStarPosition(x, y) {
+    let score = -Math.abs(y - 585) * 0.22;
+    score -= Math.max(0, 70 - x) * 3;
+    score -= Math.max(0, x - 650) * 3;
+    score -= Math.max(0, 390 - y) * 1.4;
+    score -= Math.max(0, y - 670) * 3;
+
+    star.enemyBullets.forEach((bullet) => {
+      const time = Math.max(0, Math.min(1.1, (y - bullet.y) / Math.max(1, bullet.vy)));
+      const projectedY = bullet.y + bullet.vy * time;
+      const gap = Math.hypot(x - bullet.x, y - projectedY);
+      score -= Math.max(0, 92 - gap) * 16;
+      if (time < 0.65 && Math.abs(x - bullet.x) < star.player.r + bullet.r + 18) score -= 900;
+    });
+
+    [...star.meteors, ...star.enemies].forEach((hazard) => {
+      const speed = hazard.speed || 0;
+      [0.25, 0.55, 0.9].forEach((time) => {
+        const projected = { x: hazard.x, y: hazard.y + speed * time };
+        const gap = distance({ x, y }, projected) - star.player.r - hazard.r;
+        score -= Math.max(0, 115 - gap) * (hazard.type === "boss" ? 5 : 8);
+        if (gap < 18) score -= 1000;
+      });
+    });
+
+    const powerup = star.powerups
+      .filter((item) => !item.dead)
+      .sort((a, b) => distance(star.player, a) - distance(star.player, b))[0];
+    if (powerup) {
+      const value = powerup.type === "health" && star.health < star.maxHealth ? 420 : 180;
+      score += Math.max(0, value - distance({ x, y }, powerup) * 0.55);
+    }
+
+    const target = star.enemies.find((enemy) => enemy.type === "boss" && !enemy.dead)
+      || star.enemies.filter((enemy) => !enemy.dead).sort((a, b) => b.y - a.y)[0]
+      || star.meteors.filter((meteor) => !meteor.dead).sort((a, b) => b.y - a.y)[0];
+    if (target) score += Math.max(0, 130 - Math.abs(x - target.x)) * 0.32;
+    return score;
+  }
+
+  function runCasperStar() {
+    if (!casperHasGameplayControl("star")) return;
+    if (star.machineGunBoosterEquipped && star.machineGunChargeReady && !star.machineGunActive) activateStarMachineGun();
+    star.shootHeld = true;
+    const choices = [];
+    [-1, 0, 1].forEach((dx) => {
+      [-1, 0, 1].forEach((dy) => {
+        const magnitude = Math.hypot(dx, dy) || 1;
+        const input = { x: dx / magnitude, y: dy / magnitude };
+        const x = Math.max(24, Math.min(696, star.player.x + input.x * 92));
+        const y = Math.max(90, Math.min(686, star.player.y + input.y * 92));
+        const stillBonus = dx === 0 && dy === 0 ? 4 : 0;
+        choices.push({ input, score: scoreCasperStarPosition(x, y) + stillBonus });
+      });
+    });
+    choices.sort((a, b) => b.score - a.score);
+    star.input = choices[0]?.input || { x: 0, y: 0 };
+  }
+
   function tickStar() {
     if (!star.running || star.paused) return;
     const now = performance.now();
@@ -3445,6 +3718,8 @@
     star.lastFrame = now;
     star.survivedMs += dt * 1000;
     const difficulty = starDifficulty();
+
+    runCasperStar();
 
     star.player.x = Math.max(20, Math.min(700, star.player.x + star.input.x * 260 * dt));
     star.player.y = Math.max(80, Math.min(690, star.player.y + star.input.y * 260 * dt));
@@ -4051,6 +4326,7 @@
     playTone("tap");
     playGameTheme("stack", { restart: true });
     stackTimer = setInterval(tickStack, STACK_TICK_MS);
+    prepareCasperRun("stack");
     renderStackStats();
   }
 
@@ -4065,6 +4341,7 @@
     }
     stack.running = false;
     stack.paused = false;
+    releaseCasperRun();
     if (render) {
       renderStackStats();
       drawStack();
@@ -4112,6 +4389,8 @@
     const dt = Math.min(0.05, (now - stack.lastFrame) / 1000 || 0.016);
     stack.lastFrame = now;
     const active = stack.active;
+    const base = stack.tower[stack.tower.length - 1];
+    const previousPosition = active[stack.axis];
     const travel = 340;
     active[stack.axis] += stack.direction * stack.speed * dt;
     if (active[stack.axis] > travel) {
@@ -4121,6 +4400,16 @@
     if (active[stack.axis] < -travel) {
       active[stack.axis] = -travel;
       stack.direction = 1;
+    }
+    if (casperHasGameplayControl("stack")) {
+      const target = base[stack.axis];
+      const crossedTarget = (previousPosition - target) * (active[stack.axis] - target) <= 0;
+      const closeEnough = Math.abs(active[stack.axis] - target) <= Math.max(5, stack.speed * dt * 0.72);
+      if (crossedTarget || closeEnough) {
+        active[stack.axis] = target;
+        placeStackBlock();
+        return;
+      }
     }
     drawStack();
   }
@@ -4458,6 +4747,7 @@
     playGameTheme("snake", { restart: true });
     if (snake.tombstoneArmed) showToast("Tombstone Armed", "One fatal collision will resurrect your snake.", "win", 3600);
     snakeTimer = setInterval(tickSnake, GAME_TICK_MS);
+    prepareCasperRun("snake");
   }
 
   function stopSnake() {
@@ -4471,6 +4761,7 @@
     el.snakeStage?.classList.remove("score-visible");
     el.snakeLiveScorebar?.classList.remove("is-visible");
     el.snakeLiveScorebar?.setAttribute("aria-hidden", "true");
+    releaseCasperRun();
   }
 
   function handlePrimarySnakeAction() {
@@ -4489,6 +4780,7 @@
   }
 
   function changeDirection(dir) {
+    if (casperHasGameplayControl("snake")) return;
     const vectors = {
       up: { x: 0, y: -1 },
       down: { x: 0, y: 1 },
@@ -4507,8 +4799,67 @@
     snake.nextDirection = queue[0];
   }
 
+  function casperSnakeOpenArea(start, occupied) {
+    const startKey = `${start.x}:${start.y}`;
+    if (occupied.has(startKey)) return 0;
+    const queue = [start];
+    const seen = new Set([startKey]);
+    for (let index = 0; index < queue.length; index += 1) {
+      const cell = queue[index];
+      [
+        { x: cell.x + 1, y: cell.y },
+        { x: cell.x - 1, y: cell.y },
+        { x: cell.x, y: cell.y + 1 },
+        { x: cell.x, y: cell.y - 1 }
+      ].forEach((next) => {
+        const key = `${next.x}:${next.y}`;
+        if (next.x < 0 || next.y < 0 || next.x >= GRID_SIZE || next.y >= GRID_SIZE || occupied.has(key) || seen.has(key)) return;
+        seen.add(key);
+        queue.push(next);
+      });
+    }
+    return seen.size;
+  }
+
+  function runCasperSnake() {
+    if (!casperHasGameplayControl("snake")) return;
+    const head = snake.body[0];
+    const current = snake.direction || { x: 1, y: 0 };
+    const directions = [
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: -1, y: 0 },
+      { x: 0, y: -1 }
+    ];
+    const options = directions.flatMap((direction) => {
+      if (direction.x + current.x === 0 && direction.y + current.y === 0) return [];
+      const next = { x: head.x + direction.x, y: head.y + direction.y };
+      if (next.x < 0 || next.y < 0 || next.x >= GRID_SIZE || next.y >= GRID_SIZE) return [];
+      const eating = next.x === snake.food.x && next.y === snake.food.y;
+      const body = eating ? snake.body : snake.body.slice(0, -1);
+      const occupied = new Set(body.map((part) => `${part.x}:${part.y}`));
+      if (occupied.has(`${next.x}:${next.y}`) && snake.ghostTicks <= 0) return [];
+      occupied.delete(`${next.x}:${next.y}`);
+      const area = casperSnakeOpenArea(next, occupied);
+      const distanceToFood = Math.abs(next.x - snake.food.x) + Math.abs(next.y - snake.food.y);
+      const roomNeeded = Math.min(GRID_SIZE * GRID_SIZE - snake.body.length, snake.body.length + 4);
+      const crampedPenalty = area < roomNeeded ? 900 : 0;
+      const edgePenalty = (next.x === 0 || next.y === 0 || next.x === GRID_SIZE - 1 || next.y === GRID_SIZE - 1) ? 8 : 0;
+      const straightBonus = direction.x === current.x && direction.y === current.y ? 3 : 0;
+      const score = Math.min(120, area) * 5 - distanceToFood * 11 + (eating ? 360 : 0) - crampedPenalty - edgePenalty + straightBonus;
+      return [{ direction, score }];
+    });
+    if (!options.length) return;
+    options.sort((a, b) => b.score - a.score);
+    const chosen = options[0].direction;
+    snake.directionQueue = [chosen];
+    snake.nextDirection = chosen;
+  }
+
   function tickSnake() {
     if (snake.paused) return;
+
+    runCasperSnake();
 
     if (snake.directionQueue?.length) {
       snake.nextDirection = snake.directionQueue.shift();
@@ -4945,6 +5296,7 @@
     playTone("tap");
     playGameTheme("flappy", { restart: true });
     flappyTimer = setInterval(tickFlappy, FLAPPY_TICK_MS);
+    prepareCasperRun("flappy");
     renderFlappyStats();
     drawFlappy();
   }
@@ -4964,6 +5316,7 @@
     }
     flappy.running = false;
     flappy.paused = false;
+    releaseCasperRun();
     if (render) {
       renderFlappyStats();
       drawFlappy();
@@ -5015,6 +5368,26 @@
     flappy.spawnAt = now + Math.max(1180, 1640 - Math.min(320, flappy.score * 13));
   }
 
+  function runCasperFlappy() {
+    if (!casperHasGameplayControl("flappy")) return;
+    const bird = flappy.bird;
+    const nextPipe = flappy.pipes
+      .filter((pipe) => pipe.x + pipe.width >= bird.x - bird.r)
+      .sort((a, b) => a.x - b.x)[0];
+    const targetY = nextPipe ? (nextPipe.gapTop + nextPipe.gapBottom) / 2 + 16 : 325;
+    const framesAhead = nextPipe
+      ? Math.max(5, Math.min(16, ((nextPipe.x - bird.x) / Math.max(1, 168 + flappy.score * 3.6)) * 20))
+      : 10;
+    const gravityPerFrame = 18.5 / 60;
+    const predictedY = bird.y + bird.vy * framesAhead + gravityPerFrame * framesAhead * (framesAhead + 1) / 2;
+    const upperLimit = nextPipe ? nextPipe.gapTop + bird.r + 12 : 72;
+    const shouldFlap = predictedY > targetY + 8
+      || bird.y > targetY + 26
+      || bird.y + bird.r > 620;
+    const safeFlapApex = bird.y - 82 > upperLimit;
+    if (shouldFlap && safeFlapApex && bird.vy > -0.35) flapBird();
+  }
+
   function tickFlappy() {
     if (!flappy.running || flappy.paused) return;
     const now = performance.now();
@@ -5031,6 +5404,8 @@
       drawFlappy();
       return;
     }
+
+    runCasperFlappy();
 
     flappy.groundX = (flappy.groundX - 140 * dt) % 42;
     flappy.bird.vy += 18.5 * dt;
@@ -5487,6 +5862,7 @@
     playTone("tap");
     playGameTheme("crossy", { restart: true, volume: 0.4 });
     crossyTimer = setInterval(tickCrossy, CROSSY_TICK_MS);
+    prepareCasperRun("crossy");
     renderCrossyStats();
     if (crossy.tombstoneArmed) {
       showToast("Tombstone Armed", "One traffic hit or danger-edge catch will resurrect your runner.", "win", 3600);
@@ -5516,6 +5892,7 @@
     }
     crossy.running = false;
     crossy.paused = false;
+    releaseCasperRun();
     if (render) {
       renderCrossyStats();
       drawCrossy();
@@ -5582,6 +5959,76 @@
     renderCrossyStats();
   }
 
+  function casperCrossyCarX(car, secondsAhead) {
+    let x = car.x + car.speed * secondsAhead;
+    const span = 650 + car.width;
+    while (x > 590) x -= span;
+    while (x + car.width < -50) x += span;
+    return x;
+  }
+
+  function casperCrossyCellSafe(depth, col, arrivalSeconds = 0.2) {
+    if (col < 0 || col > 8 || isCrossyBlocked(depth, col)) return false;
+    const centerX = 30 + col * 60;
+    return !crossy.cars.some((car) => {
+      if (car.depth !== depth) return false;
+      const windowStart = Math.max(0, arrivalSeconds - 0.2);
+      const samples = Array.from({ length: 4 }, (_, index) => windowStart + index * 0.09);
+      return samples.some((time) => {
+        const carX = casperCrossyCarX(car, time);
+        return centerX + 26 > carX - 14 && centerX - 26 < carX + car.width + 14;
+      });
+    });
+  }
+
+  function findCasperCrossyPath() {
+    const start = { col: crossy.player.col, depth: crossy.player.depth, path: [] };
+    const goalDepth = start.depth + 6;
+    const queue = [start];
+    const seen = new Set([`${start.depth}:${start.col}`]);
+    for (let index = 0; index < queue.length; index += 1) {
+      const node = queue[index];
+      if (node.depth >= goalDepth) return node.path;
+      const lane = crossy.lanes.find((item) => item.depth === node.depth);
+      const lateralTowardExit = lane && lane.pathExit !== node.col
+        ? (lane.pathExit > node.col ? "right" : "left")
+        : null;
+      const directions = [lateralTowardExit, "up", "left", "right", "down"].filter((value, moveIndex, list) => value && list.indexOf(value) === moveIndex);
+      directions.forEach((direction) => {
+        const next = { col: node.col, depth: node.depth };
+        if (direction === "up") next.depth += 1;
+        if (direction === "down") next.depth -= 1;
+        if (direction === "left") next.col -= 1;
+        if (direction === "right") next.col += 1;
+        if (next.depth < start.depth - 1 || next.depth > goalDepth || next.col < 0 || next.col > 8) return;
+        const key = `${next.depth}:${next.col}`;
+        if (seen.has(key)) return;
+        const arrival = Math.max(0.14, (node.path.length + 1) * 0.2);
+        const safe = node.path.length < 2
+          ? casperCrossyCellSafe(next.depth, next.col, arrival)
+          : !isCrossyBlocked(next.depth, next.col);
+        if (!safe) return;
+        seen.add(key);
+        queue.push({ ...next, path: [...node.path, direction] });
+      });
+    }
+    return null;
+  }
+
+  function runCasperCrossy(now) {
+    if (!casperHasGameplayControl("crossy") || crossy.rescuing || now < casperRuntime.crossyMoveAt) return;
+    const player = crossy.player;
+    if (Math.abs(player.x - player.targetX) > 4 || Math.abs(player.y - player.targetY) > 4) return;
+    ensureCrossyWorld(player.depth + 14);
+    const path = findCasperCrossyPath();
+    if (!path?.length) {
+      casperRuntime.crossyMoveAt = now + 70;
+      return;
+    }
+    casperRuntime.crossyMoveAt = now + 92;
+    moveCrossy(path[0]);
+  }
+
   function tickCrossy() {
     if (!crossy.running || crossy.paused) return;
     const now = performance.now();
@@ -5593,6 +6040,7 @@
       if (car.speed > 0 && car.x > 590) car.x = -car.width - 60;
       if (car.speed < 0 && car.x + car.width < -50) car.x = 590 + Math.random() * 80;
     });
+    runCasperCrossy(now);
     const activeSeconds = Math.max(0, (Date.now() - crossy.startedAt - crossy.pausedMs) / 1000);
     if (activeSeconds > 2.25) {
       const pressureRate = Math.min(0.34, 0.17 + crossy.section * 0.012);
@@ -6200,6 +6648,8 @@
       startedAt: 0,
       pausedAt: 0,
       pausedMs: 0,
+      casperPlan: [],
+      casperPlanIndex: 0,
       won: false
     };
   }
@@ -6270,7 +6720,7 @@
         return rankOf(card) <= Math.min(foundation[oppositeSuits[0]], foundation[oppositeSuits[1]]) + 1;
       }
 
-      function promoteSafeCards(state) {
+      function promoteSafeCards(state, plan) {
         let changed = true;
         while (changed) {
           changed = false;
@@ -6283,6 +6733,7 @@
             pile.pop();
             state.foundation[suitOf(card)] += 1;
             exposeTableauTop(state, column);
+            plan.push({ type: "tableauFoundation", from: column, card });
             changed = true;
           }
           for (let index = 0; index < state.reserve.length; index += 1) {
@@ -6291,6 +6742,7 @@
               || !safeForFoundation(card, state.foundation)) continue;
             state.reserve.splice(index, 1);
             state.foundation[suitOf(card)] += 1;
+            plan.push({ type: "reserveFoundation", card });
             changed = true;
             break;
           }
@@ -6310,18 +6762,19 @@
           : rankOf(target) === rankOf(card) + 1 && colorOf(target) !== colorOf(card);
       }
 
-      function search(source) {
+      function search(source, sourcePlan = []) {
         nodes += 1;
         if (nodes > nodeLimit || Date.now() > deadline) {
           stopped = true;
-          return false;
+          return null;
         }
 
         const state = cloneState(source);
-        promoteSafeCards(state);
-        if (state.foundation.every((rank) => rank === 13)) return true;
+        const plan = sourcePlan.slice();
+        promoteSafeCards(state, plan);
+        if (state.foundation.every((rank) => rank === 13)) return plan;
         const key = stateKey(state);
-        if (seen.has(key)) return false;
+        if (seen.has(key)) return null;
         seen.add(key);
 
         const moves = [];
@@ -6377,26 +6830,34 @@
 
         for (const move of moves) {
           const next = cloneState(state);
+          let action;
           if (move.type === "tableau") {
+            action = { type: move.type, from: move.from, to: move.to, card: next.tableau[move.from][move.index] };
             next.tableau[move.to].push(...next.tableau[move.from].splice(move.index));
             exposeTableauTop(next, move.from);
           } else if (move.type === "reserveTableau") {
-            next.tableau[move.to].push(next.reserve.splice(move.index, 1)[0]);
+            const card = next.reserve.splice(move.index, 1)[0];
+            action = { type: move.type, to: move.to, card };
+            next.tableau[move.to].push(card);
           } else if (move.type === "reserveFoundation") {
             const card = next.reserve.splice(move.index, 1)[0];
+            action = { type: move.type, card };
             next.foundation[suitOf(card)] += 1;
           } else {
             const card = next.tableau[move.from].pop();
+            action = { type: move.type, from: move.from, card };
             next.foundation[suitOf(card)] += 1;
             exposeTableauTop(next, move.from);
           }
-          if (search(next)) return true;
-          if (stopped) return false;
+          const result = search(next, [...plan, action]);
+          if (result) return result;
+          if (stopped) return null;
         }
-        return false;
+        return null;
       }
 
-      return { solved: search(initial), nodes };
+      const plan = search(initial);
+      return { solved: Boolean(plan), plan: plan || [], nodes };
     }
 
     self.onmessage = (event) => {
@@ -6410,7 +6871,7 @@
         const result = solveDeal(dealDeck(deck), nodeLimit, timeLimitMs);
         testedNodes += result.nodes;
         if (result.solved) {
-          self.postMessage({ type: "solved", deck, attempts, testedNodes });
+          self.postMessage({ type: "solved", deck, plan: result.plan, attempts, testedNodes });
           return;
         }
         if (attempts % 5 === 0) self.postMessage({ type: "progress", attempts, testedNodes });
@@ -6508,13 +6969,18 @@
 
     solitaire.dealing = false;
     solitaire.dealAttempts = result.attempts;
+    solitaire.casperPlan = Array.isArray(result.plan) ? result.plan : [];
+    solitaire.casperPlanIndex = 0;
     dealSolitaireDeck(createSolitaireDeck(result.deck));
     ensureSolitaireIntegrity("initial deal");
     solitaire.running = true;
     solitaire.startedAt = Date.now();
     solitaireTimer = setInterval(renderSolitaireStats, 1000);
+    if (casperSolitaireTimer) clearInterval(casperSolitaireTimer);
+    casperSolitaireTimer = setInterval(runCasperSolitaire, 90);
     playTone("tap");
     playGameTheme("solitaire", { restart: true, volume: 0.52 });
+    prepareCasperRun("solitaire");
     renderSolitaireBoard();
     renderSolitaireStats();
   }
@@ -6529,6 +6995,10 @@
       clearInterval(solitaireTimer);
       solitaireTimer = null;
     }
+    if (casperSolitaireTimer) {
+      clearInterval(casperSolitaireTimer);
+      casperSolitaireTimer = null;
+    }
     if (solitaire.paused && solitaire.pausedAt) {
       solitaire.pausedMs += Date.now() - solitaire.pausedAt;
       solitaire.pausedAt = 0;
@@ -6536,6 +7006,7 @@
     solitaire.running = false;
     solitaire.paused = false;
     solitaire.selected = null;
+    releaseCasperRun();
     if (render) {
       renderSolitaireBoard();
       renderSolitaireStats();
@@ -6930,6 +7401,7 @@
   }
 
   function handleSolitaireBoardClick(event) {
+    if (casperHasGameplayControl("solitaire")) return;
     if (!solitaire.running || solitaire.paused) return;
     const target = event.target.closest("[data-solitaire-action]");
     if (!target || !el.solitaireBoard.contains(target)) return;
@@ -6986,6 +7458,7 @@
   }
 
   function handleSolitaireBoardDoubleClick(event) {
+    if (casperHasGameplayControl("solitaire")) return;
     const target = event.target.closest("[data-solitaire-action]");
     if (!target) return;
     const action = target.dataset.solitaireAction;
@@ -7118,6 +7591,143 @@
     if (solitaire.stock.length) return { type: "draw", message: "Draw from the stock to reach another playable card." };
     if (solitaire.waste.length > 1) return { type: "recycle", message: "Recycle the waste pile to reach another playable card." };
     return null;
+  }
+
+  function solitairePlanCardId(cardNumber) {
+    const number = Number(cardNumber);
+    if (!Number.isInteger(number) || number < 0 || number >= 52) return "";
+    const suit = SOLITAIRE_SUITS[Math.floor(number / 13)];
+    return `${suit.id}-${number % 13 + 1}`;
+  }
+
+  function solitairePlanCardIsHome(cardNumber) {
+    const number = Number(cardNumber);
+    if (!Number.isInteger(number)) return false;
+    const suit = SOLITAIRE_SUITS[Math.floor(number / 13)];
+    const rank = number % 13 + 1;
+    return solitaire.foundations[suit.id].length >= rank;
+  }
+
+  function advanceCasperSolitairePlan() {
+    solitaire.casperPlanIndex += 1;
+    casperRuntime.solitaireMoveAt = performance.now() + 170;
+  }
+
+  function executeCasperSolitairePlanStep() {
+    const action = solitaire.casperPlan?.[solitaire.casperPlanIndex];
+    if (!action) return false;
+    const cardId = solitairePlanCardId(action.card);
+    if (!cardId) return false;
+
+    if (action.type.endsWith("Foundation") && solitairePlanCardIsHome(action.card)) {
+      advanceCasperSolitairePlan();
+      return true;
+    }
+
+    if (action.type === "tableauFoundation") {
+      const pile = solitaire.tableau[action.from];
+      const cardIndex = pile?.findIndex((card) => card.id === cardId) ?? -1;
+      if (cardIndex < 0 || cardIndex !== pile.length - 1) return false;
+      selectSolitaireSource("tableau", action.from, cardIndex);
+      const moved = moveSelectedSolitaireToFoundation(pile[cardIndex].suit);
+      if (moved) advanceCasperSolitairePlan();
+      return moved;
+    }
+
+    if (action.type === "tableau") {
+      const pile = solitaire.tableau[action.from];
+      const cardIndex = pile?.findIndex((card) => card.id === cardId) ?? -1;
+      if (cardIndex < 0) return false;
+      selectSolitaireSource("tableau", action.from, cardIndex);
+      const moved = moveSelectedSolitaireToTableau(action.to);
+      if (moved) advanceCasperSolitairePlan();
+      return moved;
+    }
+
+    const wasteTop = solitaire.waste[solitaire.waste.length - 1];
+    if (wasteTop?.id !== cardId) {
+      const accessible = solitaire.stock.some((card) => card.id === cardId)
+        || solitaire.waste.some((card) => card.id === cardId);
+      if (!accessible) return false;
+      drawSolitaireStock();
+      casperRuntime.solitaireMoveAt = performance.now() + 85;
+      return true;
+    }
+
+    selectSolitaireSource("waste", "waste", solitaire.waste.length - 1);
+    const moved = action.type === "reserveFoundation"
+      ? moveSelectedSolitaireToFoundation(wasteTop.suit)
+      : moveSelectedSolitaireToTableau(action.to);
+    if (moved) advanceCasperSolitairePlan();
+    return moved;
+  }
+
+  function casperSolitaireStateKey() {
+    const foundations = SOLITAIRE_SUITS.map((suit) => solitaire.foundations[suit.id].length).join(".");
+    const tableau = solitaire.tableau.map((pile) => pile.map((card) => `${card.id}${card.faceUp ? "u" : "d"}`).join(",")).join("/");
+    const stock = solitaire.stock.map((card) => card.id).join(",");
+    const waste = solitaire.waste.map((card) => card.id).join(",");
+    return `${foundations}|${tableau}|${stock}|${waste}`;
+  }
+
+  function scoreCasperSolitaireMove(move) {
+    const revealsCard = move.source === "tableau"
+      && move.cardIndex > 0
+      && !solitaire.tableau[move.pile][move.cardIndex - 1]?.faceUp;
+    if (move.type === "flip") return 2400;
+    if (revealsCard) return 2100 + (13 - move.card.rank) * 4;
+    if (move.type.endsWith("foundation")) {
+      return (isSafeSolitaireFoundationMove(move.card) ? 1600 : 900) + move.card.rank * 7;
+    }
+    if (move.type === "waste-tableau") return 1300 + (13 - move.card.rank) * 5;
+    if (move.type === "tableau-tableau") {
+      const target = solitaire.tableau[move.targetColumn];
+      const emptyKingMove = !target.length && move.card.rank === 13;
+      return (emptyKingMove ? 1120 : 760) + move.priority;
+    }
+    return move.type === "foundation-tableau" ? 80 : move.priority;
+  }
+
+  function executeCasperSolitaireMove(move) {
+    if (move.type === "flip") {
+      flipSolitaireCard(move.pile, move.cardIndex);
+      return true;
+    }
+    selectSolitaireSource(move.source, move.pile, move.cardIndex);
+    if (move.type.endsWith("foundation")) return moveSelectedSolitaireToFoundation(move.card.suit);
+    if (move.targetColumn !== undefined) return moveSelectedSolitaireToTableau(move.targetColumn);
+    solitaire.selected = null;
+    return false;
+  }
+
+  function runCasperSolitaire() {
+    if (!casperHasGameplayControl("solitaire")) return;
+    const now = performance.now();
+    if (now < casperRuntime.solitaireMoveAt) return;
+    if (solitaire.casperPlanIndex < solitaire.casperPlan.length && executeCasperSolitairePlanStep()) return;
+    const stateKey = casperSolitaireStateKey();
+    const visits = (casperRuntime.solitaireStates.get(stateKey) || 0) + 1;
+    casperRuntime.solitaireStates.set(stateKey, visits);
+    if (casperRuntime.solitaireStates.size > 500) {
+      const oldest = casperRuntime.solitaireStates.keys().next().value;
+      casperRuntime.solitaireStates.delete(oldest);
+    }
+
+    const moves = findSolitaireLegalMoves()
+      .filter((move) => move.useful !== false && move.type !== "foundation-tableau")
+      .map((move) => ({ ...move, casperScore: scoreCasperSolitaireMove(move) }))
+      .filter((move) => visits < 3 || move.type === "flip" || move.type.endsWith("foundation") || move.type === "waste-tableau")
+      .sort((a, b) => b.casperScore - a.casperScore);
+    const move = moves[0];
+    casperRuntime.solitaireMoveAt = now + 360;
+    if (move && executeCasperSolitaireMove(move)) return;
+
+    solitaire.selected = null;
+    if (solitaire.stock.length || solitaire.waste.length) {
+      drawSolitaireStock();
+      return;
+    }
+    renderSolitaireBoard();
   }
 
   function showSolitaireHint() {
@@ -7390,6 +8000,7 @@
     renderFruitStats();
     drawFruitBlend();
     fruitTimer = requestAnimationFrame(tickFruit);
+    prepareCasperRun("fruit");
   }
 
   function restartFruit() {
@@ -7403,6 +8014,7 @@
     fruit.running = false;
     fruit.paused = false;
     fruitPointerId = null;
+    releaseCasperRun();
     if (render) {
       renderFruitStats();
       drawFruitBlend();
@@ -7454,6 +8066,61 @@
     renderFruitStats();
   }
 
+  function evaluateCasperFruitAim(tier, x) {
+    const radius = FRUIT_TYPES[tier].radius;
+    let landingY = FRUIT_BOUNDS.bottom - radius;
+    let support = null;
+    fruit.fruits.forEach((body) => {
+      const combined = radius + body.radius;
+      const dx = Math.abs(x - body.x);
+      if (dx >= combined) return;
+      const contactY = body.y - Math.sqrt(Math.max(0, combined * combined - dx * dx));
+      if (contactY < landingY) {
+        landingY = contactY;
+        support = body;
+      }
+    });
+
+    let score = landingY * 3.4;
+    if (support?.tier === tier) score += 4800 + tier * 520;
+    if (support && support.tier !== tier) score -= Math.abs(support.tier - tier) * 80;
+    const sameTier = fruit.fruits.filter((body) => body.tier === tier);
+    if (sameTier.length) {
+      const nearest = Math.min(...sameTier.map((body) => Math.abs(body.x - x) + Math.max(0, body.y - landingY) * 0.18));
+      score += Math.max(0, 820 - nearest * 7);
+    }
+    const nextMatches = fruit.fruits.filter((body) => body.tier === fruit.nextTier);
+    if (nextMatches.length) {
+      const nearestNext = Math.min(...nextMatches.map((body) => Math.abs(body.x - x)));
+      if (tier !== fruit.nextTier) score += Math.min(160, nearestNext * 0.5);
+    }
+    if (landingY - radius < FRUIT_BOUNDS.danger + 18) score -= 3600;
+    if (radius >= 70) score -= Math.max(0, 76 - Math.min(x - FRUIT_BOUNDS.left, FRUIT_BOUNDS.right - x)) * 12;
+    return score;
+  }
+
+  function chooseCasperFruitAim(tier) {
+    const radius = FRUIT_TYPES[tier].radius;
+    const minX = FRUIT_BOUNDS.left + radius;
+    const maxX = FRUIT_BOUNDS.right - radius;
+    const candidates = [];
+    for (let x = minX; x <= maxX; x += 16) candidates.push(x);
+    fruit.fruits
+      .filter((body) => body.tier === tier)
+      .forEach((body) => candidates.push(Math.max(minX, Math.min(maxX, body.x))));
+    candidates.push(maxX);
+    return candidates
+      .map((x) => ({ x, score: evaluateCasperFruitAim(tier, x) }))
+      .sort((a, b) => b.score - a.score)[0]?.x || (minX + maxX) / 2;
+  }
+
+  function runCasperFruit(now) {
+    if (!casperHasGameplayControl("fruit") || !fruit.dropReady || now < casperRuntime.fruitDropAt) return;
+    fruit.aimX = chooseCasperFruitAim(fruit.currentTier);
+    casperRuntime.fruitDropAt = now + 760;
+    dropFruit();
+  }
+
   function tickFruit(now) {
     if (!fruit.running) return;
     const elapsed = Math.max(0.001, Math.min(0.034, (now - fruit.lastAt) / 1000));
@@ -7463,6 +8130,7 @@
       stepFruitPhysics(step, now);
       stepFruitPhysics(step, now);
       if (!fruit.dropReady && now >= fruit.dropReadyAt) fruit.dropReady = true;
+      runCasperFruit(now);
       updateFruitParticles(elapsed);
       updateFruitDanger(now);
       if (!fruit.running) return;
@@ -8238,6 +8906,7 @@
 
   function setDevModeEnabled(enabled) {
     state.devModeEnabled = Boolean(enabled);
+    if (!state.devModeEnabled) state.casperEnabled = false;
     saveState();
     renderAll();
     showToast("Dev Mode", state.devModeEnabled ? "Operator tools unlocked." : "Operator tools hidden.", "win", 4000);
@@ -8343,7 +9012,7 @@
   }
 
   function startStarJoystick(event) {
-    if (!star.running || star.paused) return;
+    if (!star.running || star.paused || casperHasGameplayControl("star")) return;
     event.preventDefault();
     star.joystickPointerId = event.pointerId;
     el.starJoystick.setPointerCapture?.(event.pointerId);
@@ -8351,7 +9020,7 @@
   }
 
   function moveStarJoystick(event) {
-    if (star.paused) return;
+    if (star.paused || casperHasGameplayControl("star")) return;
     if (star.joystickPointerId !== event.pointerId) return;
     event.preventDefault();
     updateStarJoystick(event);
@@ -8412,6 +9081,7 @@
     el.toggleMusicBtn.addEventListener("click", toggleSoundtrack);
     el.checkUpdatesBtn.addEventListener("click", searchForUpdates);
     el.openRenameBtn.addEventListener("click", openRenameModal);
+    el.casperToggleBtn.addEventListener("click", toggleCasper);
     el.editLevelBtn.addEventListener("click", editPlayerLevel);
     el.editCoinsBtn.addEventListener("click", editPlayerCoins);
     el.closeRenameBtn.addEventListener("click", () => el.renameModal.classList.add("hidden"));
@@ -8522,18 +9192,19 @@
     el.startFruitBtn.addEventListener("click", handlePrimaryFruitAction);
     el.restartFruitBtn.addEventListener("click", restartFruit);
     el.fruitCanvas.addEventListener("pointermove", (event) => {
-      if (!fruit.running || fruit.paused) return;
+      if (!fruit.running || fruit.paused || casperHasGameplayControl("fruit")) return;
       event.preventDefault();
       aimFruitFromPointer(event);
     });
     el.fruitCanvas.addEventListener("pointerdown", (event) => {
-      if (!fruit.running || fruit.paused) return;
+      if (!fruit.running || fruit.paused || casperHasGameplayControl("fruit")) return;
       event.preventDefault();
       fruitPointerId = event.pointerId;
       aimFruitFromPointer(event);
       el.fruitCanvas.setPointerCapture?.(event.pointerId);
     });
     el.fruitCanvas.addEventListener("pointerup", (event) => {
+      if (casperHasGameplayControl("fruit")) return;
       if (fruitPointerId !== event.pointerId) return;
       event.preventDefault();
       aimFruitFromPointer(event);
@@ -8543,15 +9214,18 @@
     el.fruitCanvas.addEventListener("pointercancel", () => { fruitPointerId = null; });
     el.flappyCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      if (casperHasGameplayControl("flappy")) return;
       flapBird();
     });
     el.crossyCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      if (casperHasGameplayControl("crossy")) return;
       crossyTouchStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
       el.crossyCanvas.setPointerCapture?.(event.pointerId);
     });
     el.crossyCanvas.addEventListener("pointerup", (event) => {
       event.preventDefault();
+      if (casperHasGameplayControl("crossy")) return;
       if (!crossyTouchStart || crossyTouchStart.pointerId !== event.pointerId) return;
       const dx = event.clientX - crossyTouchStart.x;
       const dy = event.clientY - crossyTouchStart.y;
@@ -8568,6 +9242,7 @@
     });
     el.stackCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      if (casperHasGameplayControl("stack")) return;
       placeStackBlock();
     });
     el.starJoystick.addEventListener("pointerdown", startStarJoystick);
@@ -8576,14 +9251,19 @@
     el.starJoystick.addEventListener("pointercancel", endStarJoystick);
     el.starShootBtn.addEventListener("pointerdown", (event) => {
       event.preventDefault();
-      if (!star.running || star.paused) return;
+      if (!star.running || star.paused || casperHasGameplayControl("star")) return;
       star.shootHeld = true;
       shootStar();
     });
-    el.starShootBtn.addEventListener("pointerup", () => { star.shootHeld = false; });
-    el.starShootBtn.addEventListener("pointercancel", () => { star.shootHeld = false; });
+    el.starShootBtn.addEventListener("pointerup", () => {
+      if (!casperHasGameplayControl("star")) star.shootHeld = false;
+    });
+    el.starShootBtn.addEventListener("pointercancel", () => {
+      if (!casperHasGameplayControl("star")) star.shootHeld = false;
+    });
     el.starBoosterBtn?.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      if (casperHasGameplayControl("star")) return;
       activateStarMachineGun();
     });
     document.addEventListener("pointermove", moveBlockDrag);
@@ -8609,13 +9289,13 @@
         event.preventDefault();
         changeDirection(keyMap[event.key]);
       }
-      if (keyMap[event.key] && currentScreen === "star" && star.running && !star.paused) {
+      if (keyMap[event.key] && currentScreen === "star" && star.running && !star.paused && !casperHasGameplayControl("star")) {
         event.preventDefault();
         const dir = keyMap[event.key];
         star.input.x = dir === "left" ? -1 : dir === "right" ? 1 : star.input.x;
         star.input.y = dir === "up" ? -1 : dir === "down" ? 1 : star.input.y;
       }
-      if (keyMap[event.key] && currentScreen === "crossy") {
+      if (keyMap[event.key] && currentScreen === "crossy" && !casperHasGameplayControl("crossy")) {
         event.preventDefault();
         moveCrossy(keyMap[event.key]);
       }
@@ -8626,28 +9306,28 @@
       if (event.key === " " && currentScreen === "star") {
         event.preventDefault();
         if (!star.running) startStar();
-        else if (!star.paused) shootStar();
+        else if (!star.paused && !casperHasGameplayControl("star")) shootStar();
       }
       if (event.key === " " && currentScreen === "stack") {
         event.preventDefault();
-        placeStackBlock();
+        if (!casperHasGameplayControl("stack")) placeStackBlock();
       }
       if ([" ", "ArrowUp", "w", "W"].includes(event.key) && currentScreen === "flappy") {
         event.preventDefault();
         if (!flappy.running) startFlappy();
-        else flapBird();
+        else if (!casperHasGameplayControl("flappy")) flapBird();
       }
       if (event.key === " " && currentScreen === "crossy") {
         event.preventDefault();
         if (!crossy.running) startCrossy();
-        else moveCrossy("up");
+        else if (!casperHasGameplayControl("crossy")) moveCrossy("up");
       }
       if (event.key === " " && currentScreen === "fruit") {
         event.preventDefault();
         if (!fruit.running) startFruit();
-        else dropFruit();
+        else if (!casperHasGameplayControl("fruit")) dropFruit();
       }
-      if (currentScreen === "fruit" && fruit.running && ["ArrowLeft", "a", "A", "ArrowRight", "d", "D"].includes(event.key)) {
+      if (currentScreen === "fruit" && fruit.running && !casperHasGameplayControl("fruit") && ["ArrowLeft", "a", "A", "ArrowRight", "d", "D"].includes(event.key)) {
         event.preventDefault();
         const direction = ["ArrowLeft", "a", "A"].includes(event.key) ? -1 : 1;
         const radius = FRUIT_TYPES[fruit.currentTier].radius;
@@ -8657,13 +9337,14 @@
     });
 
     document.addEventListener("keyup", (event) => {
-      if (currentScreen !== "star") return;
+      if (currentScreen !== "star" || casperHasGameplayControl("star")) return;
       if (["ArrowLeft", "ArrowRight", "a", "A", "d", "D"].includes(event.key)) star.input.x = 0;
       if (["ArrowUp", "ArrowDown", "w", "W", "s", "S"].includes(event.key)) star.input.y = 0;
     });
 
     el.snakeCanvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      if (casperHasGameplayControl("snake")) return;
       touchStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
       el.snakeCanvas.setPointerCapture?.(event.pointerId);
     });
