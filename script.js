@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.11.0.0";
+  const APP_VERSION = "19.11.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "The notification bell now inherits the equipped player nameplate's background, border, glow, and animated RGB or Redline effects.",
     "A new notification bell opens a scrollable player inbox with unread activity, detailed multi-level progress, and update history with version notes.",
     "The Rewards Store adds Galaxy Frog, a level-65 Crossy Road character with a living starfield that counter-moves as the frog crosses each lane.",
     "Dev Mode adds Casper, an eight-game autopilot that plays through normal mechanics with predictive strategies while locking only direct gameplay input.",
@@ -1752,6 +1753,7 @@
     el.headerCoins.textContent = formatCompactNumber(state.coins);
     nameplateClasses.forEach((className) => {
       el.openProfileBtn.classList.toggle(className, className === activeNameplateClass);
+      el.openNotificationsBtn.classList.toggle(className, className === activeNameplateClass);
       el.profileHero.classList.toggle(className, className === activeNameplateClass);
     });
     el.profileAvatar.textContent = initial;

@@ -565,6 +565,7 @@ input:focus {
 }
 
 .player-strip.nameplate-neon,
+.notification-bell-pill.nameplate-neon,
 .profile-hero.nameplate-neon {
   border-color: rgba(87, 255, 154, 0.48);
   background:
@@ -586,6 +587,7 @@ input:focus {
 }
 
 .player-strip.nameplate-blue,
+.notification-bell-pill.nameplate-blue,
 .profile-hero.nameplate-blue {
   border-color: rgba(73, 244, 255, 0.66);
   background:
@@ -601,6 +603,7 @@ input:focus {
 }
 
 .player-strip.nameplate-black,
+.notification-bell-pill.nameplate-black,
 .profile-hero.nameplate-black {
   border-color: rgba(255, 255, 255, 0.28);
   background:
@@ -616,6 +619,7 @@ input:focus {
 }
 
 .player-strip.nameplate-purple,
+.notification-bell-pill.nameplate-purple,
 .profile-hero.nameplate-purple {
   border-color: rgba(176, 113, 255, 0.72);
   background:
@@ -631,6 +635,7 @@ input:focus {
 }
 
 .player-strip.nameplate-rgb,
+.notification-bell-pill.nameplate-rgb,
 .profile-hero.nameplate-rgb {
   border-color: rgba(255, 255, 255, 0.38);
   background:
@@ -648,6 +653,7 @@ input:focus {
 }
 
 .player-strip.nameplate-redline,
+.notification-bell-pill.nameplate-redline,
 .profile-hero.nameplate-redline {
   position: relative;
   border-color: rgba(255, 82, 117, 0.72);
