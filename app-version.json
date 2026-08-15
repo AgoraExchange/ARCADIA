@@ -1,6 +1,8 @@
 {
-  "version": "19.14.1.0",
+  "version": "19.15.0.0",
   "patchNotes": [
+    "Crossy Road adds fourteen purchasable characters, from Fox, Duck, and Penguin through the level-110 Chrono Dragon flex skin.",
+    "Premium Crossy characters now bring their Store designs into gameplay with animated materials, accessories, hop particles, holograms, landing bursts, shadow trails, and time ripples.",
     "Snake Store previews now face forward, and the Cowboy Snake preview spins its complete hat instead of moving only the brim.",
     "Casper now shares Snake's tail-vacate collision rule and favors routes with a reachable tail and safe next move.",
     "Reactive Snake milestones are rebalanced by rarity, with Cyber and Obsidian at 10 pellets, Quantum and Void at 12, and a flashing Void body outline.",
