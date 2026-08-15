@@ -1,6 +1,8 @@
 {
-  "version": "19.12.0.0",
+  "version": "19.13.0.0",
   "patchNotes": [
+    "The Rewards Store now previews every nameplate, Star Invaders laser, and booster with compact animated artwork while keeping complete item descriptions readable.",
+    "Blackstorm no longer stretches the Player Profile or disrupts the notification bell and unread badge layout.",
     "The Rewards Store adds the level-75 Blackstorm Nameplate with moving black clouds, a circling lightning border, and intermittent lightning flashes.",
     "The notification bell now inherits the equipped player nameplate's background, border, glow, and animated RGB or Redline effects.",
     "A new notification bell opens a scrollable player inbox with unread activity, detailed multi-level progress, and update history with version notes.",
