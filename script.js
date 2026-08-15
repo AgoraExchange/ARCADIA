@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.10.0.0";
+  const APP_VERSION = "19.11.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "A new notification bell opens a scrollable player inbox with unread activity, detailed multi-level progress, and update history with version notes.",
+    "The Rewards Store adds Galaxy Frog, a level-65 Crossy Road character with a living starfield that counter-moves as the frog crosses each lane.",
     "Dev Mode adds Casper, an eight-game autopilot that plays through normal mechanics with predictive strategies while locking only direct gameplay input.",
     "Fruit Blend now uses a streamlined 10-fruit chain, removing Peach and Dragon Fruit so Watermelon and maximum-fruit clears are more achievable before the container fills.",
     "Tombstone now resurrects Crossy Road runners after a traffic hit and ghost-rescues players caught by the rising danger edge to a safe center island.",
@@ -189,6 +191,7 @@
     devModeEnabled: false,
     casperEnabled: false,
     activityLog: [],
+    notificationsReadAt: 0,
     stats: {
       gamesPlayed: 0,
       snakeRuns: 0,
@@ -541,6 +544,17 @@
       text: "Cross the road as Skips, a bright white cat with vivid blue eyes."
     },
     {
+      id: "crossy_galaxy_frog",
+      title: "Galaxy Frog",
+      category: "player",
+      type: "cosmetic",
+      slot: "crossy_character",
+      level: 65,
+      cost: 12500,
+      tags: ["crossy", "road", "character", "frog", "galaxy", "space", "animated", "reactive"],
+      text: "Leap through traffic with a living galaxy that drifts against every sideways move."
+    },
+    {
       id: "xp_boost_2",
       title: "2X XP Booster",
       category: "boosters",
@@ -675,6 +689,8 @@
     playerForm: $("playerForm"),
     playerName: $("playerName"),
     openProfileBtn: $("openProfileBtn"),
+    openNotificationsBtn: $("openNotificationsBtn"),
+    notificationBadge: $("notificationBadge"),
     backFromProfileBtn: $("backFromProfileBtn"),
     playerHandle: $("playerHandle"),
     playerLevel: $("playerLevel"),
@@ -848,6 +864,11 @@
     progressLeastXpMeta: $("progressLeastXpMeta"),
     progressGameXpList: $("progressGameXpList"),
     progressActivityList: $("progressActivityList"),
+    notificationsModal: $("notificationsModal"),
+    closeNotificationsBtn: $("closeNotificationsBtn"),
+    notificationSummary: $("notificationSummary"),
+    notificationUpdateBtn: $("notificationUpdateBtn"),
+    notificationList: $("notificationList"),
     renameModal: $("renameModal"),
     renameForm: $("renameForm"),
     renamePlayerName: $("renamePlayerName"),
@@ -943,10 +964,11 @@
       muteMusic: Boolean(saved?.muteMusic),
       devModeEnabled: Boolean(saved?.devModeEnabled),
       casperEnabled: Boolean(saved?.casperEnabled),
+      notificationsReadAt: Number.isFinite(Number(saved?.notificationsReadAt)) ? Number(saved.notificationsReadAt) : 0,
       stats: { ...clone(defaultState.stats), ...(saved?.stats || {}) },
       owned: Array.isArray(saved?.owned) ? saved.owned : [],
       achievements: Array.isArray(saved?.achievements) ? saved.achievements : [],
-      activityLog: Array.isArray(saved?.activityLog) ? saved.activityLog.slice(0, 40) : []
+      activityLog: Array.isArray(saved?.activityLog) ? saved.activityLog.slice(0, 60) : []
     };
   }
 
@@ -1205,13 +1227,20 @@
     playOneShotSfx(src, volume);
   }
 
-  function triggerLevelUpReward(level) {
+  function triggerLevelUpReward(level, previousLevel = level - 1) {
     if (currentScreen !== "home") return;
+    const levelsGained = Math.max(1, level - previousLevel);
     el.playerLevel.textContent = `Level ${level}`;
     el.playerLevel.classList.remove("level-reward-pop");
     void el.playerLevel.offsetWidth;
     el.playerLevel.classList.add("level-reward-pop");
-    showToast("Level Up", `You reached level ${level}.`, "silent", 4000);
+    showToast(
+      "Level Up",
+      `Level ${previousLevel} to Level ${level} (+${levelsGained} level${levelsGained === 1 ? "" : "s"}).`,
+      "silent",
+      4000,
+      { category: "level" }
+    );
     playLevelUpSound();
     setTimeout(() => {
       el.playerLevel.classList.remove("level-reward-pop");
@@ -1526,7 +1555,7 @@
     showToast("Soundtrack", "Soundtrack enabled.", "silent", 3000);
   }
 
-  function showToast(title, text, kind = "tap", duration = 3000) {
+  function showToast(title, text, kind = "tap", duration = 3000, activityDetails = {}) {
     const key = `${title}::${text}`;
     const now = Date.now();
     const lastShown = toastCooldowns.get(key) || 0;
@@ -1535,13 +1564,13 @@
     if (activeToasts.has(key) || alreadyQueued || now - lastShown < 6000) return;
 
     toastCooldowns.set(key, now);
-    recordActivity(title, text, kind);
+    recordActivity(title, text, kind, activityDetails);
     toastQueue.push({ key, title, text, kind, duration });
     drainToastQueue();
   }
 
-  function recordActivity(title, text, kind = "tap") {
-    const ignored = new Set(["Coming Soon", "Start Game", "No Updates Found", "Share Canceled"]);
+  function recordActivity(title, text, kind = "tap", details = {}) {
+    const ignored = new Set(["Coming Soon", "Start Game", "Share Canceled"]);
     if (ignored.has(title)) return;
     state.activityLog = [
       {
@@ -1549,12 +1578,23 @@
         title,
         text,
         kind,
-        at: Date.now()
+        at: Date.now(),
+        category: typeof details.category === "string" ? details.category : "activity",
+        version: typeof details.version === "string" ? details.version : "",
+        notes: Array.isArray(details.notes) ? details.notes.slice(0, 8).map((note) => String(note)) : []
       },
       ...(Array.isArray(state.activityLog) ? state.activityLog : [])
-    ].slice(0, 40);
+    ].slice(0, 60);
+    const modalOpen = el.notificationsModal && !el.notificationsModal.classList.contains("hidden");
+    const readAtBeforeActivity = Number(state.notificationsReadAt) || 0;
     saveState();
     if (!el.progressModal?.classList.contains("hidden")) renderProgressModal();
+    if (modalOpen) {
+      renderNotificationsModal(readAtBeforeActivity);
+      state.notificationsReadAt = Date.now();
+      saveState();
+    }
+    renderNotificationBell();
   }
 
   function drainToastQueue() {
@@ -1666,6 +1706,7 @@
     renderLeaderboard();
     renderStore();
     renderProgressModal();
+    renderNotificationBell();
     updateAudioToggleButtons();
     renderAppVersion();
     renderDeveloperTools();
@@ -1755,7 +1796,7 @@
             }, Math.max(520, animationDuration * 0.58));
           });
           setTimeout(() => {
-            triggerLevelUpReward(target.level);
+            triggerLevelUpReward(target.level, from.level);
           }, animationDuration + 160);
         } else {
           requestAnimationFrame(() => {
@@ -1910,6 +1951,76 @@
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
+  }
+
+  function notificationUnreadCount(readAt = Number(state.notificationsReadAt) || 0) {
+    return (Array.isArray(state.activityLog) ? state.activityLog : [])
+      .filter((item) => (Number(item.at) || 0) > readAt).length;
+  }
+
+  function renderNotificationBell() {
+    if (!el.openNotificationsBtn || !el.notificationBadge) return;
+    const unread = notificationUnreadCount();
+    el.openNotificationsBtn.classList.toggle("has-unread", unread > 0);
+    el.openNotificationsBtn.setAttribute(
+      "aria-label",
+      unread ? `Open notifications, ${unread} unread` : "Open notifications"
+    );
+    el.notificationBadge.textContent = unread > 9 ? "9+" : String(unread);
+    el.notificationBadge.classList.toggle("hidden", unread === 0);
+  }
+
+  function notificationGlyph(item) {
+    if (item.category === "update") return "UP";
+    if (item.category === "level" || item.title === "Level Up") return "LV";
+    if (item.title?.includes("Achievement")) return "A";
+    if (item.title?.includes("XP")) return "XP";
+    if (item.title?.includes("Coins")) return "$";
+    if (item.title?.includes("Purchase") || item.title?.includes("Equipped")) return "S";
+    return "!";
+  }
+
+  function renderNotificationsModal(readAt = Number(state.notificationsReadAt) || 0) {
+    if (!el.notificationList || !el.notificationSummary) return;
+    const activity = (Array.isArray(state.activityLog) ? state.activityLog : []).slice(0, 60);
+    const unread = notificationUnreadCount(readAt);
+    el.notificationSummary.textContent = unread
+      ? `${formatNumber(unread)} new notification${unread === 1 ? "" : "s"}`
+      : activity.length
+        ? `${formatNumber(activity.length)} recent notification${activity.length === 1 ? "" : "s"}`
+        : "All caught up";
+    el.notificationList.innerHTML = activity.length
+      ? activity.map((item) => {
+        const notes = Array.isArray(item.notes) ? item.notes.filter(Boolean).slice(0, 8) : [];
+        const version = typeof item.version === "string" && item.version ? item.version : "";
+        const isNew = (Number(item.at) || 0) > readAt;
+        return `
+          <article class="notification-item ${isNew ? "is-new" : ""}" data-kind="${escapeHtml(item.kind || "tap")}" data-category="${escapeHtml(item.category || "activity")}">
+            <span class="notification-item-icon" aria-hidden="true">${escapeHtml(notificationGlyph(item))}</span>
+            <div class="notification-item-body">
+              <strong>${escapeHtml(item.title)}</strong>
+              <small>${escapeHtml(item.text)}</small>
+              ${version ? `<span class="notification-version">Version ${escapeHtml(version)}</span>` : ""}
+              ${notes.length ? `<ul class="notification-patch-notes">${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>` : ""}
+            </div>
+            <time datetime="${new Date(Number(item.at) || Date.now()).toISOString()}">${formatActivityTime(item.at)}</time>
+          </article>
+        `;
+      }).join("")
+      : `<div class="notification-empty">No notifications yet. Level-ups, rewards, store activity, and ARCADIA updates will appear here.</div>`;
+  }
+
+  function openNotificationsModal() {
+    const readAt = Number(state.notificationsReadAt) || 0;
+    renderNotificationsModal(readAt);
+    el.notificationsModal.classList.remove("hidden");
+    state.notificationsReadAt = Date.now();
+    saveState();
+    renderNotificationBell();
+  }
+
+  function closeNotificationsModal() {
+    el.notificationsModal.classList.add("hidden");
   }
 
   function renderProgressModal() {
@@ -2225,6 +2336,18 @@
       `;
     }
     if (item.slot === "crossy_character") {
+      if (item.id === "crossy_galaxy_frog") {
+        return `
+          <div class="crossy-character-preview galaxy-frog-preview" aria-hidden="true">
+            <div class="galaxy-store-frog">
+              <span class="frog-foot left"></span><span class="frog-foot right"></span>
+              <span class="frog-body"></span><span class="frog-face"></span>
+              <i class="frog-eye left"></i><i class="frog-eye right"></i>
+            </div>
+            <strong>GALAXY FROG</strong>
+          </div>
+        `;
+      }
       return `
         <div class="crossy-character-preview" aria-hidden="true">
           <div class="skips-store-cat">
@@ -5720,6 +5843,8 @@
       pathCol: 4,
       section: 0,
       bestLive: 0,
+      galaxyOffsetX: 0,
+      galaxyOffsetY: 0,
       player: { col: 4, depth: 0, x: 270, y: CROSSY_START_Y, targetX: 270, targetY: CROSSY_START_Y, size: 34 },
       cars: [],
       lanes: [],
@@ -6053,9 +6178,13 @@
     crossy.cameraFloor = Math.max(crossy.cameraFloor, crossy.cameraDepth);
     ensureCrossyWorld();
     const p = crossy.player;
+    const previousPlayerX = p.x;
+    const previousPlayerY = p.y;
     p.targetY = crossyScreenY(p.depth);
     p.x += (p.targetX - p.x) * Math.min(1, dt * 16);
     p.y += (p.targetY - p.y) * Math.min(1, dt * 16);
+    crossy.galaxyOffsetX -= (p.x - previousPlayerX) * 1.4;
+    crossy.galaxyOffsetY -= (p.y - previousPlayerY) * 0.48;
     if (crossy.rescuing && Math.abs(p.x - p.targetX) < 1.5 && Math.abs(p.y - p.targetY) < 1.5) {
       p.x = p.targetX;
       p.y = p.targetY;
@@ -6340,6 +6469,10 @@
     return state.equippedCrossyCharacter === "crossy_skips" && state.owned.includes("crossy_skips");
   }
 
+  function crossyGalaxyFrogEquipped() {
+    return state.equippedCrossyCharacter === "crossy_galaxy_frog" && state.owned.includes("crossy_galaxy_frog");
+  }
+
   function drawCrossyChicken(ctx) {
     drawCrossyBlock(ctx, -16, -16, 32, 32, 8, "#f7f4df", "rgba(188, 180, 145, 0.58)");
     drawCrossyBlock(ctx, -11, -35, 22, 20, 6, "#fff7d8", "rgba(188, 180, 145, 0.5)");
@@ -6384,6 +6517,91 @@
     ctx.stroke();
   }
 
+  function traceCrossyGalaxyFrog(ctx) {
+    ctx.beginPath();
+    ctx.rect(-20, -40, 40, 27);
+    ctx.rect(-17, -49, 11, 12);
+    ctx.rect(6, -49, 11, 12);
+    ctx.rect(-18, -18, 36, 30);
+    ctx.rect(-24, 4, 17, 12);
+    ctx.rect(7, 4, 17, 12);
+  }
+
+  function drawCrossyGalaxyFrog(ctx, now) {
+    const wrap = (value, span) => ((value % span) + span) % span;
+    const driftX = (Number(crossy.galaxyOffsetX) || 0) + now * 0.013;
+    const driftY = (Number(crossy.galaxyOffsetY) || 0) + now * 0.004;
+
+    ctx.save();
+    ctx.shadowColor = "#7f5cff";
+    ctx.shadowBlur = 18;
+    traceCrossyGalaxyFrog(ctx);
+    ctx.fillStyle = "#090421";
+    ctx.fill();
+    ctx.clip();
+
+    const space = ctx.createLinearGradient(-26 + driftX * 0.08, -50, 24 + driftX * 0.08, 18);
+    space.addColorStop(0, "#07031a");
+    space.addColorStop(0.36, "#301163");
+    space.addColorStop(0.68, "#075c8e");
+    space.addColorStop(1, "#170326");
+    ctx.fillStyle = space;
+    ctx.fillRect(-28, -52, 56, 72);
+
+    [
+      { x: -38, y: -30, radius: 28, color: "rgba(255, 62, 178, 0.66)" },
+      { x: 4, y: -6, radius: 32, color: "rgba(63, 205, 255, 0.62)" },
+      { x: 46, y: -40, radius: 25, color: "rgba(157, 91, 255, 0.72)" }
+    ].forEach((cloud) => {
+      const x = wrap(cloud.x + driftX + 60, 120) - 60;
+      const y = wrap(cloud.y + driftY + 68, 88) - 68;
+      const nebula = ctx.createRadialGradient(x, y, 1, x, y, cloud.radius);
+      nebula.addColorStop(0, cloud.color);
+      nebula.addColorStop(1, "rgba(8, 3, 28, 0)");
+      ctx.fillStyle = nebula;
+      ctx.fillRect(-30, -54, 60, 76);
+    });
+
+    const stars = [
+      [-23, -43, 2.2], [-10, -34, 1.2], [8, -44, 1.7], [21, -29, 1.1],
+      [-17, -20, 1.4], [-2, -12, 2], [13, -17, 1.2], [23, -4, 1.7],
+      [-22, 7, 1.1], [-7, 4, 1.5], [8, 9, 1.1], [18, 2, 2.1]
+    ];
+    stars.forEach(([baseX, baseY, size], index) => {
+      const x = wrap(baseX + driftX * (0.7 + (index % 3) * 0.12) + 28, 56) - 28;
+      const y = wrap(baseY + driftY * 0.45 + 54, 72) - 54;
+      ctx.globalAlpha = 0.55 + Math.abs(Math.sin(now / 210 + index)) * 0.45;
+      ctx.fillStyle = index % 4 === 0 ? "#ffd8ff" : "#e8ffff";
+      ctx.fillRect(x, y, size, size);
+      if (size > 1.8) {
+        ctx.fillRect(x - 2, y + size / 2, size + 4, 1);
+        ctx.fillRect(x + size / 2, y - 2, 1, size + 4);
+      }
+    });
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(203, 229, 255, 0.92)";
+    ctx.lineWidth = 2;
+    [[-20, -40, 40, 27], [-17, -49, 11, 12], [6, -49, 11, 12], [-18, -18, 36, 30], [-24, 4, 17, 12], [7, 4, 17, 12]]
+      .forEach(([x, y, width, height]) => ctx.strokeRect(x, y, width, height));
+    ctx.shadowColor = "#49f4ff";
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = "#dfffff";
+    ctx.fillRect(-13, -43, 5, 6);
+    ctx.fillRect(8, -43, 5, 6);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#101024";
+    ctx.fillRect(-11, -41, 2, 4);
+    ctx.fillRect(10, -41, 2, 4);
+    ctx.strokeStyle = "rgba(216, 251, 255, 0.92)";
+    ctx.beginPath();
+    ctx.moveTo(-7, -23);
+    ctx.quadraticCurveTo(0, -18, 7, -23);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawCrossyPlayer(ctx, p) {
     const now = performance.now();
     const ghostActive = isCrossyGhostActive(now);
@@ -6395,7 +6613,8 @@
       ctx.globalAlpha = 0.42 + Math.abs(Math.sin(now / 90)) * 0.18;
       ctx.globalCompositeOperation = "screen";
     }
-    if (crossySkipsEquipped()) drawCrossySkips(ctx);
+    if (crossyGalaxyFrogEquipped()) drawCrossyGalaxyFrog(ctx, now);
+    else if (crossySkipsEquipped()) drawCrossySkips(ctx);
     else drawCrossyChicken(ctx);
     if (ghostActive) {
       ctx.fillStyle = "#dffcff";
@@ -8818,6 +9037,10 @@
   async function searchForUpdates() {
     el.developerModal.classList.add("hidden");
     await startBackgroundVideo();
+    if (el.notificationUpdateBtn) {
+      el.notificationUpdateBtn.disabled = true;
+      el.notificationUpdateBtn.textContent = "Checking...";
+    }
     let remoteVersion = APP_VERSION;
     let remoteNotes = PATCH_NOTES;
     try {
@@ -8835,8 +9058,7 @@
     }
 
     remoteVersion = normalizeVersion(remoteVersion) || APP_VERSION;
-    const previousVersion = normalizeVersion(localStorage.getItem(VERSION_KEY)) || APP_VERSION;
-    const hasRemoteUpdate = remoteVersion !== APP_VERSION || previousVersion !== APP_VERSION;
+    const hasRemoteUpdate = remoteVersion !== APP_VERSION;
 
     try {
       const registration = await registerServiceWorker();
@@ -8852,12 +9074,50 @@
 
     if (hasRemoteUpdate) {
       localStorage.setItem(VERSION_KEY, remoteVersion);
-      showToast("Update Successful", `Patches include: ${remoteNotes.join(" ")}`, "win", 5000);
+      showToast(
+        "Update Available",
+        `ARCADIA ${remoteVersion} was found. Refreshing to install the latest release.`,
+        "win",
+        5000,
+        { category: "update", version: remoteVersion, notes: remoteNotes.slice(0, 8) }
+      );
       setTimeout(() => window.location.reload(), 900);
       return;
     }
     localStorage.setItem(VERSION_KEY, APP_VERSION);
-    showToast("No Updates Found", "ARCADIA is already running the latest patch.", "tap", 5000);
+    showToast(
+      "No Updates Found",
+      `ARCADIA ${APP_VERSION} is already running the latest patch.`,
+      "tap",
+      5000,
+      { category: "update", version: APP_VERSION, notes: PATCH_NOTES.slice(0, 2) }
+    );
+    if (el.notificationUpdateBtn) {
+      el.notificationUpdateBtn.disabled = false;
+      el.notificationUpdateBtn.textContent = "Check for Updates";
+    }
+  }
+
+  function recordInstalledVersionChange() {
+    let previousVersion = "";
+    try {
+      previousVersion = normalizeVersion(localStorage.getItem(VERSION_KEY));
+    } catch {
+      previousVersion = "";
+    }
+    if (previousVersion && previousVersion !== APP_VERSION) {
+      recordActivity(
+        "ARCADIA Updated",
+        `Version ${previousVersion} to Version ${APP_VERSION} is now installed.`,
+        "win",
+        { category: "update", version: APP_VERSION, notes: PATCH_NOTES.slice(0, 8) }
+      );
+    }
+    try {
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+    } catch {
+      // Private browsing can block persistent version history.
+    }
   }
 
   function openRenameModal() {
@@ -9061,6 +9321,12 @@
     });
 
     el.openProfileBtn.addEventListener("click", () => showScreen("profile"));
+    el.openNotificationsBtn.addEventListener("click", openNotificationsModal);
+    el.closeNotificationsBtn.addEventListener("click", closeNotificationsModal);
+    el.notificationsModal.addEventListener("click", (event) => {
+      if (event.target === el.notificationsModal) closeNotificationsModal();
+    });
+    el.notificationUpdateBtn.addEventListener("click", searchForUpdates);
     el.backFromProfileBtn.addEventListener("click", () => showScreen("home"));
     el.exitGameBtn.addEventListener("click", () => showScreen("home"));
     el.profileShareBtn.addEventListener("click", shareProfile);
@@ -9079,7 +9345,7 @@
     el.closeDeveloperBtn.addEventListener("click", () => el.developerModal.classList.add("hidden"));
     el.toggleSfxBtn.addEventListener("click", toggleSoundEffects);
     el.toggleMusicBtn.addEventListener("click", toggleSoundtrack);
-    el.checkUpdatesBtn.addEventListener("click", searchForUpdates);
+    el.checkUpdatesBtn.addEventListener("click", () => searchForUpdates());
     el.openRenameBtn.addEventListener("click", openRenameModal);
     el.casperToggleBtn.addEventListener("click", toggleCasper);
     el.editLevelBtn.addEventListener("click", editPlayerLevel);
@@ -9380,8 +9646,8 @@
 
   function init() {
     bindEvents();
+    recordInstalledVersionChange();
     registerServiceWorker();
-    localStorage.setItem(VERSION_KEY, APP_VERSION);
     drawSnake();
     renderSolitaireBoard();
     drawFruitBlend();
