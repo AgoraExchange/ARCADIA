@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.11.1.0";
+  const APP_VERSION = "19.12.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "The Rewards Store adds the level-75 Blackstorm Nameplate with moving black clouds, a circling lightning border, and intermittent lightning flashes.",
     "The notification bell now inherits the equipped player nameplate's background, border, glow, and animated RGB or Redline effects.",
     "A new notification bell opens a scrollable player inbox with unread activity, detailed multi-level progress, and update history with version notes.",
     "The Rewards Store adds Galaxy Frog, a level-65 Crossy Road character with a living starfield that counter-moves as the frog crosses each lane.",
@@ -427,6 +428,17 @@
       cost: 3900,
       tags: ["nameplate", "profile", "player", "red", "black", "animated"],
       text: "A black neon plate with red energy racing around the border."
+    },
+    {
+      id: "blackstorm_nameplate",
+      title: "Blackstorm Nameplate",
+      category: "player",
+      type: "cosmetic",
+      slot: "nameplate",
+      level: 75,
+      cost: 18000,
+      tags: ["nameplate", "profile", "player", "black", "storm", "cloud", "lightning", "animated"],
+      text: "Command a living black storm with rolling clouds, circling lightning, and sudden electric flashes."
     },
     {
       id: "laser_yellow",
@@ -1740,14 +1752,15 @@
     const target = progressForXp(state.xp);
     const from = progressForXp(headerSeenXp);
     const xpDelta = Math.max(0, (Number(state.xp) || 0) - headerSeenXp);
-    const nameplateClasses = ["nameplate-neon", "nameplate-blue", "nameplate-black", "nameplate-purple", "nameplate-rgb", "nameplate-redline"];
+    const nameplateClasses = ["nameplate-neon", "nameplate-blue", "nameplate-black", "nameplate-purple", "nameplate-rgb", "nameplate-redline", "nameplate-blackstorm"];
     const activeNameplateClass = {
       neon_badge: "nameplate-neon",
       blue_nameplate: "nameplate-blue",
       black_nameplate: "nameplate-black",
       purple_nameplate: "nameplate-purple",
       rgb_nameplate: "nameplate-rgb",
-      redline_nameplate: "nameplate-redline"
+      redline_nameplate: "nameplate-redline",
+      blackstorm_nameplate: "nameplate-blackstorm"
     }[state.equippedNameplate] || "";
     el.playerHandle.textContent = name.toUpperCase();
     el.headerCoins.textContent = formatCompactNumber(state.coins);
@@ -2328,6 +2341,13 @@
   }
 
   function renderStoreItemPreview(item) {
+    if (item.id === "blackstorm_nameplate") {
+      return `
+        <div class="storm-store-preview nameplate-blackstorm" aria-hidden="true">
+          <strong>BLACKSTORM</strong>
+        </div>
+      `;
+    }
     if (item.slot === "snake_skin") {
       const colors = item.colors || ["#ff4fc8", "#8a5cff", "#49f4ff"];
       const style = `--skin-a:${colors[0]};--skin-b:${colors[1]};--skin-c:${colors[2]}`;

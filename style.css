@@ -684,6 +684,166 @@ input:focus {
   }
 }
 
+@property --storm-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.player-strip.nameplate-blackstorm,
+.notification-bell-pill.nameplate-blackstorm,
+.profile-hero.nameplate-blackstorm,
+.storm-store-preview.nameplate-blackstorm {
+  --storm-angle: 0deg;
+  position: relative;
+  isolation: isolate;
+  border-color: rgba(128, 196, 255, 0.42);
+  background:
+    radial-gradient(ellipse at center, rgba(73, 82, 104, 0.62) 0 9%, rgba(18, 22, 33, 0.76) 28%, transparent 52%),
+    radial-gradient(ellipse at center, rgba(48, 54, 72, 0.66) 0 12%, rgba(7, 9, 15, 0.82) 34%, transparent 59%),
+    linear-gradient(140deg, #000105, #080b12 46%, #010208 74%, #000000);
+  background-repeat: no-repeat;
+  background-size: 145% 180%, 175% 190%, 100% 100%;
+  box-shadow:
+    0 0 0 1px rgba(117, 192, 255, 0.12),
+    0 0 28px rgba(58, 142, 255, 0.22),
+    inset 0 0 28px rgba(0, 0, 0, 0.86);
+  animation:
+    stormCloudMotion 9s ease-in-out infinite alternate,
+    stormLightningFlash 7.6s linear infinite;
+}
+
+.player-strip.nameplate-blackstorm,
+.profile-hero.nameplate-blackstorm,
+.storm-store-preview.nameplate-blackstorm {
+  overflow: hidden;
+}
+
+.player-strip.nameplate-blackstorm > *,
+.notification-bell-pill.nameplate-blackstorm > *,
+.profile-hero.nameplate-blackstorm > *,
+.storm-store-preview.nameplate-blackstorm > * {
+  position: relative;
+  z-index: 2;
+}
+
+.player-strip.nameplate-blackstorm::before,
+.notification-bell-pill.nameplate-blackstorm::before,
+.profile-hero.nameplate-blackstorm::before,
+.storm-store-preview.nameplate-blackstorm::before {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--storm-angle),
+    transparent 0deg 252deg,
+    rgba(89, 119, 255, 0.08) 266deg,
+    #667dff 278deg,
+    #b9f8ff 288deg,
+    #ffffff 294deg,
+    #65d9ff 301deg,
+    rgba(109, 76, 255, 0.34) 314deg,
+    transparent 329deg 360deg
+  );
+  filter: drop-shadow(0 0 5px rgba(125, 230, 255, 0.95));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: stormBorderCircuit 2.45s linear infinite;
+}
+
+.player-strip.nameplate-blackstorm::after,
+.notification-bell-pill.nameplate-blackstorm::after,
+.profile-hero.nameplate-blackstorm::after,
+.storm-store-preview.nameplate-blackstorm::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 3px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, #ffffff, #96f2ff 44%, #6b6dff 100%);
+  clip-path: polygon(53% 0, 40% 37%, 53% 37%, 36% 100%, 71% 51%, 57% 51%, 69% 0);
+  filter: drop-shadow(0 0 8px #c8fbff) drop-shadow(0 0 18px #596eff);
+  animation: stormBoltFlash 7.6s linear infinite;
+}
+
+.player-strip.nameplate-blackstorm strong,
+.profile-hero.nameplate-blackstorm h2,
+.storm-store-preview.nameplate-blackstorm strong {
+  color: #f5fbff;
+  text-shadow:
+    0 0 8px rgba(224, 249, 255, 0.88),
+    0 0 19px rgba(82, 175, 255, 0.62),
+    0 0 32px rgba(93, 70, 255, 0.38);
+}
+
+.player-strip.nameplate-blackstorm small {
+  color: rgba(211, 229, 247, 0.8);
+}
+
+.notification-bell-pill.nameplate-blackstorm .notification-badge {
+  z-index: 6;
+}
+
+.storm-store-preview {
+  display: grid;
+  width: min(270px, 100%);
+  min-height: 48px;
+  place-items: center;
+  margin: 5px 0 10px;
+  padding: 8px 18px;
+  border: 1px solid rgba(128, 196, 255, 0.42);
+  border-radius: 999px;
+  letter-spacing: 0.12em;
+}
+
+.storm-store-preview strong {
+  font-family: var(--font-player);
+  font-size: 0.84rem;
+}
+
+@keyframes stormBorderCircuit {
+  to { --storm-angle: 360deg; }
+}
+
+@keyframes stormCloudMotion {
+  0% { background-position: -45% 48%, 125% 24%, 0 0; }
+  45% { background-position: 50% 30%, 46% 78%, 0 0; }
+  100% { background-position: 132% 62%, -58% 42%, 0 0; }
+}
+
+@keyframes stormLightningFlash {
+  0%, 72%, 74%, 77%, 100% {
+    filter: brightness(1);
+    box-shadow:
+      0 0 0 1px rgba(117, 192, 255, 0.12),
+      0 0 28px rgba(58, 142, 255, 0.22),
+      inset 0 0 28px rgba(0, 0, 0, 0.86);
+  }
+  73%, 76% {
+    filter: brightness(1.62);
+    box-shadow:
+      0 0 0 1px rgba(232, 252, 255, 0.9),
+      0 0 22px rgba(192, 247, 255, 0.94),
+      0 0 48px rgba(72, 112, 255, 0.72),
+      inset 0 0 34px rgba(137, 222, 255, 0.28);
+  }
+}
+
+@keyframes stormBoltFlash {
+  0%, 72%, 74%, 77%, 100% { opacity: 0; }
+  73% { opacity: 0.72; }
+  76% { opacity: 0.94; }
+}
+
 .profile-avatar {
   display: grid;
   place-items: center;
