@@ -1,6 +1,7 @@
 {
-  "version": "19.11.1.0",
+  "version": "19.12.0.0",
   "patchNotes": [
+    "The Rewards Store adds the level-75 Blackstorm Nameplate with moving black clouds, a circling lightning border, and intermittent lightning flashes.",
     "The notification bell now inherits the equipped player nameplate's background, border, glow, and animated RGB or Redline effects.",
     "A new notification bell opens a scrollable player inbox with unread activity, detailed multi-level progress, and update history with version notes.",
     "The Rewards Store adds Galaxy Frog, a level-65 Crossy Road character with a living starfield that counter-moves as the frog crosses each lane.",

@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.12.0.0 adds the animated level-75 Blackstorm Nameplate with moving storm clouds and circulating lightning.
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
