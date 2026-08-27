@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.19.0.1";
+  const APP_VERSION = "19.19.0.2";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Super Mario Kart ZX now uses the player-provided neon kart artwork as its dashboard game icon.",
     "Mario Kart keeps its enlarged portrait game canvas while returning the touch controls and Restart button to the bottom of the screen.",
     "Super Mario Kart ZX fixes Grand Prix's hidden Reset option, replaces the broken course-quit restart, and automatically recovers if the HTML5 renderer becomes stuck on a black frame.",
     "Mario Kart now advances from its original intro to the title automatically, removes ARCADIA's extra touch-guide gate, adds proportional steering, and enlarges and packs the portrait mobile layout.",
