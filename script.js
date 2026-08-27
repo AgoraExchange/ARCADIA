@@ -3,10 +3,16 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.17.0.1";
+  const APP_VERSION = "19.19.0.1";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Mario Kart keeps its enlarged portrait game canvas while returning the touch controls and Restart button to the bottom of the screen.",
+    "Super Mario Kart ZX fixes Grand Prix's hidden Reset option, replaces the broken course-quit restart, and automatically recovers if the HTML5 renderer becomes stuck on a black frame.",
+    "Mario Kart now advances from its original intro to the title automatically, removes ARCADIA's extra touch-guide gate, adds proportional steering, and enlarges and packs the portrait mobile layout.",
+    "The local ARCADIA launcher now waits for a confirmed server, opens the exact working URL, and automatically uses another local port if 4179 is occupied.",
+    "Mario Kart now detects blocked game-file downloads instead of loading forever, and ARCADIA includes a one-click local web launcher for file-based testing.",
+    "Super Mario Kart ZX joins ARCADIA as Game 10 with the original HTML5 port, preserved srPerez and burnedpopcorn credits, a staged title launch, and mobile kart controls.",
     "Fruit Ninja now uses the player-provided game icon, with its image, soundtrack, and cut sound organized into their dedicated asset folders.",
     "Fruit Ninja joins ARCADIA as Game 09 with block-built fruit, projected wall shadows, swipe slicing, voxel destruction, escalating waves, bombs, rewards, and dedicated music and cut audio.",
     "Inferno Red, Violet Pulse, Hologram, and Black Hole Store previews now visibly fire across the full showcase instead of sticking near the launcher edge.",
@@ -259,7 +265,10 @@
       ninjaTotalScore: 0,
       ninjaFruits: 0,
       ninjaBestCombo: 0,
-      ninjaBombs: 0
+      ninjaBombs: 0,
+      kartRuns: 0,
+      kartXpEarned: 0,
+      kartPlaySeconds: 0
     },
     achievements: []
   };
@@ -363,6 +372,17 @@
       available: true,
       image: "assets/images/games/fruitninja-icon.png",
       mark: "N"
+    },
+    {
+      id: "kart",
+      title: "Super Mario Kart ZX",
+      gameNo: "10",
+      tags: ["mario", "kart", "racing", "snes", "retro", "3d", "items", "web port"],
+      description: "Race the complete ZX web port with ARCADIA touch controls.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/super-mario-kart-zx.png",
+      mark: "M"
     }
   ];
 
@@ -390,6 +410,7 @@
     { id: "ninja_first", title: "Sharp Start", text: "Complete your first Fruit Ninja run." },
     { id: "ninja_500", title: "Voxel Slicer", text: "Score 500 or higher in Fruit Ninja." },
     { id: "ninja_combo", title: "Fruit Storm", text: "Reach a 10-fruit combo in Fruit Ninja." },
+    { id: "kart_first", title: "Starting Grid", text: "Begin your first Super Mario Kart ZX session." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -1200,6 +1221,8 @@
   let ninjaPointerId = null;
   let ninjaComboTimer = null;
   let casperNinjaTimer = null;
+  let kartController = null;
+  let kartSessionStartedAt = 0;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -1240,6 +1263,7 @@
     solitaireScreen: $("solitaireScreen"),
     fruitScreen: $("fruitScreen"),
     ninjaScreen: $("ninjaScreen"),
+    kartScreen: $("kartScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -1391,6 +1415,18 @@
     ninjaCombo: $("ninjaCombo"),
     startNinjaBtn: $("startNinjaBtn"),
     restartNinjaBtn: $("restartNinjaBtn"),
+    exitKartBtn: $("exitKartBtn"),
+    kartPauseBtn: $("kartPauseBtn"),
+    kartFrame: $("kartFrame"),
+    kartLoading: $("kartLoading"),
+    kartLoadingText: $("kartLoadingText"),
+    kartControls: $("kartControls"),
+    kartJoystick: $("kartJoystick"),
+    kartJoystickKnob: $("kartJoystickKnob"),
+    kartItemBtn: $("kartItemBtn"),
+    kartJumpBtn: $("kartJumpBtn"),
+    startKartBtn: $("startKartBtn"),
+    restartKartBtn: $("restartKartBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -1606,6 +1642,7 @@
     el.solitaireScreen.classList.toggle("hidden", name !== "solitaire");
     el.fruitScreen.classList.toggle("hidden", name !== "fruit");
     el.ninjaScreen.classList.toggle("hidden", name !== "ninja");
+    el.kartScreen.classList.toggle("hidden", name !== "kart");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -1615,14 +1652,15 @@
     if (name !== "solitaire") stopSolitaire(false);
     if (name !== "fruit") stopFruit(false);
     if (name !== "ninja") stopNinja(false);
+    if (name !== "kart") stopKart();
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -2432,6 +2470,7 @@
         if (game.id === "solitaire") openSolitaire();
         if (game.id === "fruit") openFruit();
         if (game.id === "ninja") openNinja();
+        if (game.id === "kart") openKart();
       });
       el.gameGrid.appendChild(card);
     });
@@ -2521,6 +2560,13 @@
         runs: Number(state.stats.ninjaRuns) || 0,
         best: Number(state.stats.ninjaBest) || 0,
         metricLabel: "Best"
+      },
+      {
+        title: "Super Mario Kart ZX",
+        xp: Number(state.stats.kartXpEarned) || 0,
+        runs: Number(state.stats.kartRuns) || 0,
+        best: Math.floor((Number(state.stats.kartPlaySeconds) || 0) / 60),
+        metricLabel: "Minutes"
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -2708,6 +2754,13 @@
         runs: Number(state.stats.ninjaRuns) || 0,
         xp: Number(state.stats.ninjaXpEarned) || 0,
         best: Number(state.stats.ninjaBest) || 0
+      },
+      {
+        id: "kart",
+        title: "Super Mario Kart ZX",
+        runs: Number(state.stats.kartRuns) || 0,
+        xp: Number(state.stats.kartXpEarned) || 0,
+        best: Math.floor((Number(state.stats.kartPlaySeconds) || 0) / 60)
       }
     ];
 
@@ -11314,6 +11367,101 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function getKartController() {
+    if (kartController) return kartController;
+    if (typeof window.ArcadiaSMKartZX !== "function") return null;
+    kartController = new window.ArcadiaSMKartZX({
+      frame: el.kartFrame,
+      loading: el.kartLoading,
+      loadingText: el.kartLoadingText,
+      startButton: el.startKartBtn,
+      restartButton: el.restartKartBtn,
+      pauseButton: el.kartPauseBtn,
+      controls: el.kartControls,
+      joystick: el.kartJoystick,
+      joystickKnob: el.kartJoystickKnob,
+      jumpButton: el.kartJumpBtn,
+      itemButton: el.kartItemBtn,
+      onReady() {
+        if (currentScreen !== "kart") return;
+        el.kartFrame?.focus({ preventScroll: true });
+      },
+      onTitleReady() {
+        if (currentScreen !== "kart") return;
+        showToast("Kart Ready", "Title music is playing. Start Game is ready.", "silent", 2200);
+      },
+      onRecover() {
+        finishKartSession(true);
+        if (currentScreen !== "kart") return;
+        showToast("Kart Display Recovered", "The web port stopped drawing, so ARCADIA safely reloaded it.", "silent", 3600);
+      }
+    });
+    return kartController;
+  }
+
+  function openKart() {
+    currentGame = "kart";
+    kartSessionStartedAt = 0;
+    prepareGameTheme();
+    showScreen("kart");
+    const controller = getKartController();
+    if (!controller) {
+      showToast("Port Error", "The Super Mario Kart ZX wrapper did not load.", "fail", 4200);
+      return;
+    }
+    controller.load(APP_VERSION);
+  }
+
+  async function startKart() {
+    const controller = getKartController();
+    if (!controller || !(await controller.start())) return;
+    currentGame = "kart";
+    kartSessionStartedAt = Date.now();
+    state.stats.gamesPlayed += 1;
+    state.stats.kartRuns += 1;
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+  }
+
+  function finishKartSession(showRewards = true) {
+    if (!kartSessionStartedAt) return;
+    const elapsed = Math.max(1, Math.round((Date.now() - kartSessionStartedAt) / 1000));
+    kartSessionStartedAt = 0;
+    state.stats.kartPlaySeconds += elapsed;
+    let earned = 0;
+    let coinsEarned = 0;
+    if (elapsed >= 15) {
+      earned = Math.min(48, Math.max(6, Math.floor(elapsed / 25) * 4 + 4));
+      coinsEarned = Math.min(18, Math.max(2, Math.floor(elapsed / 45) + 2));
+      state.xp += earned;
+      state.stats.kartXpEarned += earned;
+      state.coins += coinsEarned;
+      state.level = deriveLevel(state.xp);
+      unlockEarnedAchievements();
+    }
+    saveState();
+    if (showRewards && earned > 0) {
+      showToast("Kart Session Saved", `+${formatNumber(earned)} XP and +${formatNumber(coinsEarned)} coins for ${elapsed} seconds of racing.`, "win", 3600);
+    }
+  }
+
+  function restartKart() {
+    finishKartSession(true);
+    kartSessionStartedAt = 0;
+    getKartController()?.restart(APP_VERSION);
+  }
+
+  function stopKart(recordSession = true) {
+    if (recordSession) finishKartSession(true);
+    else kartSessionStartedAt = 0;
+    kartController?.stop();
+  }
+
+  function toggleKartPause() {
+    getKartController()?.togglePause();
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -11339,6 +11487,7 @@
       ["ninja_first", state.stats.ninjaRuns >= 1],
       ["ninja_500", state.stats.ninjaBest >= 500],
       ["ninja_combo", state.stats.ninjaBestCombo >= 10],
+      ["kart_first", state.stats.kartRuns >= 1],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -11799,6 +11948,10 @@
     el.ninjaPauseBtn.addEventListener("click", toggleNinjaPause);
     el.startNinjaBtn.addEventListener("click", handlePrimaryNinjaAction);
     el.restartNinjaBtn.addEventListener("click", restartNinja);
+    el.exitKartBtn.addEventListener("click", () => showScreen("home"));
+    el.kartPauseBtn.addEventListener("click", toggleKartPause);
+    el.startKartBtn.addEventListener("click", startKart);
+    el.restartKartBtn.addEventListener("click", restartKart);
     el.ninjaCanvas.addEventListener("pointerdown", (event) => {
       if (!ninja.running || ninja.paused || casperHasGameplayControl("ninja")) return;
       event.preventDefault();
@@ -11902,6 +12055,26 @@
     document.addEventListener("pointercancel", () => cleanupBlockDrag(true));
 
     document.addEventListener("keydown", (event) => {
+      const kartInputMap = {
+        ArrowUp: "up",
+        ArrowDown: "down",
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        x: "accelerate",
+        X: "accelerate",
+        z: "back",
+        Z: "back",
+        s: "item",
+        S: "item",
+        c: "jump",
+        C: "jump",
+        Enter: "start",
+        " ": "lookback"
+      };
+      if (currentScreen === "kart" && getKartController()?.started && kartInputMap[event.key]) {
+        event.preventDefault();
+        getKartController().setInput(kartInputMap[event.key], true);
+      }
       const keyMap = {
         ArrowUp: "up",
         w: "up",
@@ -11973,6 +12146,26 @@
     });
 
     document.addEventListener("keyup", (event) => {
+      const kartInputMap = {
+        ArrowUp: "up",
+        ArrowDown: "down",
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        x: "accelerate",
+        X: "accelerate",
+        z: "back",
+        Z: "back",
+        s: "item",
+        S: "item",
+        c: "jump",
+        C: "jump",
+        Enter: "start",
+        " ": "lookback"
+      };
+      if (currentScreen === "kart" && getKartController()?.started && kartInputMap[event.key]) {
+        event.preventDefault();
+        getKartController().setInput(kartInputMap[event.key], false);
+      }
       if (currentScreen !== "star" || casperHasGameplayControl("star")) return;
       if (["ArrowLeft", "ArrowRight", "a", "A", "d", "D"].includes(event.key)) star.input.x = 0;
       if (["ArrowUp", "ArrowDown", "w", "W", "s", "S"].includes(event.key)) star.input.y = 0;

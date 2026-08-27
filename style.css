@@ -4353,6 +4353,376 @@ input:focus {
   100% { opacity: 0; filter: brightness(1) saturate(1); }
 }
 
+.kart-stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 67, 43, 0.14), transparent 34%),
+    radial-gradient(circle at 18% 85%, rgba(73, 244, 255, 0.11), transparent 30%),
+    rgba(8, 5, 18, 0.72);
+}
+
+.kart-port-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, calc((var(--app-height) - 310px) * 1.7778), 900px);
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 211, 90, 0.38);
+  border-radius: 24px;
+  background: #000;
+  box-shadow:
+    inset 0 0 34px rgba(255, 73, 35, 0.1),
+    0 0 38px rgba(73, 244, 255, 0.18),
+    0 22px 42px rgba(0, 0, 0, 0.32);
+}
+
+.kart-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+
+.kart-loading {
+  position: absolute;
+  z-index: 7;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px;
+  color: white;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 61, 43, 0.22), transparent 36%),
+    linear-gradient(180deg, #08030f, #020104);
+  text-align: center;
+}
+
+.kart-loading strong {
+  font-family: var(--font-display);
+  font-size: clamp(0.72rem, 2vw, 0.92rem);
+  letter-spacing: 0.08em;
+}
+
+.kart-loading.is-error strong {
+  max-width: 620px;
+  color: #ffb2c3;
+  line-height: 1.55;
+  text-shadow: 0 0 18px rgba(255, 47, 98, 0.48);
+}
+
+.kart-loading.is-error .kart-loading-spinner {
+  border-color: rgba(255, 47, 98, 0.28);
+  border-top-color: #ff2f62;
+  border-right-color: #ffd35a;
+  animation-duration: 1.4s;
+}
+
+.kart-loading-spinner {
+  width: 34px;
+  height: 34px;
+  border: 4px solid rgba(255, 255, 255, 0.18);
+  border-top-color: #ffd35a;
+  border-right-color: #ff472e;
+  border-radius: 50%;
+  box-shadow: 0 0 24px rgba(255, 71, 46, 0.42);
+  animation: kartLoadingSpin 0.72s linear infinite;
+}
+
+@keyframes kartLoadingSpin {
+  to { transform: rotate(360deg); }
+}
+
+.kart-controls {
+  display: none;
+  grid-template-columns: minmax(116px, 1fr) minmax(54px, auto) minmax(116px, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 16px;
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.kart-controls.is-active {
+  display: grid;
+  animation: kartControlsReveal 0.28s ease both;
+}
+
+@keyframes kartControlsReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kart-joystick {
+  position: relative;
+  grid-column: 1;
+  justify-self: start;
+  width: 112px;
+  height: 112px;
+  overflow: hidden;
+  border: 1px solid rgba(73, 244, 255, 0.34);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 43%),
+    linear-gradient(135deg, rgba(73, 244, 255, 0.15), rgba(255, 71, 46, 0.11)),
+    rgba(255, 255, 255, 0.045);
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.66),
+    0 11px 22px rgba(0, 0, 0, 0.3),
+    0 0 24px rgba(73, 244, 255, 0.13);
+  touch-action: none;
+}
+
+.kart-joystick-directions {
+  position: absolute;
+  inset: 7px;
+  color: rgba(255, 255, 255, 0.32);
+  font-family: sans-serif;
+  font-size: 0.7rem;
+  font-style: normal;
+  text-align: center;
+  pointer-events: none;
+}
+
+.kart-joystick-directions i,
+.kart-joystick-directions b,
+.kart-joystick-directions em {
+  position: absolute;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.kart-joystick-directions i { left: 0; top: 50%; transform: translateY(-50%); }
+.kart-joystick-directions b { right: 0; top: 50%; transform: translateY(-50%); }
+.kart-joystick-directions em { bottom: 0; left: 50%; transform: translateX(-50%); }
+
+.kart-joystick-knob {
+  position: absolute;
+  left: calc(50% - 24px);
+  top: calc(50% - 24px);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.82), transparent 18%),
+    linear-gradient(145deg, #5ef7ff, #188bcf 56%, #164678);
+  box-shadow:
+    inset -5px -8px 12px rgba(0, 18, 40, 0.38),
+    0 8px 16px rgba(0, 0, 0, 0.36),
+    0 0 21px rgba(73, 244, 255, 0.38);
+  pointer-events: none;
+}
+
+.kart-item-slot {
+  grid-column: 2;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 62px;
+  height: 62px;
+  border: 2px solid rgba(255, 246, 152, 0.82);
+  border-radius: 12px;
+  color: #241005;
+  background:
+    linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.55) 43% 50%, transparent 53%),
+    linear-gradient(135deg, #fff48a, #ffb51b 56%, #fa5629);
+  box-shadow:
+    inset 0 0 12px rgba(255, 255, 255, 0.42),
+    0 7px 0 #87310f,
+    0 12px 20px rgba(0, 0, 0, 0.3),
+    0 0 25px rgba(255, 196, 45, 0.44);
+  cursor: pointer;
+  touch-action: none;
+  animation: kartItemReady 0.72s ease-in-out infinite alternate;
+}
+
+.kart-item-slot span {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.kart-item-slot small,
+.kart-jump-button small {
+  font-family: var(--font-display);
+  font-size: 0.46rem;
+  letter-spacing: 0.08em;
+}
+
+.kart-item-slot.is-pressed {
+  transform: translateY(5px);
+  box-shadow:
+    inset 0 0 12px rgba(255, 255, 255, 0.32),
+    0 2px 0 #87310f,
+    0 6px 14px rgba(0, 0, 0, 0.3),
+    0 0 22px rgba(255, 196, 45, 0.35);
+}
+
+@keyframes kartItemReady {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.22); }
+}
+
+.kart-jump-button {
+  grid-column: 3;
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 112px;
+  height: 88px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  color: white;
+  background:
+    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.58), transparent 18%),
+    linear-gradient(180deg, #ff7962, #d62531 58%, #74101e);
+  box-shadow:
+    inset 0 7px 12px rgba(255, 255, 255, 0.22),
+    inset 0 -9px 14px rgba(75, 0, 18, 0.45),
+    0 10px 0 #47000e,
+    0 16px 24px rgba(0, 0, 0, 0.36),
+    0 0 28px rgba(255, 71, 46, 0.3);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.kart-jump-button strong {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.kart-jump-button:active {
+  transform: translateY(7px);
+  box-shadow:
+    inset 0 6px 12px rgba(255, 255, 255, 0.18),
+    inset 0 -8px 14px rgba(75, 0, 18, 0.5),
+    0 3px 0 #47000e,
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    0 0 24px rgba(255, 71, 46, 0.25);
+}
+
+.kart-actions {
+  width: min(310px, 100%);
+  justify-self: center;
+}
+
+.kart-hint {
+  margin: 0;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .kart-screen {
+    padding-top: calc(6px + var(--safe-top));
+    padding-bottom: calc(6px + var(--safe-bottom));
+  }
+
+  .kart-screen .page-top {
+    margin-bottom: 6px;
+  }
+
+  .kart-screen .page-top h1 {
+    font-size: clamp(1rem, 3.5vw, 1.45rem);
+  }
+
+  .kart-screen .game-content {
+    height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 70px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .kart-stage {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 6px;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .kart-port-shell {
+    width: min(calc(100% - 248px), calc((var(--app-height) - var(--safe-top) - var(--safe-bottom) - 100px) * 1.7778));
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0 auto;
+    border-radius: 15px;
+  }
+
+  .kart-controls.is-active {
+    position: absolute;
+    z-index: 6;
+    inset: 6px;
+    display: grid;
+    grid-template-columns: 112px minmax(42px, 1fr) 112px;
+    gap: 8px;
+    width: auto;
+    pointer-events: none;
+  }
+
+  .kart-joystick,
+  .kart-item-slot,
+  .kart-jump-button {
+    pointer-events: auto;
+  }
+
+  .kart-joystick {
+    align-self: center;
+    width: 96px;
+    height: 96px;
+  }
+
+  .kart-joystick-knob {
+    left: calc(50% - 20px);
+    top: calc(50% - 20px);
+    width: 40px;
+    height: 40px;
+  }
+
+  .kart-item-slot {
+    align-self: end;
+    margin-bottom: 10px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .kart-jump-button {
+    align-self: center;
+    width: 100px;
+    height: 72px;
+  }
+
+  .kart-actions {
+    position: absolute;
+    z-index: 7;
+    left: 50%;
+    bottom: 8px;
+    width: min(220px, 36vw);
+    transform: translateX(-50%);
+  }
+
+  .kart-actions .arcade-btn {
+    min-height: 34px;
+    padding: 7px 10px;
+  }
+
+  .kart-hint {
+    display: none;
+  }
+}
+
 #crossyCanvas {
   display: block;
   width: 100%;
@@ -5280,6 +5650,11 @@ input:focus {
     overflow-x: hidden;
   }
 
+  .kart-screen {
+    padding-left: calc(4px + var(--safe-left));
+    padding-right: calc(4px + var(--safe-right));
+  }
+
   .bg-video {
     height: 100%;
     min-height: var(--app-height);
@@ -5300,6 +5675,10 @@ input:focus {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .kart-screen .page-top h1 {
+    font-size: clamp(0.78rem, 3.5vw, 0.92rem);
   }
 
   .game-content {
@@ -5342,7 +5721,8 @@ input:focus {
   .flappy-stage,
   .crossy-stage,
   .fruit-stage,
-  .ninja-stage {
+  .ninja-stage,
+  .kart-stage {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5353,6 +5733,14 @@ input:focus {
     padding: 10px;
     border-radius: 26px 26px 0 0;
     overflow: hidden;
+  }
+
+  .kart-stage {
+    min-height: 100%;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    align-content: stretch;
+    gap: 10px;
+    padding: 4px;
   }
 
   .game-hud,
@@ -5466,6 +5854,50 @@ input:focus {
     aspect-ratio: auto;
   }
 
+  .kart-port-shell {
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    border-radius: 14px;
+  }
+
+  .kart-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(42px, auto) minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+
+  .kart-joystick {
+    width: clamp(74px, 25vw, 94px);
+    height: clamp(74px, 25vw, 94px);
+  }
+
+  .kart-joystick-knob {
+    left: calc(50% - 20px);
+    top: calc(50% - 20px);
+    width: 40px;
+    height: 40px;
+  }
+
+  .kart-item-slot {
+    width: clamp(44px, 14vw, 54px);
+    height: clamp(44px, 14vw, 54px);
+    border-radius: 10px;
+  }
+
+  .kart-item-slot span {
+    font-size: 1.1rem;
+  }
+
+  .kart-jump-button {
+    width: clamp(78px, 28vw, 98px);
+    height: clamp(60px, 21vw, 74px);
+  }
+
+  .kart-jump-button strong {
+    font-size: 1.2rem;
+  }
+
   .star-controls {
     grid-template-columns: minmax(0, 1fr) minmax(42px, auto) minmax(0, 1fr);
     width: 100%;
@@ -5521,9 +5953,14 @@ input:focus {
   .flappy-stage .game-actions,
   .crossy-stage .game-actions,
   .fruit-stage .game-actions,
-  .ninja-stage .game-actions {
+  .ninja-stage .game-actions,
+  .kart-stage .game-actions {
     width: min(310px, 100%);
     justify-self: center;
+    align-self: end;
+  }
+
+  .kart-stage .game-actions {
     align-self: end;
   }
 
@@ -5535,6 +5972,10 @@ input:focus {
     margin: 0;
     text-align: center;
     font-size: 0.78rem;
+  }
+
+  .kart-hint {
+    display: none;
   }
 
   .toast-stack {

@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.17.0.1";
+const ARCADIA_VERSION = "19.19.0.1";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "style.css",
   "script.js",
   "fruit-ninja.js",
+  "sm-kart-zx.js",
   "manifest.webmanifest",
   "app-version.json",
   "assets/images/games/stack.png",
@@ -14,6 +15,7 @@ const APP_SHELL = [
   "assets/images/games/solitaire.png",
   "assets/images/games/fruitblend.png",
   "assets/images/games/fruitninja-icon.png",
+  "assets/images/games/super-mario-kart-zx.png",
   "assets/images/arcadia-logo-180.png",
   "assets/images/arcadia-logo-192.png",
   "assets/images/arcadia-logo-512.png",
@@ -28,7 +30,8 @@ const APP_SHELL = [
   "assets/themesong/games/fruit-blend-2.mp3",
   "assets/themesong/games/fruit-ninja.ogg",
   "assets/audio/sfx/fruit-ninja/cut.wav",
-  "assets/audio/sfx/crossy-road/crash.mp3"
+  "assets/audio/sfx/crossy-road/crash.mp3",
+  "games/sm-kart-zx/index.html"
 ];
 
 self.addEventListener("install", (event) => {
@@ -77,7 +80,9 @@ async function networkFirst(request) {
     if (response.ok) cache.put(request, response.clone());
     return response;
   } catch {
-    return await cache.match(request) || await cache.match("index.html");
+    const cleanUrl = new URL(request.url);
+    cleanUrl.search = "";
+    return await cache.match(request) || await cache.match(cleanUrl.href) || await cache.match("index.html");
   }
 }
 

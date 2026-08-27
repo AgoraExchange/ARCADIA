@@ -1,5 +1,10 @@
 # ARCADIA
 
+- Version 19.19.0.1 keeps Mario Kart's enlarged portrait canvas while returning its touch controls and Restart button to the bottom of the screen.
+- Version 19.19.0.0 fixes Mario Kart's Grand Prix pause menu and black-screen course exits, removes the extra touch guide, adds smoother proportional steering, and enlarges the portrait mobile presentation.
+- Version 19.18.0.2 makes the local launcher open only after its server is ready and automatically moves to another localhost port when 4179 is occupied.
+- Version 19.18.0.1 detects blocked Mario Kart game-file downloads and adds `Launch ARCADIA.cmd` for one-click local web-server testing.
+- Version 19.18.0.0 adds Super Mario Kart ZX as Game 10 with the original web build, preserved intro and title sequence, mobile driving controls, and ARCADIA progression.
 - Version 19.17.0.1 switches Fruit Ninja to the player-provided icon and organizes its image, OGG soundtrack, and WAV cut sound into dedicated asset folders.
 - Version 19.17.0.0 adds Fruit Ninja with voxel-built fruit, projected wall shadows, swipe slicing, block-fragment destruction, escalating survival waves, bombs, rewards, and dedicated audio.
 - Version 19.16.1.0 fixes Inferno Red, Violet Pulse, Hologram, and Black Hole Store preview travel so their style animations no longer pin shots to the bottom edge.
@@ -11,9 +16,13 @@
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
-ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play nine arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
+ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play ten arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
 If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
+
+## Local Launch
+
+Most ARCADIA games can run from a directly opened HTML file, but browser security blocks Super Mario Kart ZX's WebAssembly files in `file://` mode. On Windows, double-click `Launch ARCADIA.cmd` and use the `http://127.0.0.1:4179/` tab it opens. The published GitHub Pages site already runs over HTTP and does not need this launcher.
 
 ## Current Layout
 
@@ -72,13 +81,21 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Increasing launch speed and multi-fruit waves, combos, three-miss survival, and instant-loss bombs
   - Full-screen bomb flash and fragment explosion before the shared result modal
   - Animated attract mode before Start Game, dedicated OGG soundtrack, XP, coins, high scores, and achievements
-- Dev Mode Casper autopilot for all nine games
+- Super Mario Kart ZX game page
+  - Original srPerez and Nintendo intro, gamepad recommendation, animated title, music, menus, races, items, and GameMaker WebGL renderer
+  - ARCADIA touch guide followed by a Start Game button that appears only after the title and music begin
+  - Left-side analog steering with hold-forward acceleration and pull-back braking
+  - Right-side jump/select button and a center item slot that reveals itself when the race HUD receives a power-up
+  - Desktop keyboard and gamepad support retained from the original port, plus ARCADIA XP, coins, playtime, and an achievement
+- Dev Mode Casper autopilot for ARCADIA's nine native games
 
 ## Visual Direction
 
 The theme is based on dark arcade poster art, hot magenta, violet, purple, cyan, neon grid floors, subtle scanlines, and semi-transparent UI panels.
 
 Fruit Ninja's custom ARCADIA canvas renderer is an original implementation inspired by Caleb Miller's open-source Menja cube-smashing prototype, including its tiny-renderer approach to shaded geometry, projected backboard shadows, swipe trails, and flying fragments.
+
+Super Mario Kart ZX was created by srPerez and its web port was published by burnedpopcorn. ARCADIA includes the exact compiled port with the user's confirmed permission and adds only the surrounding launch, touch-control, responsive-layout, and progression integration. See `games/sm-kart-zx/ATTRIBUTION.md` for upstream links and details.
 
 ## Asset Folders
 

@@ -1,6 +1,12 @@
 {
-  "version": "19.17.0.1",
+  "version": "19.19.0.1",
   "patchNotes": [
+    "Mario Kart keeps its enlarged portrait game canvas while returning the touch controls and Restart button to the bottom of the screen.",
+    "Super Mario Kart ZX fixes Grand Prix's hidden Reset option, replaces the broken course-quit restart, and automatically recovers if the HTML5 renderer becomes stuck on a black frame.",
+    "Mario Kart now advances from its original intro to the title automatically, removes ARCADIA's extra touch-guide gate, adds proportional steering, and enlarges and packs the portrait mobile layout.",
+    "The local ARCADIA launcher now waits for a confirmed server, opens the exact working URL, and automatically uses another local port if 4179 is occupied.",
+    "Mario Kart now detects blocked game-file downloads instead of loading forever, and ARCADIA includes a one-click local web launcher for file-based testing.",
+    "Super Mario Kart ZX joins ARCADIA as Game 10 with the original HTML5 port, preserved srPerez and burnedpopcorn credits, a staged title launch, and mobile kart controls.",
     "Fruit Ninja now uses the player-provided game icon, with its image, soundtrack, and cut sound organized into their dedicated asset folders.",
     "Fruit Ninja joins ARCADIA as Game 09 with block-built fruit, projected wall shadows, swipe slicing, voxel destruction, escalating waves, bombs, rewards, and dedicated music and cut audio.",
     "Inferno Red, Violet Pulse, Hologram, and Black Hole Store previews now visibly fire across the full showcase instead of sticking near the launcher edge.",

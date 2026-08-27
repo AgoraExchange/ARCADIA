@@ -506,6 +506,57 @@
       </main>
     </section>
 
+    <section id="kartScreen" class="screen game-screen kart-screen hidden">
+      <header class="page-top">
+        <button id="exitKartBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Super Mario Kart ZX</h1>
+        <button id="kartPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content">
+        <section class="kart-stage panel">
+          <div class="kart-port-shell">
+            <iframe
+              id="kartFrame"
+              class="kart-frame"
+              title="Super Mario Kart ZX web port"
+              src="about:blank"
+              allow="autoplay; fullscreen; gamepad"
+              sandbox="allow-scripts allow-same-origin allow-pointer-lock"
+            ></iframe>
+
+            <div id="kartLoading" class="kart-loading">
+              <span class="kart-loading-spinner" aria-hidden="true"></span>
+              <strong id="kartLoadingText">Loading Super Mario Kart ZX...</strong>
+            </div>
+
+          </div>
+
+          <div id="kartControls" class="kart-controls" aria-label="Super Mario Kart ZX touch controls">
+            <div id="kartJoystick" class="kart-joystick" role="application" aria-label="Steer kart, accelerate, brake, and navigate menus">
+              <span class="kart-joystick-directions" aria-hidden="true">▲<i>◀</i><b>▶</b><em>▼</em></span>
+              <span id="kartJoystickKnob" class="kart-joystick-knob"></span>
+            </div>
+            <button id="kartItemBtn" class="kart-item-slot hidden" type="button" aria-label="Use collected item" disabled>
+              <span>?</span>
+              <small>ITEM</small>
+            </button>
+            <button id="kartJumpBtn" class="kart-jump-button" type="button" aria-label="Jump or select">
+              <strong>A</strong>
+              <small>JUMP</small>
+            </button>
+          </div>
+
+          <div class="game-actions kart-actions">
+            <button id="startKartBtn" class="arcade-btn primary hidden" type="button">Start Game</button>
+            <button id="restartKartBtn" class="arcade-btn secondary hidden" type="button">Restart</button>
+          </div>
+
+          <p class="hint kart-hint">Desktop: Arrow keys navigate, X accelerates/selects, C jumps, S uses items, Z goes back, and Enter pauses.</p>
+        </section>
+      </main>
+    </section>
+
     <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
     <div id="gameOverModal" class="modal hidden">
@@ -566,7 +617,7 @@
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
           <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 19.16.1.0</p>
+        <p id="appVersionText" class="app-version-text">Version 19.19.0.1</p>
       </div>
     </div>
 
@@ -662,7 +713,8 @@
     </div>
   </div>
 
-  <script src="fruit-ninja.js"></script>
-  <script src="script.js"></script>
+    <script src="fruit-ninja.js"></script>
+    <script src="sm-kart-zx.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
