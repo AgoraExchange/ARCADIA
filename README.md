@@ -1,5 +1,9 @@
 # ARCADIA
 
+- Version 19.23.0.0 unlocks Mario Kart's actual GameMaker music/SFX engine from real touch gestures on iOS PWAs and precaches the complete kart runtime for dependable loading.
+- Version 19.22.0.0 restores responsive held Mario Kart steering, separates joystick menu navigation from confirmation, and adds native joystick-down braking/reverse during races.
+- Version 19.21.0.0 adds Fruit Ninja's blue-glowing Slow Motion Nana, six-second time slowing, escalating survival score, bonus power-up XP, and guaranteed level gains for new personal high scores across ARCADIA.
+- Version 19.20.0.1 removes the dotted circle around Fruit Ninja bombs while preserving their animated fuse, sparks, flame, and smoke.
 - Version 19.20.0.0 adds unmistakable sparking bomb fuses, cannon-pop fruit launches, five-fruit minute volleys, +100 combo milestones, and sharply escalating survival XP to Fruit Ninja.
 - Version 19.19.0.2 switches the Super Mario Kart ZX dashboard card to the player-provided neon kart artwork.
 - Version 19.19.0.1 keeps Mario Kart's enlarged portrait canvas while returning its touch controls and Restart button to the bottom of the screen.
@@ -86,7 +90,7 @@ Most ARCADIA games can run from a directly opened HTML file, but browser securit
 - Super Mario Kart ZX game page
   - Original srPerez and Nintendo intro, gamepad recommendation, animated title, music, menus, races, items, and GameMaker WebGL renderer
   - ARCADIA touch guide followed by a Start Game button that appears only after the title and music begin
-  - Left-side analog steering with hold-forward acceleration and pull-back braking
+  - Left-side immediate steering with hold-forward acceleration and pull-back native braking/reverse, while menu navigation remains separate from selection
   - Right-side jump/select button and a center item slot that reveals itself when the race HUD receives a power-up
   - Desktop keyboard and gamepad support retained from the original port, plus ARCADIA XP, coins, playtime, and an achievement
 - Dev Mode Casper autopilot for ARCADIA's nine native games

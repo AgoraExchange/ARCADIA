@@ -3,11 +3,17 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.20.0.0";
+  const APP_VERSION = "19.23.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
-    "Fruit Ninja bombs now crackle with a bright animated fuse, flying sparks, smoke, and a pulsing danger halo so they are unmistakable before a swipe.",
+    "Mario Kart now captures and unlocks the port's real GameMaker audio engine from Start Game and every touch control, including iOS installed PWAs, while caching the complete game runtime for reliable loading.",
+    "Mario Kart restores immediate held steering so small left and right joystick movements turn responsively again instead of using delayed steering pulses.",
+    "Mario Kart now keeps joystick-up as menu navigation until the race HUD appears, then maps up to acceleration and down to native brake/reverse so wall crashes are recoverable.",
+    "Fruit Ninja adds the rare Slow Motion Nana: a blue-glowing power-up banana earned during strong runs that slows gameplay for six seconds.",
+    "Fruit Ninja fruit becomes more valuable every 30 seconds survived, while Slow Motion Nanas add bonus score and XP for dedicated runs.",
+    "Setting a new personal high score in any score-based ARCADIA game now guarantees enough run XP to gain at least one level.",
+    "Fruit Ninja bombs keep their bright animated fuse, flying sparks, and smoke while removing the dotted circle around each bomb.",
     "Every Fruit Ninja launch now fires with a cannon pop, and every full minute survived triggers a rapid five-fruit cannon volley.",
     "Fruit Ninja now awards +100 score at every five-fruit combo milestone and uses escalating survival-focused XP that grows sharply during long runs while still rewarding score and slicing.",
     "Super Mario Kart ZX now uses the player-provided neon kart artwork as its dashboard game icon.",
@@ -1620,6 +1626,13 @@
 
   function xpNeededForLevel(level) {
     return BASE_XP_PER_LEVEL + (Math.max(1, level) - 1) * XP_LEVEL_STEP;
+  }
+
+  function highScoreLevelUpBonus(newBest, runXp) {
+    if (!newBest) return 0;
+    const currentLevel = deriveLevel(state.xp);
+    const nextLevelFloor = xpForLevel(currentLevel + 1);
+    return Math.max(0, nextLevelFloor - ((Number(state.xp) || 0) + Math.max(0, Number(runXp) || 0)));
   }
 
   function xpIntoLevel() {
@@ -3980,7 +3993,8 @@
     const newBest = block.score > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem();
-    const earned = applyRewardBooster(calculateBlockXp());
+    let earned = applyRewardBooster(calculateBlockXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewBlockCoins(newBest);
 
     state.stats.gamesPlayed += 1;
@@ -5463,7 +5477,8 @@
     const newBest = star.bossKills > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem("star");
-    const earned = applyRewardBooster(calculateStarXp());
+    let earned = applyRewardBooster(calculateStarXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewStarCoins(newBest);
 
     state.stats.gamesPlayed += 1;
@@ -5886,7 +5901,8 @@
     const newBest = stack.score > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem();
-    const earned = applyRewardBooster(calculateStackXp());
+    let earned = applyRewardBooster(calculateStackXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewStackCoins(newBest);
 
     state.stats.gamesPlayed += 1;
@@ -7075,6 +7091,7 @@
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem("snake");
     let earned = applyRewardBooster(calculateSnakeXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     let coinsEarned = previewCoins(newBest);
 
     state.stats.gamesPlayed += 1;
@@ -7530,7 +7547,8 @@
     const newBest = flappy.score > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem();
-    const earned = applyRewardBooster(calculateFlappyXp());
+    let earned = applyRewardBooster(calculateFlappyXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewFlappyCoins(newBest);
 
     state.stats.gamesPlayed += 1;
@@ -8970,7 +8988,8 @@
     const newBest = crossy.score > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem("crossy");
-    const earned = applyRewardBooster(calculateCrossyXp());
+    let earned = applyRewardBooster(calculateCrossyXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewCrossyCoins(newBest);
     stopCrossy(false);
     if (!wasCrash) {
@@ -10147,7 +10166,8 @@
     const newBest = solitaire.score > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem();
-    const earned = applyRewardBooster(calculateSolitaireXp(won));
+    let earned = applyRewardBooster(calculateSolitaireXp(won));
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewSolitaireCoins(won);
     stopSolitaire(false);
     stopGameTheme("stop");
@@ -11107,7 +11127,8 @@
     const newBest = fruit.score > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem("fruit");
-    const earned = applyRewardBooster(calculateFruitXp());
+    let earned = applyRewardBooster(calculateFruitXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewFruitCoins(newBest);
     stopFruit(false);
     stopGameTheme(reason === "overflow" ? "death" : "stop");
@@ -11164,6 +11185,8 @@
       combo: 0,
       bestCombo: 0,
       comboBonusPoints: 0,
+      survivalBonusPoints: 0,
+      slowNanasSliced: 0,
       elapsed: 0,
       runStartedAt: 0
     };
@@ -11179,6 +11202,8 @@
         ninja.combo = snapshot.combo;
         ninja.bestCombo = snapshot.bestCombo;
         ninja.comboBonusPoints = snapshot.comboBonusPoints || 0;
+        ninja.survivalBonusPoints = snapshot.survivalBonusPoints || 0;
+        ninja.slowNanasSliced = snapshot.slowNanasSliced || 0;
         ninja.elapsed = snapshot.elapsed;
         renderNinjaStats();
       },
@@ -11188,6 +11213,19 @@
       },
       onLaunch(_kind, details = {}) {
         playNinjaCannonPop(details.minuteVolley ? 0 : (Number(details.waveIndex) || 0) * 0.035, details.minuteVolley);
+      },
+      onPowerUpSpawn(kind) {
+        if (kind !== "slow") return;
+        playNinjaSlowNanaSound("spawn");
+        showToast("Power-Up Incoming", "Slice the glowing blue Slow Motion Nana.", "silent", 2300);
+      },
+      onPowerUp(kind, seconds) {
+        if (kind !== "slow") return;
+        playNinjaSlowNanaSound("collect");
+        showToast("Slow Motion Nana", `Time slowed for ${seconds} seconds.`, "win", 2600);
+      },
+      onSlowMotionChange(active) {
+        el.ninjaScreen?.classList.toggle("ninja-slow-motion", active);
       },
       onMiss(misses) {
         playToneAt(210 - misses * 24, 0.11, "sawtooth", 0.07);
@@ -11246,7 +11284,7 @@
     ninjaComboTimer = null;
     ninjaPointerId = null;
     ninjaEngine?.stop();
-    el.ninjaScreen?.classList.remove("ninja-bomb-flash");
+    el.ninjaScreen?.classList.remove("ninja-bomb-flash", "ninja-slow-motion");
     ninja.running = false;
     ninja.paused = false;
     el.ninjaCombo?.classList.add("hidden");
@@ -11332,6 +11370,18 @@
     }
   }
 
+  function playNinjaSlowNanaSound(stage = "collect") {
+    if (state.muteSfx) return;
+    if (stage === "spawn") {
+      playToneAt(420, 0.1, "sine", 0.055);
+      setTimeout(() => playToneAt(620, 0.12, "sine", 0.06), 80);
+      return;
+    }
+    playToneAt(440, 0.18, "sine", 0.075);
+    setTimeout(() => playToneAt(660, 0.22, "sine", 0.082), 75);
+    setTimeout(() => playToneAt(880, 0.28, "sine", 0.07), 155);
+  }
+
   function calculateNinjaXp() {
     const seconds = Math.max(0, Number(ninja.elapsed) || 0);
     const scoreReward = Math.floor(Math.max(0, Number(ninja.score) || 0) * 0.2);
@@ -11340,7 +11390,8 @@
     const minuteMilestones = Math.floor(seconds / 60) * 120;
     const comboMilestones = Math.floor((Number(ninja.comboBonusPoints) || 0) / 100) * 18;
     const bestComboReward = Math.floor(Math.max(0, Number(ninja.bestCombo) || 0) / 5) * 20;
-    return Math.max(12, scoreReward + sliceReward + survivalReward + minuteMilestones + comboMilestones + bestComboReward);
+    const slowNanaReward = Math.max(0, Number(ninja.slowNanasSliced) || 0) * 90;
+    return Math.max(12, scoreReward + sliceReward + survivalReward + minuteMilestones + comboMilestones + bestComboReward + slowNanaReward);
   }
 
   function previewNinjaCoins(newBest = ninja.score > state.stats.ninjaBest) {
@@ -11369,11 +11420,13 @@
     ninja.combo = snapshot.combo;
     ninja.bestCombo = snapshot.bestCombo;
     ninja.comboBonusPoints = snapshot.comboBonusPoints || 0;
+    ninja.survivalBonusPoints = snapshot.survivalBonusPoints || 0;
+    ninja.slowNanasSliced = snapshot.slowNanasSliced || 0;
     ninja.elapsed = snapshot.elapsed;
     ninja.running = false;
     ninja.paused = false;
     getNinjaEngine().finish();
-    el.ninjaScreen.classList.remove("ninja-bomb-flash");
+    el.ninjaScreen.classList.remove("ninja-bomb-flash", "ninja-slow-motion");
     if (casperNinjaTimer) clearInterval(casperNinjaTimer);
     casperNinjaTimer = null;
     releaseCasperRun();
@@ -11382,7 +11435,8 @@
     const newBest = ninja.score > previousBest;
     const oldAchievements = new Set(state.achievements);
     const boosterUsed = getEquippedBoosterItem("ninja");
-    const earned = applyRewardBooster(calculateNinjaXp());
+    let earned = applyRewardBooster(calculateNinjaXp());
+    earned += highScoreLevelUpBonus(newBest, earned);
     const coinsEarned = previewNinjaCoins(newBest);
     stopGameTheme(reason === "manual" ? "stop" : "death");
     if (reason === "miss") playGameOverSound();
@@ -11425,7 +11479,7 @@
     el.resultBest.textContent = formatNumber(state.stats.ninjaBest);
     el.newBestBadge.classList.toggle("hidden", !newBest);
     el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
-    el.resultMessage.textContent = `${formatNumber(ninja.sliced)} fruit sliced in ${Math.max(1, Math.round(ninja.elapsed))} seconds. Best combo: ${formatNumber(ninja.bestCombo)}x. Combo bonuses: +${formatNumber(ninja.comboBonusPoints)} points.`;
+    el.resultMessage.textContent = `${formatNumber(ninja.sliced)} fruit sliced in ${Math.max(1, Math.round(ninja.elapsed))} seconds. Best combo: ${formatNumber(ninja.bestCombo)}x. Combo bonuses: +${formatNumber(ninja.comboBonusPoints)} points. Survival bonuses: +${formatNumber(ninja.survivalBonusPoints)}. Slow Motion Nanas: ${formatNumber(ninja.slowNanasSliced)}.`;
     el.gameOverModal.classList.remove("hidden");
   }
 
@@ -11450,7 +11504,14 @@
       },
       onTitleReady() {
         if (currentScreen !== "kart") return;
-        showToast("Kart Ready", "Title music is playing. Start Game is ready.", "silent", 2200);
+        const audioMessage = kartController?.audioRunning
+          ? "Music and sound effects are ready."
+          : "Tap Start Game to enable music and sound effects.";
+        showToast("Kart Ready", audioMessage, "silent", 2600);
+      },
+      onAudioState(running) {
+        if (currentScreen !== "kart" || !running) return;
+        showToast("Kart Audio Ready", "Music and sound effects are enabled.", "silent", 2200);
       },
       onRecover() {
         finishKartSession(true);

@@ -5,9 +5,7 @@
   const PORT_URL = "games/sm-kart-zx/index.html";
   const DRIVE_DEAD_ZONE = 0.24;
   const STEER_DEAD_ZONE = 0.18;
-  const FULL_STEER_THRESHOLD = 0.86;
-  const STEER_PULSE_PERIOD = 180;
-  const DRIVE_HOLD_DELAY = 220;
+  const RACE_STATE_SAMPLE_PERIOD = 320;
   const TITLE_REVEAL_DELAY = 1550;
   const INTRO_ADVANCE_DELAY = 4600;
   const LOAD_TIMEOUT = 45_000;
@@ -30,6 +28,7 @@
       this.onStart = options.onStart || (() => {});
       this.onPauseChange = options.onPauseChange || (() => {});
       this.onItemState = options.onItemState || (() => {});
+      this.onAudioState = options.onAudioState || (() => {});
       this.onRecover = options.onRecover || (() => {});
       this.ready = false;
       this.loadFailed = false;
@@ -37,17 +36,17 @@
       this.started = false;
       this.paused = false;
       this.itemReady = false;
+      this.audioRunning = false;
+      this.audioContextCount = 0;
       this.joystickPointerId = null;
       this.joystickValue = { x: 0, y: 0 };
       this.inputState = new Map();
-      this.driveHoldTimer = null;
       this.introTimer = null;
       this.titleTimer = null;
-      this.steeringTimer = null;
-      this.steeringReleaseTimer = null;
-      this.steeringDirection = null;
-      this.steeringStrength = 0;
-      this.steeringContinuous = false;
+      this.raceStateTimer = null;
+      this.raceActive = false;
+      this.raceLitSamples = 0;
+      this.raceQuietSamples = 0;
       this.loadTimeoutTimer = null;
       this.itemArmTimer = null;
       this.itemSampleTimer = null;
@@ -68,6 +67,7 @@
       this.joystick?.addEventListener("pointerdown", (event) => {
         if (!this.started) return;
         event.preventDefault();
+        this.resumeAudio();
         this.joystickPointerId = event.pointerId;
         try {
           this.joystick.setPointerCapture?.(event.pointerId);
@@ -116,6 +116,10 @@
       this.itemButton?.addEventListener("pointerup", releaseItem);
       this.itemButton?.addEventListener("pointercancel", releaseItem);
       this.itemButton?.addEventListener("pointerleave", releaseItem);
+
+      this.startButton?.addEventListener("pointerdown", () => {
+        if (this.ready) this.resumeAudio();
+      });
     }
 
     load(version = "1") {
@@ -128,6 +132,11 @@
       this.titleReady = false;
       this.started = false;
       this.paused = false;
+      this.audioRunning = false;
+      this.audioContextCount = 0;
+      this.raceActive = false;
+      this.raceLitSamples = 0;
+      this.raceQuietSamples = 0;
       this.itemBaseline = null;
       this.setItemReady(false);
       this.setLoading(true, "Loading Super Mario Kart ZX...");
@@ -167,6 +176,11 @@
       this.titleReady = false;
       this.started = false;
       this.paused = false;
+      this.audioRunning = false;
+      this.audioContextCount = 0;
+      this.raceActive = false;
+      this.raceLitSamples = 0;
+      this.raceQuietSamples = 0;
       this.itemBaseline = null;
       this.setItemReady(false);
       this.controls?.classList.remove("is-active");
@@ -184,7 +198,20 @@
       if (data.type === "status" && data.text && !this.loadFailed) this.setLoading(true, data.text);
       if (data.type === "error") this.handleLoadError(data.text);
       if (data.type === "ready") this.handleReady();
+      if (data.type === "audio") this.handleAudioState(data);
       if (data.type === "black-screen") this.handleBlackScreen();
+    }
+
+    handleAudioState(data = {}) {
+      const wasRunning = this.audioRunning;
+      this.audioRunning = Boolean(data.running);
+      this.audioContextCount = Math.max(0, Number(data.contexts) || 0);
+      if (wasRunning !== this.audioRunning) {
+        this.onAudioState(this.audioRunning, {
+          contexts: this.audioContextCount,
+          states: Array.isArray(data.states) ? data.states.slice() : []
+        });
+      }
     }
 
     handleBlackScreen() {
@@ -240,6 +267,7 @@
       this.paused = false;
       this.startButton?.classList.add("hidden");
       this.controls?.classList.add("is-active");
+      this.startRaceStateDetector();
       if (this.pauseButton) {
         this.pauseButton.disabled = false;
         this.pauseButton.textContent = "Pause";
@@ -299,8 +327,6 @@
     }
 
     releaseAll() {
-      window.clearTimeout(this.driveHoldTimer);
-      this.driveHoldTimer = null;
       this.clearSteeringInput();
       for (const [name, pressed] of this.inputState) {
         if (pressed) this.setInput(name, false);
@@ -333,76 +359,22 @@
     applyJoystickInput() {
       const { x, y } = this.joystickValue;
       this.applySteeringInput(x);
-      this.setInput("up", y < -DRIVE_DEAD_ZONE);
-      this.setInput("down", y > DRIVE_DEAD_ZONE);
-
-      if (y < -DRIVE_DEAD_ZONE) {
-        if (!this.driveHoldTimer && !this.inputState.get("accelerate")) {
-          this.driveHoldTimer = window.setTimeout(() => {
-            this.driveHoldTimer = null;
-            if (this.joystickValue.y < -DRIVE_DEAD_ZONE && !this.paused) {
-              this.setInput("accelerate", true);
-              this.scheduleItemDetector();
-            }
-          }, DRIVE_HOLD_DELAY);
-        }
-      } else {
-        window.clearTimeout(this.driveHoldTimer);
-        this.driveHoldTimer = null;
-        this.setInput("accelerate", false);
-      }
+      const forward = y < -DRIVE_DEAD_ZONE;
+      const reverse = y > DRIVE_DEAD_ZONE;
+      this.setInput("up", forward);
+      this.setInput("down", reverse);
+      this.setInput("accelerate", this.raceActive && forward && !this.paused);
+      this.setInput("back", this.raceActive && reverse && !this.paused);
+      if (this.raceActive && forward) this.scheduleItemDetector();
     }
 
     applySteeringInput(value) {
       const direction = value < -STEER_DEAD_ZONE ? "left" : value > STEER_DEAD_ZONE ? "right" : null;
-      if (!direction) {
-        this.clearSteeringInput();
-        return;
-      }
-
-      const strength = Math.min(1, (Math.abs(value) - STEER_DEAD_ZONE) / (1 - STEER_DEAD_ZONE));
-      const continuous = strength >= FULL_STEER_THRESHOLD;
-      const directionChanged = direction !== this.steeringDirection;
-      const modeChanged = continuous !== this.steeringContinuous;
-      this.steeringStrength = strength;
-
-      if (directionChanged || modeChanged) {
-        this.clearSteeringInput();
-        this.steeringDirection = direction;
-        this.steeringStrength = strength;
-        this.steeringContinuous = continuous;
-        this.setInput(direction === "left" ? "right" : "left", false);
-        if (continuous) this.setInput(direction, true);
-        else this.runSteeringPulse();
-      }
-    }
-
-    runSteeringPulse() {
-      const direction = this.steeringDirection;
-      if (!direction || this.steeringContinuous) return;
-      window.clearTimeout(this.steeringTimer);
-      window.clearTimeout(this.steeringReleaseTimer);
-      const curvedStrength = Math.pow(this.steeringStrength, 1.7);
-      const heldFor = Math.round(22 + curvedStrength * 116);
-      this.setInput(direction, true);
-      this.steeringReleaseTimer = window.setTimeout(() => {
-        this.steeringReleaseTimer = null;
-        if (this.steeringDirection === direction && !this.steeringContinuous) this.setInput(direction, false);
-      }, heldFor);
-      this.steeringTimer = window.setTimeout(() => {
-        this.steeringTimer = null;
-        if (this.steeringDirection === direction && !this.steeringContinuous) this.runSteeringPulse();
-      }, STEER_PULSE_PERIOD);
+      this.setInput("left", direction === "left");
+      this.setInput("right", direction === "right");
     }
 
     clearSteeringInput() {
-      window.clearTimeout(this.steeringTimer);
-      window.clearTimeout(this.steeringReleaseTimer);
-      this.steeringTimer = null;
-      this.steeringReleaseTimer = null;
-      this.steeringDirection = null;
-      this.steeringStrength = 0;
-      this.steeringContinuous = false;
       this.setInput("left", false);
       this.setInput("right", false);
     }
@@ -411,9 +383,40 @@
       this.joystickValue = { x: 0, y: 0 };
       if (this.joystickKnob) this.joystickKnob.style.transform = "translate(0, 0)";
       this.clearSteeringInput();
-      for (const name of ["up", "down", "accelerate"]) this.setInput(name, false);
-      window.clearTimeout(this.driveHoldTimer);
-      this.driveHoldTimer = null;
+      for (const name of ["up", "down", "accelerate", "back"]) this.setInput(name, false);
+    }
+
+    startRaceStateDetector() {
+      window.clearInterval(this.raceStateTimer);
+      this.raceStateTimer = window.setInterval(() => this.detectRaceState(), RACE_STATE_SAMPLE_PERIOD);
+      this.detectRaceState();
+    }
+
+    detectRaceState() {
+      if (!this.started) return;
+      const sample = this.sampleItemHud();
+      if (!sample) return;
+      if (sample.hasHolder) {
+        this.raceLitSamples += 1;
+        this.raceQuietSamples = 0;
+        if (this.raceLitSamples >= 2) this.setRaceActive(true);
+        return;
+      }
+      this.raceLitSamples = 0;
+      this.raceQuietSamples += 1;
+      if (this.raceQuietSamples >= 2) this.setRaceActive(false);
+    }
+
+    setRaceActive(active) {
+      const next = Boolean(active);
+      if (this.raceActive === next) return;
+      this.raceActive = next;
+      if (!next) {
+        this.setInput("accelerate", false);
+        this.setInput("back", false);
+        this.setItemReady(false);
+      }
+      this.applyJoystickInput();
     }
 
     scheduleItemDetector() {
@@ -509,15 +512,14 @@
     }
 
     clearTimers() {
-      for (const timer of [this.driveHoldTimer, this.introTimer, this.titleTimer, this.steeringTimer, this.steeringReleaseTimer, this.itemArmTimer, this.loadTimeoutTimer]) {
+      for (const timer of [this.introTimer, this.titleTimer, this.itemArmTimer, this.loadTimeoutTimer]) {
         window.clearTimeout(timer);
       }
       window.clearInterval(this.itemSampleTimer);
-      this.driveHoldTimer = null;
+      window.clearInterval(this.raceStateTimer);
       this.introTimer = null;
       this.titleTimer = null;
-      this.steeringTimer = null;
-      this.steeringReleaseTimer = null;
+      this.raceStateTimer = null;
       this.loadTimeoutTimer = null;
       this.itemArmTimer = null;
       this.itemSampleTimer = null;

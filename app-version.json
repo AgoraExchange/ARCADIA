@@ -1,7 +1,13 @@
 {
-  "version": "19.20.0.0",
+  "version": "19.23.0.0",
   "patchNotes": [
-    "Fruit Ninja bombs now crackle with a bright animated fuse, flying sparks, smoke, and a pulsing danger halo so they are unmistakable before a swipe.",
+    "Mario Kart now captures and unlocks the port's real GameMaker audio engine from Start Game and every touch control, including iOS installed PWAs, while caching the complete game runtime for reliable loading.",
+    "Mario Kart restores immediate held steering so small left and right joystick movements turn responsively again instead of using delayed steering pulses.",
+    "Mario Kart now keeps joystick-up as menu navigation until the race HUD appears, then maps up to acceleration and down to native brake/reverse so wall crashes are recoverable.",
+    "Fruit Ninja adds the rare Slow Motion Nana: a blue-glowing power-up banana earned during strong runs that slows gameplay for six seconds.",
+    "Fruit Ninja fruit becomes more valuable every 30 seconds survived, while Slow Motion Nanas add bonus score and XP for dedicated runs.",
+    "Setting a new personal high score in any score-based ARCADIA game now guarantees enough run XP to gain at least one level.",
+    "Fruit Ninja bombs keep their bright animated fuse, flying sparks, and smoke while removing the dotted circle around each bomb.",
     "Every Fruit Ninja launch now fires with a cannon pop, and every full minute survived triggers a rapid five-fruit cannon volley.",
     "Fruit Ninja now awards +100 score at every five-fruit combo milestone and uses escalating survival-focused XP that grows sharply during long runs while still rewarding score and slicing.",
     "Super Mario Kart ZX now uses the player-provided neon kart artwork as its dashboard game icon.",

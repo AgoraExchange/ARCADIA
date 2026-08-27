@@ -232,6 +232,9 @@
       this.nextMinuteVolley = 60;
       this.minuteVolleyRemaining = 0;
       this.minuteVolleyIn = 0;
+      this.nextSlowNanaAt = random(46, 58);
+      this.slowMotionUntil = 0;
+      this.slowMotionActive = false;
       this.entities = [];
       this.fragments = [];
       this.particles = [];
@@ -244,6 +247,8 @@
       this.combo = 0;
       this.bestCombo = 0;
       this.comboBonusPoints = 0;
+      this.survivalBonusPoints = 0;
+      this.slowNanasSliced = 0;
       this.lastSliceAt = 0;
       this.explosionElapsed = 0;
       this.gameOverSent = false;
@@ -309,6 +314,9 @@
         combo: this.combo,
         bestCombo: this.bestCombo,
         comboBonusPoints: this.comboBonusPoints,
+        survivalBonusPoints: this.survivalBonusPoints,
+        slowNanasSliced: this.slowNanasSliced,
+        slowMotionRemaining: this.slowMotionActive ? Math.max(0, (this.slowMotionUntil - performance.now()) / 1000) : 0,
         elapsed: this.elapsed
       };
     }
@@ -370,6 +378,9 @@
       this.nextMinuteVolley = 60;
       this.minuteVolleyRemaining = 0;
       this.minuteVolleyIn = 0;
+      this.nextSlowNanaAt = random(46, 58);
+      this.slowMotionUntil = 0;
+      this.slowMotionActive = false;
       this.entities.length = 0;
       this.fragments.length = 0;
       this.particles.length = 0;
@@ -382,6 +393,8 @@
       this.combo = 0;
       this.bestCombo = 0;
       this.comboBonusPoints = 0;
+      this.survivalBonusPoints = 0;
+      this.slowNanasSliced = 0;
       this.lastSliceAt = 0;
       this.explosionElapsed = 0;
       this.gameOverSent = false;
@@ -409,10 +422,17 @@
     }
 
     update(dt) {
+      const now = performance.now();
+      if (this.slowMotionActive && now >= this.slowMotionUntil) {
+        this.slowMotionActive = false;
+        this.slowMotionUntil = 0;
+        this.callbacks.onSlowMotionChange?.(false, 0);
+      }
+      const simulationDt = this.mode === "running" && this.slowMotionActive ? dt * 0.42 : dt;
       this.trail.forEach((point) => { point.life -= dt; });
       this.trail = this.trail.filter((point) => point.life > 0);
-      this.updateFragments(dt);
-      this.updateParticles(dt);
+      this.updateFragments(simulationDt);
+      this.updateParticles(simulationDt);
       if (this.mode === "paused" || this.mode === "ended") return;
       if (this.mode === "exploding") {
         this.explosionElapsed += dt;
@@ -425,23 +445,25 @@
       }
 
       this.elapsed += dt;
+      if (this.mode === "running" && this.elapsed >= this.nextSlowNanaAt) this.maybeSpawnSlowMotionBanana();
       if (this.mode === "running" && this.elapsed >= this.nextMinuteVolley) {
         this.minuteVolleyRemaining += 5;
         this.minuteVolleyIn = 0;
         this.nextMinuteVolley += 60;
       }
       if (this.mode === "running" && this.minuteVolleyRemaining > 0) {
-        this.minuteVolleyIn -= dt;
+        this.minuteVolleyIn -= simulationDt;
         if (this.minuteVolleyIn <= 0) this.spawnMinuteVolleyFruit();
       } else {
-        this.spawnIn -= dt;
+        this.spawnIn -= simulationDt;
         if (this.spawnIn <= 0) {
           if (this.mode === "preview") this.spawnPreviewFruit();
           else this.spawnWave();
         }
       }
-      this.updateEntities(dt);
-      if (this.mode === "running" && this.lastSliceAt && performance.now() - this.lastSliceAt > 900) this.combo = 0;
+      this.updateEntities(simulationDt);
+      const comboGrace = this.slowMotionActive ? 1800 : 900;
+      if (this.mode === "running" && this.lastSliceAt && now - this.lastSliceAt > comboGrace) this.combo = 0;
     }
 
     createEntity(kind, x, y, overrides = {}) {
@@ -459,6 +481,7 @@
         spin: { x: random(-1.8, 1.8), y: random(-2.2, 2.2), z: random(-2.6, 2.6) },
         scale: overrides.scale ?? 1,
         preview: Boolean(overrides.preview),
+        powerUp: overrides.powerUp || "",
         fuseSeed: random(0, TAU),
         sliced: false
       };
@@ -517,6 +540,38 @@
       }
     }
 
+    maybeSpawnSlowMotionBanana() {
+      const doingWell = this.elapsed >= 45
+        && this.score >= 450 + this.elapsed * 4
+        && this.sliced >= 18 + this.elapsed * 0.12
+        && this.misses <= 1;
+      const powerUpOnBoard = this.entities.some((entity) => entity.powerUp === "slow");
+      if (!doingWell || this.slowMotionActive || powerUpOnBoard) {
+        this.nextSlowNanaAt = this.elapsed + 7;
+        return;
+      }
+
+      const x = random(105, this.canvas.width - 105);
+      const centerPull = (this.canvas.width / 2 - x) * random(0.22, 0.34);
+      this.entities.push(this.createEntity("banana", x, this.canvas.height + 84, {
+        vx: centerPull + random(-48, 48),
+        vy: random(-985, -895) - Math.min(100, this.elapsed),
+        vz: random(25, 105),
+        powerUp: "slow"
+      }));
+      this.callbacks.onLaunch?.("banana", { waveIndex: 0, minuteVolley: false, powerUp: "slow" });
+      this.callbacks.onPowerUpSpawn?.("slow");
+      this.spawnIn = Math.max(this.spawnIn, 0.5);
+      this.nextSlowNanaAt = this.elapsed + random(55, 78);
+    }
+
+    activateSlowMotion(seconds = 6) {
+      const duration = Math.max(1, Number(seconds) || 6);
+      this.slowMotionUntil = performance.now() + duration * 1000;
+      this.slowMotionActive = true;
+      this.callbacks.onSlowMotionChange?.(true, duration);
+    }
+
     updateEntities(dt) {
       for (let index = this.entities.length - 1; index >= 0; index -= 1) {
         const entity = this.entities[index];
@@ -536,7 +591,7 @@
         }
         if (entity.y <= this.canvas.height + 135 || entity.vy <= 0) continue;
         this.entities.splice(index, 1);
-        if (this.mode === "running" && entity.kind !== "bomb") {
+        if (this.mode === "running" && entity.kind !== "bomb" && !entity.powerUp) {
           this.misses += 1;
           this.combo = 0;
           this.callbacks.onMiss?.(this.misses);
@@ -583,18 +638,27 @@
 
     sliceFruit(entity, direction, hit) {
       const now = performance.now();
-      this.combo = now - this.lastSliceAt <= 780 ? this.combo + 1 : 1;
+      const comboWindow = this.slowMotionActive ? 1550 : 780;
+      this.combo = now - this.lastSliceAt <= comboWindow ? this.combo + 1 : 1;
       this.lastSliceAt = now;
       this.bestCombo = Math.max(this.bestCombo, this.combo);
       this.sliced += 1;
       const info = FRUIT_INFO[entity.kind];
       const comboBonus = this.combo >= 5 && this.combo % 5 === 0 ? 100 : 0;
-      const earned = info.points + Math.min(30, (this.combo - 1) * 3) + comboBonus;
+      const survivalBonus = Math.min(80, Math.floor(this.elapsed / 30) * 5);
+      const powerUpBonus = entity.powerUp === "slow" ? 50 : 0;
+      const earned = info.points + Math.min(30, (this.combo - 1) * 3) + comboBonus + survivalBonus + powerUpBonus;
       this.comboBonusPoints += comboBonus;
+      this.survivalBonusPoints += survivalBonus;
       this.score += earned;
       this.createFragments(entity, direction, info.inside);
       this.createJuiceBurst(hit, info.inside, direction, 24);
-      this.callbacks.onSlice?.(entity.kind, earned, this.combo, comboBonus);
+      this.callbacks.onSlice?.(entity.kind, earned, this.combo, comboBonus, { survivalBonus, powerUpBonus, powerUp: entity.powerUp });
+      if (entity.powerUp === "slow") {
+        this.slowNanasSliced += 1;
+        this.activateSlowMotion(6);
+        this.callbacks.onPowerUp?.("slow", 6);
+      }
       this.emitStats();
     }
 
@@ -748,9 +812,11 @@
         ctx.stroke();
       });
 
+      this.drawPowerUpWarnings();
       this.drawBombWarnings();
       this.drawParticles();
       this.drawTrail();
+      this.drawSlowMotionStatus();
       this.drawOverlay();
     }
 
@@ -857,6 +923,72 @@
       });
     }
 
+    drawPowerUpWarnings() {
+      const ctx = this.ctx;
+      const now = performance.now();
+      this.entities.forEach((entity) => {
+        if (entity.powerUp !== "slow" || entity.sliced) return;
+        const outlinePoints = [];
+        entity.model.cells.forEach((cell) => {
+          [-1, 1].forEach((x) => [-1, 1].forEach((y) => [-1, 1].forEach((z) => {
+            outlinePoints.push(this.project(this.worldPoint(entity, cell, [x, y, z])));
+          })));
+        });
+        const hull = convexHull(outlinePoints);
+        if (hull.length < 3) return;
+        const center = this.project({ x: entity.x, y: entity.y, z: entity.z });
+        const pulse = 0.5 + Math.sin(now * 0.012 + entity.fuseSeed) * 0.5;
+        const top = Math.min(...hull.map((point) => point.y));
+
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.lineJoin = "round";
+        ctx.shadowColor = "#36cfff";
+        ctx.shadowBlur = 16 + pulse * 16;
+        ctx.strokeStyle = `rgba(60, 198, 255, ${0.52 + pulse * 0.3})`;
+        ctx.lineWidth = 6 + pulse * 3;
+        ctx.beginPath();
+        hull.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+        ctx.closePath();
+        ctx.stroke();
+
+        const sweep = ctx.createLinearGradient(center.x - 90, center.y - 70, center.x + 90, center.y + 70);
+        sweep.addColorStop(0, "#1b68ff");
+        sweep.addColorStop(0.5, "#bdf8ff");
+        sweep.addColorStop(1, "#35d9ff");
+        ctx.strokeStyle = sweep;
+        ctx.lineWidth = 2.6 + pulse * 1.8;
+        ctx.setLineDash([18, 28]);
+        ctx.lineDashOffset = -now * 0.075;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        for (let index = 0; index < 6; index += 1) {
+          const angle = now * 0.0022 + entity.fuseSeed + index * TAU / 6;
+          const radiusX = entity.model.radius * center.scale * 0.78;
+          const radiusY = entity.model.radius * center.scale * 0.48;
+          const moteSize = 2.5 + (index % 2) * 1.7 + pulse;
+          ctx.fillStyle = index % 2 ? "#ffffff" : "#42d8ff";
+          ctx.fillRect(
+            center.x + Math.cos(angle) * radiusX - moteSize / 2,
+            center.y + Math.sin(angle) * radiusY - moteSize / 2,
+            moteSize,
+            moteSize
+          );
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#bdf8ff";
+        ctx.shadowColor = "#239cff";
+        ctx.shadowBlur = 10;
+        ctx.font = "bold 14px 'Orange Kid', monospace";
+        ctx.fillText("SLOW NANA", center.x, top - 12);
+        ctx.restore();
+      });
+    }
+
     drawBombWarnings() {
       const ctx = this.ctx;
       const now = performance.now();
@@ -871,21 +1003,8 @@
         const fuseBase = this.project(toWorld({ x: 0, y: -size * 3.15, z: 0 }));
         const fuseTip = this.project(toWorld({ x: size * 1.05, y: -size * 4.45, z: 0 }));
         const pulse = 0.5 + Math.sin(now * 0.018 + entity.fuseSeed) * 0.5;
-        const bodyRadius = entity.model.radius * center.scale * 0.78;
-
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
-        ctx.strokeStyle = `rgba(255, 73, 42, ${0.42 + pulse * 0.34})`;
-        ctx.lineWidth = 2.2 + pulse * 1.8;
-        ctx.setLineDash([5, 7]);
-        ctx.lineDashOffset = -now * 0.018;
-        ctx.shadowColor = "#ff4b2e";
-        ctx.shadowBlur = 12 + pulse * 9;
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, bodyRadius + 7 + pulse * 5, 0, TAU);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
         ctx.strokeStyle = "#ff9a3d";
         ctx.lineWidth = Math.max(3, 5 * center.scale);
         ctx.shadowColor = "#ff572d";
@@ -986,6 +1105,27 @@
       ctx.shadowBlur = 6;
       ctx.lineWidth = 2.5;
       ctx.stroke();
+      ctx.restore();
+    }
+
+    drawSlowMotionStatus() {
+      if (this.mode !== "running" || !this.slowMotionActive) return;
+      const ctx = this.ctx;
+      const width = this.canvas.width;
+      const height = this.canvas.height;
+      const remaining = Math.max(0, (this.slowMotionUntil - performance.now()) / 1000);
+      const pulse = 0.5 + Math.sin(performance.now() * 0.01) * 0.5;
+      ctx.save();
+      ctx.strokeStyle = `rgba(55, 210, 255, ${0.35 + pulse * 0.28})`;
+      ctx.shadowColor = "#2d9dff";
+      ctx.shadowBlur = 18 + pulse * 10;
+      ctx.lineWidth = 7;
+      ctx.strokeRect(5, 5, width - 10, height - 10);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#bdf8ff";
+      ctx.shadowBlur = 9;
+      ctx.font = "bold 18px 'Orange Kid', monospace";
+      ctx.fillText(`SLOW NANA ${remaining.toFixed(1)}s`, 18, 30);
       ctx.restore();
     }
 

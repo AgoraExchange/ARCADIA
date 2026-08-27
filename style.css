@@ -4341,6 +4341,11 @@ input:focus {
   animation: ninjaScreenBombFlash 0.74s cubic-bezier(0.18, 0.7, 0.24, 1) both;
 }
 
+.ninja-screen.ninja-slow-motion .ninja-stage {
+  border-color: rgba(61, 207, 255, 0.72);
+  box-shadow: 0 0 30px rgba(46, 157, 255, 0.24), inset 0 0 24px rgba(52, 218, 255, 0.08);
+}
+
 @keyframes ninjaComboPop {
   0% { opacity: 0; transform: translateX(-50%) scale(0.55); }
   72% { opacity: 1; transform: translateX(-50%) scale(1.1); }

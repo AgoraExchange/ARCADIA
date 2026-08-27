@@ -219,10 +219,31 @@
         lookback: { key: " ", code: "Space", value: 32 }
       });
       const arcadiaHeldKeys = new Set();
+      const arcadiaAudioContexts = new Set();
+      const arcadiaNativeAudioContext = window.AudioContext || window.webkitAudioContext;
       const arcadiaOriginalGetContext = HTMLCanvasElement.prototype.getContext;
       let arcadiaSawLitFrame = false;
       let arcadiaBlackSince = 0;
       let arcadiaBlackRecoveryIssued = false;
+
+      if (arcadiaNativeAudioContext) {
+        const ArcadiaTrackedAudioContext = function (...options) {
+          const context = Reflect.construct(arcadiaNativeAudioContext, options);
+          arcadiaAudioContexts.add(context);
+          context.addEventListener?.("statechange", arcadiaReportAudioState);
+          return context;
+        };
+        ArcadiaTrackedAudioContext.prototype = arcadiaNativeAudioContext.prototype;
+        try {
+          Object.setPrototypeOf(ArcadiaTrackedAudioContext, arcadiaNativeAudioContext);
+        } catch {}
+        try {
+          window.AudioContext = ArcadiaTrackedAudioContext;
+        } catch {}
+        try {
+          window.webkitAudioContext = ArcadiaTrackedAudioContext;
+        } catch {}
+      }
 
       HTMLCanvasElement.prototype.getContext = function (type, attributes) {
         const isGameCanvas = this.id === "canvas" && typeof type === "string" && type.toLowerCase().includes("webgl");
@@ -236,6 +257,53 @@
         if (window.parent === window) return;
         const targetOrigin = window.location.protocol === "file:" ? "*" : window.location.origin;
         window.parent.postMessage({ source: ARCADIA_MESSAGE_SOURCE, type, ...detail }, targetOrigin);
+      }
+
+      function arcadiaGetAudioContexts() {
+        const contexts = [
+          ...arcadiaAudioContexts,
+          window.Module?.SDL2?.Ti,
+          window.Module?.SDL2?.audioContext,
+          window.h?.SDL2?.Ti,
+          window.h?.SDL2?.audioContext
+        ];
+        return contexts.filter((context, index, all) => (
+          context
+          && typeof context.resume === "function"
+          && all.indexOf(context) === index
+        ));
+      }
+
+      function arcadiaReportAudioState() {
+        const contexts = arcadiaGetAudioContexts();
+        const states = contexts.map((context) => String(context.state || "unknown"));
+        const running = states.includes("running");
+        arcadiaPost("audio", { running, contexts: contexts.length, states });
+        return running;
+      }
+
+      function arcadiaUnlockAudioContext(context) {
+        if (!context || context.state === "closed") return Promise.resolve(false);
+        let resumeResult;
+        try {
+          if (context.state !== "running") resumeResult = context.resume();
+          const source = context.createBufferSource();
+          const gain = context.createGain();
+          source.buffer = context.createBuffer(1, 1, Math.max(8_000, context.sampleRate || 22_050));
+          gain.gain.value = 0;
+          source.connect(gain);
+          gain.connect(context.destination);
+          source.start(0);
+          source.onended = () => {
+            try {
+              source.disconnect();
+              gain.disconnect();
+            } catch {}
+          };
+        } catch {}
+        return Promise.resolve(resumeResult)
+          .then(() => context.state === "running")
+          .catch(() => false);
       }
 
       function arcadiaSampleFrameHealth() {
@@ -319,16 +387,18 @@
       };
 
       window.arcadiaSMKResumeAudio = function () {
-        const contexts = [window.Module?.SDL2?.Ti, window.h?.SDL2?.Ti]
-          .filter((context, index, all) => context && all.indexOf(context) === index);
-        document.body?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
-        const resumes = contexts.map((context) => context.state === "suspended" ? context.resume() : Promise.resolve());
+        const contexts = arcadiaGetAudioContexts();
+        const resumes = contexts.map(arcadiaUnlockAudioContext);
         return Promise.allSettled(resumes).then(() => {
-          const running = contexts.some((context) => context.state === "running");
-          arcadiaPost("audio", { running });
-          return running;
+          return arcadiaReportAudioState();
         });
       };
+
+      for (const eventName of ["pointerdown", "touchstart", "mousedown", "keydown"]) {
+        document.addEventListener(eventName, (event) => {
+          if (event.isTrusted) window.arcadiaSMKResumeAudio();
+        }, { passive: true });
+      }
 
       window.addEventListener("message", (event) => {
         if (event.origin !== window.location.origin || event.source !== window.parent) return;
@@ -392,6 +462,7 @@
               // It seems that this text ensures game is loaded.
               ensureAspectRatio();
               document.body.classList.add("game-ready");
+              arcadiaReportAudioState();
               arcadiaPost("ready");
             }
             if (element) {

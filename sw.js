@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.20.0.0";
+const ARCADIA_VERSION = "19.23.0.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -33,12 +33,24 @@ const APP_SHELL = [
   "assets/audio/sfx/crossy-road/crash.mp3",
   "games/sm-kart-zx/index.html"
 ];
+const KART_RUNTIME_ASSETS = [
+  "games/sm-kart-zx/runner.js",
+  "games/sm-kart-zx/runner.wasm",
+  "games/sm-kart-zx/runner.data",
+  "games/sm-kart-zx/game.unx",
+  "games/sm-kart-zx/audio-worklet.js",
+  "games/sm-kart-zx/runner.json",
+  "games/sm-kart-zx/fnames"
+];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => Promise.allSettled([
+        cache.addAll(APP_SHELL),
+        ...KART_RUNTIME_ASSETS.map((asset) => cache.add(asset))
+      ]))
       .catch(() => undefined)
   );
 });
