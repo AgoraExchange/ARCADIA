@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.16.1.0";
+  const APP_VERSION = "19.17.0.1";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Fruit Ninja now uses the player-provided game icon, with its image, soundtrack, and cut sound organized into their dedicated asset folders.",
+    "Fruit Ninja joins ARCADIA as Game 09 with block-built fruit, projected wall shadows, swipe slicing, voxel destruction, escalating waves, bombs, rewards, and dedicated music and cut audio.",
     "Inferno Red, Violet Pulse, Hologram, and Black Hole Store previews now visibly fire across the full showcase instead of sticking near the launcher edge.",
     "Star Invaders adds twelve collectible beams spanning frosted, inferno, toxic, pulse, plasma, solar, cryo, luxury, and ultra flex tiers.",
     "New beam cosmetics now animate in flight and on impact with embers, vapor, electric coils, ice shards, gold etching, gravity distortion, holograms, supernova bursts, and black-hole particle collapse.",
@@ -154,6 +156,7 @@
   const BLOCK_START_SFX = "assets/audio/sfx/block-grid/start.mp3";
   const BLOCK_GRAB_SFX = "assets/audio/sfx/block-grid/grab.mp3";
   const BLOCK_PLACE_SFX = "assets/audio/sfx/block-grid/place.mp3";
+  const FRUIT_NINJA_CUT_SFX = "assets/audio/sfx/fruit-ninja/cut.wav";
   const THEME_SONGS = {
     lobby: [
       "assets/themesong/lobby/lobby1.mp3",
@@ -179,6 +182,7 @@
         "assets/themesong/games/fruit-blend-1.mp3",
         "assets/themesong/games/fruit-blend-2.mp3"
       ],
+      ninja: "assets/themesong/games/fruit-ninja.ogg",
       starBoss: "assets/themesong/games/star-invaders-boss.mp3"
     }
   };
@@ -248,7 +252,14 @@
       fruitTotalScore: 0,
       fruitMerges: 0,
       fruitLargest: 0,
-      fruitClears: 0
+      fruitClears: 0,
+      ninjaRuns: 0,
+      ninjaBest: 0,
+      ninjaXpEarned: 0,
+      ninjaTotalScore: 0,
+      ninjaFruits: 0,
+      ninjaBestCombo: 0,
+      ninjaBombs: 0
     },
     achievements: []
   };
@@ -341,6 +352,17 @@
       available: true,
       image: "assets/images/games/fruitblend.png",
       mark: "F"
+    },
+    {
+      id: "ninja",
+      title: "Fruit Ninja",
+      gameNo: "09",
+      tags: ["fruit", "ninja", "slice", "swipe", "voxel", "3d", "bomb", "reflex"],
+      description: "Slice flying block fruit, build combos, and never touch a bomb.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/fruitninja-icon.png",
+      mark: "N"
     }
   ];
 
@@ -365,6 +387,9 @@
     { id: "fruit_500", title: "Blend Master", text: "Score 500 or higher in Fruit Blend." },
     { id: "fruit_melon", title: "Melon Royalty", text: "Create a watermelon in Fruit Blend." },
     { id: "fruit_clear", title: "Clean Blend", text: "Clear two maximum fruits in Fruit Blend." },
+    { id: "ninja_first", title: "Sharp Start", text: "Complete your first Fruit Ninja run." },
+    { id: "ninja_500", title: "Voxel Slicer", text: "Score 500 or higher in Fruit Ninja." },
+    { id: "ninja_combo", title: "Fruit Storm", text: "Reach a 10-fruit combo in Fruit Ninja." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -1170,6 +1195,11 @@
   let fruit = createFruitState();
   let fruitTimer = null;
   let fruitPointerId = null;
+  let ninja = createNinjaState();
+  let ninjaEngine = null;
+  let ninjaPointerId = null;
+  let ninjaComboTimer = null;
+  let casperNinjaTimer = null;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -1209,6 +1239,7 @@
     crossyScreen: $("crossyScreen"),
     solitaireScreen: $("solitaireScreen"),
     fruitScreen: $("fruitScreen"),
+    ninjaScreen: $("ninjaScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -1349,6 +1380,17 @@
     fruitCoinPreview: $("fruitCoinPreview"),
     startFruitBtn: $("startFruitBtn"),
     restartFruitBtn: $("restartFruitBtn"),
+    exitNinjaBtn: $("exitNinjaBtn"),
+    ninjaPauseBtn: $("ninjaPauseBtn"),
+    ninjaCanvas: $("ninjaCanvas"),
+    ninjaScore: $("ninjaScore"),
+    ninjaBest: $("ninjaBest"),
+    ninjaSliced: $("ninjaSliced"),
+    ninjaXpPreview: $("ninjaXpPreview"),
+    ninjaCoinPreview: $("ninjaCoinPreview"),
+    ninjaCombo: $("ninjaCombo"),
+    startNinjaBtn: $("startNinjaBtn"),
+    restartNinjaBtn: $("restartNinjaBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -1563,6 +1605,7 @@
     el.crossyScreen.classList.toggle("hidden", name !== "crossy");
     el.solitaireScreen.classList.toggle("hidden", name !== "solitaire");
     el.fruitScreen.classList.toggle("hidden", name !== "fruit");
+    el.ninjaScreen.classList.toggle("hidden", name !== "ninja");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -1571,14 +1614,15 @@
     if (name !== "crossy") stopCrossy(false);
     if (name !== "solitaire") stopSolitaire(false);
     if (name !== "fruit") stopFruit(false);
+    if (name !== "ninja") stopNinja(false);
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -1953,6 +1997,7 @@
     if (game === "crossy") return Boolean(crossy.running && !crossy.paused && !crossy.dying);
     if (game === "solitaire") return Boolean(solitaire.running && !solitaire.paused && !solitaire.dealing);
     if (game === "fruit") return Boolean(fruit.running && !fruit.paused);
+    if (game === "ninja") return Boolean(ninja.running && !ninja.paused);
     return false;
   }
 
@@ -1966,6 +2011,7 @@
     if (game === "crossy") return Boolean(crossy.running);
     if (game === "solitaire") return Boolean(solitaire.running || solitaire.dealing);
     if (game === "fruit") return Boolean(fruit.running);
+    if (game === "ninja") return Boolean(ninja.running);
     return false;
   }
 
@@ -1978,7 +2024,8 @@
       ["flappy", el.flappyScreen],
       ["crossy", el.crossyScreen],
       ["solitaire", el.solitaireScreen],
-      ["fruit", el.fruitScreen]
+      ["fruit", el.fruitScreen],
+      ["ninja", el.ninjaScreen]
     ];
     screens.forEach(([game, screen]) => screen?.classList.toggle("casper-active", casperRunIsArmed(game)));
   }
@@ -2007,7 +2054,14 @@
   function toggleCasper() {
     if (!state.devModeEnabled) return;
     state.casperEnabled = !state.casperEnabled;
-    if (!state.casperEnabled) releaseCasperRun();
+    if (!state.casperEnabled) {
+      if (casperNinjaTimer) clearInterval(casperNinjaTimer);
+      casperNinjaTimer = null;
+      releaseCasperRun();
+    } else if (currentScreen === "ninja" && ninja.running && !casperNinjaTimer) {
+      casperNinjaTimer = setInterval(() => getNinjaEngine().autoSlice(), 145);
+      prepareCasperRun("ninja");
+    }
     saveState();
     renderDeveloperTools();
     showToast(
@@ -2052,6 +2106,7 @@
     if (currentScreen === "crossy" && crossy.running) playGameTheme("crossy", { volume: 0.4 });
     if (currentScreen === "solitaire" && solitaire.running) playGameTheme("solitaire", { volume: 0.52 });
     if (currentScreen === "fruit" && fruit.running) playGameTheme("fruit", { playlist: true, volume: 0.5 });
+    if (currentScreen === "ninja" && ninja.running) playGameTheme("ninja", { volume: 0.56 });
     if (currentScreen === "star" && star.running) {
       const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
       playStarTheme(bossOnScreen ? "boss" : "normal");
@@ -2239,6 +2294,7 @@
     renderStarStats();
     renderStackStats();
     renderSolitaireStats();
+    renderNinjaStats();
   }
 
   function progressForXp(totalXp) {
@@ -2375,6 +2431,7 @@
         if (game.id === "crossy") openCrossy();
         if (game.id === "solitaire") openSolitaire();
         if (game.id === "fruit") openFruit();
+        if (game.id === "ninja") openNinja();
       });
       el.gameGrid.appendChild(card);
     });
@@ -2456,6 +2513,13 @@
         xp: Number(state.stats.fruitXpEarned) || 0,
         runs: Number(state.stats.fruitRuns) || 0,
         best: Number(state.stats.fruitBest) || 0,
+        metricLabel: "Best"
+      },
+      {
+        title: "Fruit Ninja",
+        xp: Number(state.stats.ninjaXpEarned) || 0,
+        runs: Number(state.stats.ninjaRuns) || 0,
+        best: Number(state.stats.ninjaBest) || 0,
         metricLabel: "Best"
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
@@ -2637,6 +2701,13 @@
         runs: Number(state.stats.fruitRuns) || 0,
         xp: Number(state.stats.fruitXpEarned) || 0,
         best: Number(state.stats.fruitBest) || 0
+      },
+      {
+        id: "ninja",
+        title: "Fruit Ninja",
+        runs: Number(state.stats.ninjaRuns) || 0,
+        xp: Number(state.stats.ninjaXpEarned) || 0,
+        best: Number(state.stats.ninjaBest) || 0
       }
     ];
 
@@ -11026,6 +11097,223 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function createNinjaState() {
+    return {
+      running: false,
+      paused: false,
+      score: 0,
+      sliced: 0,
+      misses: 0,
+      combo: 0,
+      bestCombo: 0,
+      elapsed: 0,
+      runStartedAt: 0
+    };
+  }
+
+  function getNinjaEngine() {
+    if (ninjaEngine) return ninjaEngine;
+    ninjaEngine = new window.ArcadiaFruitNinjaEngine(el.ninjaCanvas, {
+      onStats(snapshot) {
+        ninja.score = snapshot.score;
+        ninja.sliced = snapshot.sliced;
+        ninja.misses = snapshot.misses;
+        ninja.combo = snapshot.combo;
+        ninja.bestCombo = snapshot.bestCombo;
+        ninja.elapsed = snapshot.elapsed;
+        renderNinjaStats();
+      },
+      onSlice(_kind, _earned, combo) {
+        playPooledSfx(FRUIT_NINJA_CUT_SFX, 0.86, 7);
+        if (combo >= 2) showNinjaCombo(combo);
+      },
+      onMiss(misses) {
+        playToneAt(210 - misses * 24, 0.11, "sawtooth", 0.07);
+        if (misses < 3) showToast("Fruit Missed", `${3 - misses} chance${3 - misses === 1 ? "" : "s"} left.`, "silent", 1400);
+      },
+      onBomb() {
+        el.ninjaScreen.classList.add("ninja-bomb-flash");
+        stopGameTheme("death");
+        playNinjaExplosionSound();
+      },
+      onGameOver(reason, snapshot) {
+        endNinjaRun(reason, snapshot);
+      }
+    });
+    return ninjaEngine;
+  }
+
+  function openNinja() {
+    currentGame = "ninja";
+    prepareGameTheme();
+    showScreen("ninja");
+    resetNinja();
+  }
+
+  function resetNinja() {
+    stopNinja(false);
+    ninja = createNinjaState();
+    getNinjaEngine().enterPreview();
+    renderNinjaStats();
+  }
+
+  function startNinja() {
+    stopNinja(false);
+    el.gameOverModal.classList.add("hidden");
+    ninja = createNinjaState();
+    ninja.running = true;
+    ninja.runStartedAt = Date.now();
+    currentGame = "ninja";
+    getNinjaEngine().start();
+    playGameTheme("ninja", { restart: true, volume: 0.56 });
+    prepareCasperRun("ninja");
+    if (state.devModeEnabled && state.casperEnabled) {
+      casperNinjaTimer = setInterval(() => getNinjaEngine().autoSlice(), 145);
+    }
+    renderNinjaStats();
+  }
+
+  function restartNinja() {
+    startNinja();
+  }
+
+  function stopNinja(render = true) {
+    if (casperNinjaTimer) clearInterval(casperNinjaTimer);
+    casperNinjaTimer = null;
+    if (ninjaComboTimer) clearTimeout(ninjaComboTimer);
+    ninjaComboTimer = null;
+    ninjaPointerId = null;
+    ninjaEngine?.stop();
+    el.ninjaScreen?.classList.remove("ninja-bomb-flash");
+    ninja.running = false;
+    ninja.paused = false;
+    el.ninjaCombo?.classList.add("hidden");
+    releaseCasperRun();
+    if (render) renderNinjaStats();
+  }
+
+  function handlePrimaryNinjaAction() {
+    if (ninja.running) {
+      endNinjaRun("manual", getNinjaEngine().getSnapshot());
+      return;
+    }
+    startNinja();
+  }
+
+  function toggleNinjaPause() {
+    if (!ninja.running || getNinjaEngine().mode === "exploding") return;
+    ninja.paused = getNinjaEngine().togglePause();
+    renderNinjaStats();
+  }
+
+  function showNinjaCombo(combo) {
+    if (!el.ninjaCombo) return;
+    if (ninjaComboTimer) clearTimeout(ninjaComboTimer);
+    el.ninjaCombo.textContent = `${combo}X COMBO`;
+    el.ninjaCombo.classList.remove("hidden");
+    el.ninjaCombo.style.animation = "none";
+    void el.ninjaCombo.offsetWidth;
+    el.ninjaCombo.style.animation = "";
+    ninjaComboTimer = setTimeout(() => el.ninjaCombo.classList.add("hidden"), 720);
+  }
+
+  function playNinjaExplosionSound() {
+    if (state.muteSfx) return;
+    playFailTone();
+    playToneAt(92, 0.42, "sawtooth", 0.14);
+    setTimeout(() => playToneAt(58, 0.5, "square", 0.11), 65);
+    setTimeout(() => playToneAt(38, 0.58, "sawtooth", 0.08), 130);
+  }
+
+  function calculateNinjaXp() {
+    return Math.max(8, Math.round(ninja.score * 0.17 + ninja.sliced * 1.65 + ninja.elapsed * 0.45 + ninja.bestCombo * 2.2));
+  }
+
+  function previewNinjaCoins(newBest = ninja.score > state.stats.ninjaBest) {
+    return Math.max(3, Math.round(ninja.score / 78 + ninja.sliced * 0.28 + ninja.bestCombo * 0.5 + (newBest ? 8 : 0)));
+  }
+
+  function renderNinjaStats() {
+    if (!el.ninjaScore) return;
+    const best = Math.max(Number(state.stats.ninjaBest) || 0, ninja.score);
+    el.ninjaScore.textContent = formatNumber(ninja.score);
+    el.ninjaBest.textContent = formatNumber(best);
+    el.ninjaSliced.textContent = formatNumber(ninja.sliced);
+    el.ninjaXpPreview.textContent = formatNumber(applyRewardBooster(calculateNinjaXp()));
+    el.ninjaCoinPreview.textContent = formatNumber(previewNinjaCoins());
+    el.startNinjaBtn.textContent = ninja.running ? "End Game" : "Start Game";
+    el.ninjaPauseBtn.disabled = !ninja.running || getNinjaEngine().mode === "exploding";
+    el.ninjaPauseBtn.textContent = ninja.paused ? "Resume" : "Pause";
+    syncCasperPresentation();
+  }
+
+  function endNinjaRun(reason = "miss", snapshot = getNinjaEngine().getSnapshot()) {
+    if (!ninja.running) return;
+    ninja.score = snapshot.score;
+    ninja.sliced = snapshot.sliced;
+    ninja.misses = snapshot.misses;
+    ninja.combo = snapshot.combo;
+    ninja.bestCombo = snapshot.bestCombo;
+    ninja.elapsed = snapshot.elapsed;
+    ninja.running = false;
+    ninja.paused = false;
+    getNinjaEngine().finish();
+    el.ninjaScreen.classList.remove("ninja-bomb-flash");
+    if (casperNinjaTimer) clearInterval(casperNinjaTimer);
+    casperNinjaTimer = null;
+    releaseCasperRun();
+
+    const previousBest = Number(state.stats.ninjaBest) || 0;
+    const newBest = ninja.score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem("ninja");
+    const earned = applyRewardBooster(calculateNinjaXp());
+    const coinsEarned = previewNinjaCoins(newBest);
+    stopGameTheme(reason === "manual" ? "stop" : "death");
+    if (reason === "miss") playGameOverSound();
+    else if (reason === "manual") playTone("tap");
+
+    state.stats.gamesPlayed += 1;
+    state.stats.ninjaRuns += 1;
+    state.stats.ninjaTotalScore += ninja.score;
+    state.stats.ninjaBest = Math.max(previousBest, ninja.score);
+    state.stats.ninjaFruits += ninja.sliced;
+    state.stats.ninjaBestCombo = Math.max(Number(state.stats.ninjaBestCombo) || 0, ninja.bestCombo);
+    if (reason === "bomb") state.stats.ninjaBombs += 1;
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+    state.xp += earned;
+    state.stats.ninjaXpEarned += earned;
+    state.coins += coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+    renderNinjaStats();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "ninja";
+    el.resultKicker.textContent = "Fruit Ninja Results";
+    el.resultTitle.textContent = reason === "bomb" ? "Bomb Sliced" : reason === "miss" ? "Three Fruit Missed" : "Run Complete";
+    if (newBest) showToast("New High Score", `Fruit Ninja best is now ${formatNumber(ninja.score)}.`, "win");
+    showToast("XP Earned", `+${formatNumber(earned)} XP.`, "win");
+    showToast("Coins Earned", `+${formatNumber(coinsEarned)} coins.`, "win");
+    el.resultScore.textContent = formatNumber(ninja.score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.ninjaBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = `${formatNumber(ninja.sliced)} fruit sliced in ${Math.max(1, Math.round(ninja.elapsed))} seconds. Best combo: ${formatNumber(ninja.bestCombo)}x.`;
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -11048,6 +11336,9 @@
       ["fruit_500", state.stats.fruitBest >= 500],
       ["fruit_melon", state.stats.fruitLargest >= FRUIT_TYPES.length - 1],
       ["fruit_clear", state.stats.fruitClears >= 1],
+      ["ninja_first", state.stats.ninjaRuns >= 1],
+      ["ninja_500", state.stats.ninjaBest >= 500],
+      ["ninja_combo", state.stats.ninjaBestCombo >= 10],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -11462,6 +11753,8 @@
         startSolitaire();
       } else if (currentGame === "fruit") {
         startFruit();
+      } else if (currentGame === "ninja") {
+        startNinja();
       } else {
         startSnake();
       }
@@ -11502,6 +11795,33 @@
     el.fruitPauseBtn.addEventListener("click", toggleFruitPause);
     el.startFruitBtn.addEventListener("click", handlePrimaryFruitAction);
     el.restartFruitBtn.addEventListener("click", restartFruit);
+    el.exitNinjaBtn.addEventListener("click", () => showScreen("home"));
+    el.ninjaPauseBtn.addEventListener("click", toggleNinjaPause);
+    el.startNinjaBtn.addEventListener("click", handlePrimaryNinjaAction);
+    el.restartNinjaBtn.addEventListener("click", restartNinja);
+    el.ninjaCanvas.addEventListener("pointerdown", (event) => {
+      if (!ninja.running || ninja.paused || casperHasGameplayControl("ninja")) return;
+      event.preventDefault();
+      ninjaPointerId = event.pointerId;
+      el.ninjaCanvas.setPointerCapture?.(event.pointerId);
+      getNinjaEngine().beginSlice(getNinjaEngine().pointFromEvent(event));
+    });
+    el.ninjaCanvas.addEventListener("pointermove", (event) => {
+      if (ninjaPointerId !== event.pointerId || casperHasGameplayControl("ninja")) return;
+      event.preventDefault();
+      getNinjaEngine().moveSlice(getNinjaEngine().pointFromEvent(event));
+    });
+    el.ninjaCanvas.addEventListener("pointerup", (event) => {
+      if (ninjaPointerId !== event.pointerId) return;
+      event.preventDefault();
+      getNinjaEngine().moveSlice(getNinjaEngine().pointFromEvent(event));
+      getNinjaEngine().endSlice();
+      ninjaPointerId = null;
+    });
+    el.ninjaCanvas.addEventListener("pointercancel", () => {
+      getNinjaEngine().endSlice();
+      ninjaPointerId = null;
+    });
     el.fruitCanvas.addEventListener("pointermove", (event) => {
       if (!fruit.running || fruit.paused || casperHasGameplayControl("fruit")) return;
       event.preventDefault();
@@ -11637,6 +11957,11 @@
         event.preventDefault();
         if (!fruit.running) startFruit();
         else if (!casperHasGameplayControl("fruit")) dropFruit();
+      }
+      if (event.key === " " && currentScreen === "ninja") {
+        event.preventDefault();
+        if (!ninja.running) startNinja();
+        else if (!casperHasGameplayControl("ninja")) toggleNinjaPause();
       }
       if (currentScreen === "fruit" && fruit.running && !casperHasGameplayControl("fruit") && ["ArrowLeft", "a", "A", "ArrowRight", "d", "D"].includes(event.key)) {
         event.preventDefault();

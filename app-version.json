@@ -1,6 +1,8 @@
 {
-  "version": "19.16.1.0",
+  "version": "19.17.0.1",
   "patchNotes": [
+    "Fruit Ninja now uses the player-provided game icon, with its image, soundtrack, and cut sound organized into their dedicated asset folders.",
+    "Fruit Ninja joins ARCADIA as Game 09 with block-built fruit, projected wall shadows, swipe slicing, voxel destruction, escalating waves, bombs, rewards, and dedicated music and cut audio.",
     "Inferno Red, Violet Pulse, Hologram, and Black Hole Store previews now visibly fire across the full showcase instead of sticking near the launcher edge.",
     "Star Invaders adds twelve collectible beams spanning frosted, inferno, toxic, pulse, plasma, solar, cryo, luxury, and ultra flex tiers.",
     "New beam cosmetics now animate in flight and on impact with embers, vapor, electric coils, ice shards, gold etching, gravity distortion, holograms, supernova bursts, and black-hole particle collapse.",

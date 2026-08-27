@@ -4218,6 +4218,14 @@ input:focus {
   overflow: hidden;
 }
 
+.ninja-stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .fruit-hud {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -4256,6 +4264,93 @@ input:focus {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+.ninja-hud {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ninja-canvas-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, calc((var(--app-height) - 320px) * 0.75), 430px);
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 211, 90, 0.3);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 9%, rgba(73, 244, 255, 0.19), transparent 32%),
+    radial-gradient(circle at 82% 88%, rgba(255, 47, 173, 0.18), transparent 34%),
+    rgba(5, 3, 11, 0.76);
+  box-shadow:
+    inset 0 0 34px rgba(73, 244, 255, 0.08),
+    0 0 38px rgba(255, 47, 173, 0.21);
+}
+
+#ninjaCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(255, 211, 90, 0.25);
+  border-radius: 18px;
+  background: #090718;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.ninja-combo {
+  position: absolute;
+  z-index: 6;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 211, 90, 0.72);
+  border-radius: 999px;
+  color: #fff4ab;
+  background: rgba(21, 10, 35, 0.8);
+  box-shadow: 0 0 20px rgba(255, 47, 173, 0.34);
+  font-family: var(--font-numbers);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+  animation: ninjaComboPop 0.32s cubic-bezier(0.18, 0.88, 0.3, 1.28);
+}
+
+.ninja-screen.ninja-bomb-flash::after {
+  content: "";
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 255, 240, 0.98) 0 5%, rgba(255, 211, 90, 0.9) 13%, rgba(255, 86, 35, 0.72) 30%, rgba(255, 47, 98, 0.36) 52%, transparent 74%),
+    rgba(255, 255, 255, 0.3);
+  mix-blend-mode: screen;
+  animation: ninjaScreenBombFlash 0.74s cubic-bezier(0.18, 0.7, 0.24, 1) both;
+}
+
+@keyframes ninjaComboPop {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.55); }
+  72% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+@keyframes ninjaScreenBombFlash {
+  0% { opacity: 1; filter: brightness(1.7) saturate(1.4); }
+  18% { opacity: 0.92; }
+  44% { opacity: 0.64; filter: brightness(1.2) saturate(1.8); }
+  100% { opacity: 0; filter: brightness(1) saturate(1); }
 }
 
 #crossyCanvas {
@@ -4982,7 +5077,8 @@ input:focus {
 .game-screen.casper-active .flappy-canvas-shell,
 .game-screen.casper-active .crossy-canvas-shell,
 .game-screen.casper-active .solitaire-board,
-.game-screen.casper-active .fruit-canvas-shell {
+.game-screen.casper-active .fruit-canvas-shell,
+.game-screen.casper-active .ninja-canvas-shell {
   position: relative;
 }
 
@@ -4993,7 +5089,8 @@ input:focus {
 .game-screen.casper-active .flappy-canvas-shell::after,
 .game-screen.casper-active .crossy-canvas-shell::after,
 .game-screen.casper-active .solitaire-board::after,
-.game-screen.casper-active .fruit-canvas-shell::after {
+.game-screen.casper-active .fruit-canvas-shell::after,
+.game-screen.casper-active .ninja-canvas-shell::after {
   content: "CASPER AUTOPILOT";
   position: absolute;
   z-index: 50;
@@ -5244,7 +5341,8 @@ input:focus {
 
   .flappy-stage,
   .crossy-stage,
-  .fruit-stage {
+  .fruit-stage,
+  .ninja-stage {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5347,7 +5445,18 @@ input:focus {
     min-height: 0;
   }
 
+  .ninja-canvas-shell {
+    width: min(100%, calc((var(--app-height) - 190px) * 0.72), 390px);
+    max-height: calc(var(--app-height) - 190px);
+    min-height: 0;
+  }
+
   #fruitCanvas {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  #ninjaCanvas {
     height: 100%;
     aspect-ratio: auto;
   }
@@ -5411,7 +5520,8 @@ input:focus {
 
   .flappy-stage .game-actions,
   .crossy-stage .game-actions,
-  .fruit-stage .game-actions {
+  .fruit-stage .game-actions,
+  .ninja-stage .game-actions {
     width: min(310px, 100%);
     justify-self: center;
     align-self: end;

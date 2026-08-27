@@ -1,10 +1,11 @@
-const ARCADIA_VERSION = "19.16.1.0";
+const ARCADIA_VERSION = "19.17.0.1";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
   "index.html",
   "style.css",
   "script.js",
+  "fruit-ninja.js",
   "manifest.webmanifest",
   "app-version.json",
   "assets/images/games/stack.png",
@@ -12,6 +13,7 @@ const APP_SHELL = [
   "assets/images/games/crossyroad.png",
   "assets/images/games/solitaire.png",
   "assets/images/games/fruitblend.png",
+  "assets/images/games/fruitninja-icon.png",
   "assets/images/arcadia-logo-180.png",
   "assets/images/arcadia-logo-192.png",
   "assets/images/arcadia-logo-512.png",
@@ -24,6 +26,8 @@ const APP_SHELL = [
   "assets/themesong/games/solitaire-2.mp3",
   "assets/themesong/games/fruit-blend-1.mp3",
   "assets/themesong/games/fruit-blend-2.mp3",
+  "assets/themesong/games/fruit-ninja.ogg",
+  "assets/audio/sfx/fruit-ninja/cut.wav",
   "assets/audio/sfx/crossy-road/crash.mp3"
 ];
 

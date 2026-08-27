@@ -471,6 +471,41 @@
       </main>
     </section>
 
+    <section id="ninjaScreen" class="screen game-screen ninja-screen hidden">
+      <header class="page-top">
+        <button id="exitNinjaBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Fruit Ninja</h1>
+        <button id="ninjaPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content">
+        <section class="ninja-stage panel">
+          <div class="game-hud ninja-hud">
+            <div><span>Score</span><strong id="ninjaScore">0</strong></div>
+            <div><span>Best</span><strong id="ninjaBest">0</strong></div>
+            <div><span>Sliced</span><strong id="ninjaSliced">0</strong></div>
+          </div>
+
+          <div class="ninja-canvas-shell">
+            <canvas id="ninjaCanvas" width="540" height="720" aria-label="Fruit Ninja game board. Swipe across blocky fruit to slice it and avoid bombs."></canvas>
+            <div id="ninjaCombo" class="ninja-combo hidden" aria-live="polite">2X COMBO</div>
+          </div>
+
+          <div class="reward-preview">
+            <div><span>XP Preview</span><strong id="ninjaXpPreview">0</strong></div>
+            <div><span>Coins</span><strong id="ninjaCoinPreview">0</strong></div>
+          </div>
+
+          <div class="game-actions">
+            <button id="startNinjaBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="restartNinjaBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint">Swipe through every blocky fruit. Three misses end the run, and slicing a bomb ends it instantly.</p>
+        </section>
+      </main>
+    </section>
+
     <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
     <div id="gameOverModal" class="modal hidden">
@@ -627,6 +662,7 @@
     </div>
   </div>
 
+  <script src="fruit-ninja.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

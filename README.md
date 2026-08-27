@@ -1,5 +1,7 @@
 # ARCADIA
 
+- Version 19.17.0.1 switches Fruit Ninja to the player-provided icon and organizes its image, OGG soundtrack, and WAV cut sound into dedicated asset folders.
+- Version 19.17.0.0 adds Fruit Ninja with voxel-built fruit, projected wall shadows, swipe slicing, block-fragment destruction, escalating survival waves, bombs, rewards, and dedicated audio.
 - Version 19.16.1.0 fixes Inferno Red, Violet Pulse, Hologram, and Black Hole Store preview travel so their style animations no longer pin shots to the bottom edge.
 - Version 19.16.0.0 adds twelve Star Invaders beam cosmetics with animated Store previews and matching projectile, trail, gravity, shard, hologram, and impact effects.
 - Version 19.15.0.0 adds fourteen Crossy Road characters with a level-and-price flex progression, animated Store previews, and matching in-game hop, landing, trail, hologram, and material effects.
@@ -9,7 +11,7 @@
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
-ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play eight arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
+ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play nine arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
 If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
 
@@ -63,11 +65,20 @@ If you enjoy ARCADIA and would love to see more projects show me some support he
   - Maximum-fruit clears that disappear for escalating high-score bonuses
   - Overflow danger line, high scores, XP, coins, and achievements
   - Mouse, keyboard, and touch controls with rotating music
-- Dev Mode Casper autopilot for all eight games
+- Fruit Ninja game page
+  - Six recognizable voxel fruit shapes built from shaded 3D cubes
+  - Directional wall shadows that follow intact fruit and every flying fragment
+  - Mouse and touch swipe slicing with a neon blade trail and dedicated cut sound
+  - Increasing launch speed and multi-fruit waves, combos, three-miss survival, and instant-loss bombs
+  - Full-screen bomb flash and fragment explosion before the shared result modal
+  - Animated attract mode before Start Game, dedicated OGG soundtrack, XP, coins, high scores, and achievements
+- Dev Mode Casper autopilot for all nine games
 
 ## Visual Direction
 
 The theme is based on dark arcade poster art, hot magenta, violet, purple, cyan, neon grid floors, subtle scanlines, and semi-transparent UI panels.
+
+Fruit Ninja's custom ARCADIA canvas renderer is an original implementation inspired by Caleb Miller's open-source Menja cube-smashing prototype, including its tiny-renderer approach to shaded geometry, projected backboard shadows, swipe trails, and flying fragments.
 
 ## Asset Folders
 
@@ -78,6 +89,10 @@ Place generated images in:
 Place exported sound effects or music tracks in:
 
 `assets/audio/`
+
+Game soundtracks live in:
+
+`assets/themesong/games/`
 
 ## Future Assets
 
