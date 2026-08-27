@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.20.0.0 adds unmistakable sparking bomb fuses, cannon-pop fruit launches, five-fruit minute volleys, +100 combo milestones, and sharply escalating survival XP to Fruit Ninja.
 - Version 19.19.0.2 switches the Super Mario Kart ZX dashboard card to the player-provided neon kart artwork.
 - Version 19.19.0.1 keeps Mario Kart's enlarged portrait canvas while returning its touch controls and Restart button to the bottom of the screen.
 - Version 19.19.0.0 fixes Mario Kart's Grand Prix pause menu and black-screen course exits, removes the extra touch guide, adds smoother proportional steering, and enlarges the portrait mobile presentation.

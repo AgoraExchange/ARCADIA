@@ -229,6 +229,9 @@
       this.lastDrawAt = 0;
       this.elapsed = 0;
       this.spawnIn = 0;
+      this.nextMinuteVolley = 60;
+      this.minuteVolleyRemaining = 0;
+      this.minuteVolleyIn = 0;
       this.entities = [];
       this.fragments = [];
       this.particles = [];
@@ -240,6 +243,7 @@
       this.misses = 0;
       this.combo = 0;
       this.bestCombo = 0;
+      this.comboBonusPoints = 0;
       this.lastSliceAt = 0;
       this.explosionElapsed = 0;
       this.gameOverSent = false;
@@ -304,6 +308,7 @@
         misses: this.misses,
         combo: this.combo,
         bestCombo: this.bestCombo,
+        comboBonusPoints: this.comboBonusPoints,
         elapsed: this.elapsed
       };
     }
@@ -362,6 +367,9 @@
 
     resetCommon() {
       this.elapsed = 0;
+      this.nextMinuteVolley = 60;
+      this.minuteVolleyRemaining = 0;
+      this.minuteVolleyIn = 0;
       this.entities.length = 0;
       this.fragments.length = 0;
       this.particles.length = 0;
@@ -373,6 +381,7 @@
       this.misses = 0;
       this.combo = 0;
       this.bestCombo = 0;
+      this.comboBonusPoints = 0;
       this.lastSliceAt = 0;
       this.explosionElapsed = 0;
       this.gameOverSent = false;
@@ -416,10 +425,20 @@
       }
 
       this.elapsed += dt;
-      this.spawnIn -= dt;
-      if (this.spawnIn <= 0) {
-        if (this.mode === "preview") this.spawnPreviewFruit();
-        else this.spawnWave();
+      if (this.mode === "running" && this.elapsed >= this.nextMinuteVolley) {
+        this.minuteVolleyRemaining += 5;
+        this.minuteVolleyIn = 0;
+        this.nextMinuteVolley += 60;
+      }
+      if (this.mode === "running" && this.minuteVolleyRemaining > 0) {
+        this.minuteVolleyIn -= dt;
+        if (this.minuteVolleyIn <= 0) this.spawnMinuteVolleyFruit();
+      } else {
+        this.spawnIn -= dt;
+        if (this.spawnIn <= 0) {
+          if (this.mode === "preview") this.spawnPreviewFruit();
+          else this.spawnWave();
+        }
       }
       this.updateEntities(dt);
       if (this.mode === "running" && this.lastSliceAt && performance.now() - this.lastSliceAt > 900) this.combo = 0;
@@ -440,6 +459,7 @@
         spin: { x: random(-1.8, 1.8), y: random(-2.2, 2.2), z: random(-2.6, 2.6) },
         scale: overrides.scale ?? 1,
         preview: Boolean(overrides.preview),
+        fuseSeed: random(0, TAU),
         sliced: false
       };
     }
@@ -473,8 +493,28 @@
           vy: random(-930, -790) - Math.min(90, this.elapsed * 1.2),
           vz: random(-45, 85)
         }));
+        this.callbacks.onLaunch?.(kind, { waveIndex: index, minuteVolley: false });
       }
       this.spawnIn = clamp(0.94 - this.elapsed * 0.009, 0.28, 0.94) + random(-0.07, 0.11);
+    }
+
+    spawnMinuteVolleyFruit() {
+      const launchIndex = 5 - Math.min(5, this.minuteVolleyRemaining);
+      const lanes = [78, 174, 270, 366, 462];
+      const x = lanes[launchIndex] + random(-17, 17);
+      const kind = choose(FRUIT_NAMES);
+      const centerPull = (this.canvas.width / 2 - x) * random(0.2, 0.32);
+      this.entities.push(this.createEntity(kind, x, this.canvas.height + 82, {
+        vx: centerPull + random(-48, 48),
+        vy: random(-990, -895) - Math.min(105, this.elapsed * 0.9),
+        vz: random(-35, 90)
+      }));
+      this.callbacks.onLaunch?.(kind, { waveIndex: launchIndex, minuteVolley: true });
+      this.minuteVolleyRemaining -= 1;
+      this.minuteVolleyIn = this.minuteVolleyRemaining > 0 ? 0.13 : 0;
+      if (this.minuteVolleyRemaining <= 0) {
+        this.spawnIn = Math.max(this.spawnIn, 0.42);
+      }
     }
 
     updateEntities(dt) {
@@ -548,11 +588,13 @@
       this.bestCombo = Math.max(this.bestCombo, this.combo);
       this.sliced += 1;
       const info = FRUIT_INFO[entity.kind];
-      const earned = info.points + Math.min(30, (this.combo - 1) * 3);
+      const comboBonus = this.combo >= 5 && this.combo % 5 === 0 ? 100 : 0;
+      const earned = info.points + Math.min(30, (this.combo - 1) * 3) + comboBonus;
+      this.comboBonusPoints += comboBonus;
       this.score += earned;
       this.createFragments(entity, direction, info.inside);
       this.createJuiceBurst(hit, info.inside, direction, 24);
-      this.callbacks.onSlice?.(entity.kind, earned, this.combo);
+      this.callbacks.onSlice?.(entity.kind, earned, this.combo, comboBonus);
       this.emitStats();
     }
 
@@ -706,6 +748,7 @@
         ctx.stroke();
       });
 
+      this.drawBombWarnings();
       this.drawParticles();
       this.drawTrail();
       this.drawOverlay();
@@ -811,6 +854,100 @@
           color: shadeColor(fragment.color, clamp(-0.23 + (lightDot + 1) * 0.26, -0.25, 0.28)),
           stroke: shadeColor(fragment.color, -0.36)
         });
+      });
+    }
+
+    drawBombWarnings() {
+      const ctx = this.ctx;
+      const now = performance.now();
+      this.entities.forEach((entity) => {
+        if (entity.kind !== "bomb" || entity.sliced) return;
+        const size = entity.model.cubeSize;
+        const toWorld = (point) => {
+          const rotated = rotatePoint(point, entity.rotation);
+          return { x: entity.x + rotated.x, y: entity.y + rotated.y, z: entity.z + rotated.z };
+        };
+        const center = this.project({ x: entity.x, y: entity.y, z: entity.z });
+        const fuseBase = this.project(toWorld({ x: 0, y: -size * 3.15, z: 0 }));
+        const fuseTip = this.project(toWorld({ x: size * 1.05, y: -size * 4.45, z: 0 }));
+        const pulse = 0.5 + Math.sin(now * 0.018 + entity.fuseSeed) * 0.5;
+        const bodyRadius = entity.model.radius * center.scale * 0.78;
+
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = `rgba(255, 73, 42, ${0.42 + pulse * 0.34})`;
+        ctx.lineWidth = 2.2 + pulse * 1.8;
+        ctx.setLineDash([5, 7]);
+        ctx.lineDashOffset = -now * 0.018;
+        ctx.shadowColor = "#ff4b2e";
+        ctx.shadowBlur = 12 + pulse * 9;
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, bodyRadius + 7 + pulse * 5, 0, TAU);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.strokeStyle = "#ff9a3d";
+        ctx.lineWidth = Math.max(3, 5 * center.scale);
+        ctx.shadowColor = "#ff572d";
+        ctx.shadowBlur = 11;
+        ctx.beginPath();
+        ctx.moveTo(fuseBase.x, fuseBase.y);
+        ctx.quadraticCurveTo(
+          (fuseBase.x + fuseTip.x) / 2 + Math.sin(now * 0.012 + entity.fuseSeed) * 5,
+          Math.min(fuseBase.y, fuseTip.y) - 6,
+          fuseTip.x,
+          fuseTip.y
+        );
+        ctx.stroke();
+
+        const flameRadius = (10 + pulse * 7) * center.scale;
+        const flame = ctx.createRadialGradient(fuseTip.x, fuseTip.y, 0, fuseTip.x, fuseTip.y, flameRadius * 2.1);
+        flame.addColorStop(0, "rgba(255,255,244,1)");
+        flame.addColorStop(0.2, "rgba(255,239,118,0.98)");
+        flame.addColorStop(0.48, "rgba(255,112,38,0.9)");
+        flame.addColorStop(1, "rgba(255,47,98,0)");
+        ctx.fillStyle = flame;
+        ctx.beginPath();
+        ctx.arc(fuseTip.x, fuseTip.y, flameRadius * 2.1, 0, TAU);
+        ctx.fill();
+
+        for (let index = 0; index < 12; index += 1) {
+          const cycle = (now / (420 + index * 19) + index * 0.173 + entity.fuseSeed / TAU) % 1;
+          const angle = entity.fuseSeed + index * 2.37 + Math.sin(now * 0.009 + index) * 0.55;
+          const distance = (7 + cycle * 31) * center.scale;
+          const sparkX = fuseTip.x + Math.cos(angle) * distance;
+          const sparkY = fuseTip.y + Math.sin(angle) * distance - cycle * 11;
+          const sparkSize = Math.max(1.5, (5.2 - cycle * 3.5) * center.scale);
+          ctx.globalAlpha = 1 - cycle;
+          const sparkColor = index % 3 === 0 ? "#ffffff" : index % 2 === 0 ? "#ffd35a" : "#ff6a2d";
+          ctx.strokeStyle = sparkColor;
+          ctx.lineWidth = Math.max(1.2, sparkSize * 0.72);
+          ctx.beginPath();
+          ctx.moveTo(sparkX - Math.cos(angle) * sparkSize * 2.8, sparkY - Math.sin(angle) * sparkSize * 2.8);
+          ctx.lineTo(sparkX, sparkY);
+          ctx.stroke();
+          ctx.fillStyle = sparkColor;
+          ctx.fillRect(sparkX - sparkSize / 2, sparkY - sparkSize / 2, sparkSize, sparkSize);
+        }
+        ctx.restore();
+
+        ctx.save();
+        for (let index = 0; index < 3; index += 1) {
+          const cycle = (now / 1450 + index * 0.31 + entity.fuseSeed / TAU) % 1;
+          const smokeSize = (4 + cycle * 10) * center.scale;
+          ctx.globalAlpha = (1 - cycle) * 0.32;
+          ctx.fillStyle = "#c8bfd4";
+          ctx.beginPath();
+          ctx.arc(
+            fuseTip.x + Math.sin(entity.fuseSeed + index * 2.1) * cycle * 8,
+            fuseTip.y - 8 - cycle * 28,
+            smokeSize,
+            0,
+            TAU
+          );
+          ctx.fill();
+        }
+        ctx.restore();
       });
     }
 

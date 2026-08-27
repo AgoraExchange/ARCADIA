@@ -3,10 +3,13 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.19.0.2";
+  const APP_VERSION = "19.20.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Fruit Ninja bombs now crackle with a bright animated fuse, flying sparks, smoke, and a pulsing danger halo so they are unmistakable before a swipe.",
+    "Every Fruit Ninja launch now fires with a cannon pop, and every full minute survived triggers a rapid five-fruit cannon volley.",
+    "Fruit Ninja now awards +100 score at every five-fruit combo milestone and uses escalating survival-focused XP that grows sharply during long runs while still rewarding score and slicing.",
     "Super Mario Kart ZX now uses the player-provided neon kart artwork as its dashboard game icon.",
     "Mario Kart keeps its enlarged portrait game canvas while returning the touch controls and Restart button to the bottom of the screen.",
     "Super Mario Kart ZX fixes Grand Prix's hidden Reset option, replaces the broken course-quit restart, and automatically recovers if the HTML5 renderer becomes stuck on a black frame.",
@@ -11160,6 +11163,7 @@
       misses: 0,
       combo: 0,
       bestCombo: 0,
+      comboBonusPoints: 0,
       elapsed: 0,
       runStartedAt: 0
     };
@@ -11174,12 +11178,16 @@
         ninja.misses = snapshot.misses;
         ninja.combo = snapshot.combo;
         ninja.bestCombo = snapshot.bestCombo;
+        ninja.comboBonusPoints = snapshot.comboBonusPoints || 0;
         ninja.elapsed = snapshot.elapsed;
         renderNinjaStats();
       },
-      onSlice(_kind, _earned, combo) {
+      onSlice(_kind, _earned, combo, comboBonus) {
         playPooledSfx(FRUIT_NINJA_CUT_SFX, 0.86, 7);
-        if (combo >= 2) showNinjaCombo(combo);
+        if (combo >= 2) showNinjaCombo(combo, comboBonus);
+      },
+      onLaunch(_kind, details = {}) {
+        playNinjaCannonPop(details.minuteVolley ? 0 : (Number(details.waveIndex) || 0) * 0.035, details.minuteVolley);
       },
       onMiss(misses) {
         playToneAt(210 - misses * 24, 0.11, "sawtooth", 0.07);
@@ -11260,10 +11268,10 @@
     renderNinjaStats();
   }
 
-  function showNinjaCombo(combo) {
+  function showNinjaCombo(combo, comboBonus = 0) {
     if (!el.ninjaCombo) return;
     if (ninjaComboTimer) clearTimeout(ninjaComboTimer);
-    el.ninjaCombo.textContent = `${combo}X COMBO`;
+    el.ninjaCombo.textContent = `${combo}X COMBO${comboBonus ? ` +${formatNumber(comboBonus)}` : ""}`;
     el.ninjaCombo.classList.remove("hidden");
     el.ninjaCombo.style.animation = "none";
     void el.ninjaCombo.offsetWidth;
@@ -11279,8 +11287,60 @@
     setTimeout(() => playToneAt(38, 0.58, "sawtooth", 0.08), 130);
   }
 
+  function playNinjaCannonPop(delay = 0, isMinuteVolley = false) {
+    if (state.muteSfx) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+      const startAt = audioCtx.currentTime + Math.max(0, delay);
+      const duration = isMinuteVolley ? 0.13 : 0.105;
+      const thump = audioCtx.createOscillator();
+      const thumpGain = audioCtx.createGain();
+      thump.type = "sine";
+      thump.frequency.setValueAtTime(isMinuteVolley ? 185 : 165, startAt);
+      thump.frequency.exponentialRampToValueAtTime(62, startAt + duration);
+      thumpGain.gain.setValueAtTime(0.001, startAt);
+      thumpGain.gain.exponentialRampToValueAtTime(isMinuteVolley ? 0.13 : 0.105, startAt + 0.006);
+      thumpGain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+      thump.connect(thumpGain);
+      thumpGain.connect(audioCtx.destination);
+      thump.start(startAt);
+      thump.stop(startAt + duration + 0.02);
+
+      const noiseFrames = Math.max(1, Math.round(audioCtx.sampleRate * duration));
+      const noiseBuffer = audioCtx.createBuffer(1, noiseFrames, audioCtx.sampleRate);
+      const noise = noiseBuffer.getChannelData(0);
+      for (let index = 0; index < noiseFrames; index += 1) {
+        const fade = 1 - index / noiseFrames;
+        noise[index] = (Math.random() * 2 - 1) * fade * fade;
+      }
+      const burst = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const burstGain = audioCtx.createGain();
+      burst.buffer = noiseBuffer;
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(isMinuteVolley ? 720 : 620, startAt);
+      filter.Q.value = 0.72;
+      burstGain.gain.setValueAtTime(isMinuteVolley ? 0.085 : 0.065, startAt);
+      burstGain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+      burst.connect(filter);
+      filter.connect(burstGain);
+      burstGain.connect(audioCtx.destination);
+      burst.start(startAt);
+    } catch {
+      playToneAt(150, 0.08, "sine", 0.075);
+    }
+  }
+
   function calculateNinjaXp() {
-    return Math.max(8, Math.round(ninja.score * 0.17 + ninja.sliced * 1.65 + ninja.elapsed * 0.45 + ninja.bestCombo * 2.2));
+    const seconds = Math.max(0, Number(ninja.elapsed) || 0);
+    const scoreReward = Math.floor(Math.max(0, Number(ninja.score) || 0) * 0.2);
+    const sliceReward = Math.floor(Math.max(0, Number(ninja.sliced) || 0) * 1.25);
+    const survivalReward = Math.floor(seconds * 1.35 + Math.pow(seconds / 30, 1.65) * 32);
+    const minuteMilestones = Math.floor(seconds / 60) * 120;
+    const comboMilestones = Math.floor((Number(ninja.comboBonusPoints) || 0) / 100) * 18;
+    const bestComboReward = Math.floor(Math.max(0, Number(ninja.bestCombo) || 0) / 5) * 20;
+    return Math.max(12, scoreReward + sliceReward + survivalReward + minuteMilestones + comboMilestones + bestComboReward);
   }
 
   function previewNinjaCoins(newBest = ninja.score > state.stats.ninjaBest) {
@@ -11308,6 +11368,7 @@
     ninja.misses = snapshot.misses;
     ninja.combo = snapshot.combo;
     ninja.bestCombo = snapshot.bestCombo;
+    ninja.comboBonusPoints = snapshot.comboBonusPoints || 0;
     ninja.elapsed = snapshot.elapsed;
     ninja.running = false;
     ninja.paused = false;
@@ -11364,7 +11425,7 @@
     el.resultBest.textContent = formatNumber(state.stats.ninjaBest);
     el.newBestBadge.classList.toggle("hidden", !newBest);
     el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
-    el.resultMessage.textContent = `${formatNumber(ninja.sliced)} fruit sliced in ${Math.max(1, Math.round(ninja.elapsed))} seconds. Best combo: ${formatNumber(ninja.bestCombo)}x.`;
+    el.resultMessage.textContent = `${formatNumber(ninja.sliced)} fruit sliced in ${Math.max(1, Math.round(ninja.elapsed))} seconds. Best combo: ${formatNumber(ninja.bestCombo)}x. Combo bonuses: +${formatNumber(ninja.comboBonusPoints)} points.`;
     el.gameOverModal.classList.remove("hidden");
   }
 

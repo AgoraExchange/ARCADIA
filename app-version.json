@@ -1,6 +1,9 @@
 {
-  "version": "19.19.0.2",
+  "version": "19.20.0.0",
   "patchNotes": [
+    "Fruit Ninja bombs now crackle with a bright animated fuse, flying sparks, smoke, and a pulsing danger halo so they are unmistakable before a swipe.",
+    "Every Fruit Ninja launch now fires with a cannon pop, and every full minute survived triggers a rapid five-fruit cannon volley.",
+    "Fruit Ninja now awards +100 score at every five-fruit combo milestone and uses escalating survival-focused XP that grows sharply during long runs while still rewarding score and slicing.",
     "Super Mario Kart ZX now uses the player-provided neon kart artwork as its dashboard game icon.",
     "Mario Kart keeps its enlarged portrait game canvas while returning the touch controls and Restart button to the bottom of the screen.",
     "Super Mario Kart ZX fixes Grand Prix's hidden Reset option, replaces the broken course-quit restart, and automatically recovers if the HTML5 renderer becomes stuck on a black frame.",

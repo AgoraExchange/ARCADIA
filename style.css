@@ -4323,6 +4323,7 @@ input:focus {
   font-family: var(--font-numbers);
   font-size: 0.72rem;
   letter-spacing: 0.1em;
+  white-space: nowrap;
   pointer-events: none;
   animation: ninjaComboPop 0.32s cubic-bezier(0.18, 0.88, 0.3, 1.28);
 }
