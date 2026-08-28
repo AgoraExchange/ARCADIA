@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.26.0.0";
+  const APP_VERSION = "19.27.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Super Mario Bros joins ARCADIA as Game 11 with the complete original 32-level PlayMario campaign, the player-provided icon, a staged 1985 title screen, mobile controls, responsive landscape play, native pause/audio, and escalating level rewards.",
+    "Super Mario Bros rewards every genuine stage clear with increasing XP and coins; each world's first castle clear guarantees enough XP for an immediate ARCADIA level-up.",
     "Mario Kart adds precision analog-style race steering with a stable center lane, rapid proportional micro-corrections, hysteresis against thumb drift, and immediate hard turns without changing menu navigation.",
     "Mario Kart disables the broken mobile Time Trial replay shortcut and now explains that A safely starts another run without erasing the saved best time.",
     "Mario Kart removes the separate mystery-box item button; B now identifies itself as Back in menus and Item during active races while using the port's native item action.",
@@ -304,7 +306,14 @@
       kartCupTrophies: {},
       kartCompletedClasses: [],
       kartUnlockedClasses: [50, 100],
-      kartRevolutions: 0
+      kartRevolutions: 0,
+      marioRuns: 0,
+      marioXpEarned: 0,
+      marioPlaySeconds: 0,
+      marioLevelsCleared: 0,
+      marioHighestLevel: 0,
+      marioLevelCompletions: {},
+      marioWorldsCleared: []
     },
     achievements: []
   };
@@ -419,6 +428,17 @@
       available: true,
       image: "assets/images/games/super-mario-kart-zx.png",
       mark: "M"
+    },
+    {
+      id: "mario",
+      title: "Super Mario Bros",
+      gameNo: "11",
+      tags: ["mario", "platformer", "nintendo", "nes", "retro", "32 levels", "campaign", "web port"],
+      description: "Run and jump through the complete original 32-level Mushroom Kingdom campaign.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/super-mario-bros.png",
+      mark: "M"
     }
   ];
 
@@ -447,6 +467,10 @@
     { id: "ninja_500", title: "Voxel Slicer", text: "Score 500 or higher in Fruit Ninja." },
     { id: "ninja_combo", title: "Fruit Storm", text: "Reach a 10-fruit combo in Fruit Ninja." },
     { id: "kart_first", title: "Starting Grid", text: "Begin your first Super Mario Kart ZX session." },
+    { id: "mario_first", title: "Mushroom Kingdom", text: "Begin your first Super Mario Bros adventure." },
+    { id: "mario_level", title: "Flagpole Finish", text: "Clear a Super Mario Bros stage." },
+    { id: "mario_world", title: "Castle Conqueror", text: "Clear all four stages in a Super Mario Bros world." },
+    { id: "mario_32", title: "Princess Rescued", text: "Clear all 32 original Super Mario Bros stages." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -1263,6 +1287,8 @@
   let kartRaceResultsThisSession = 0;
   let kartResultAutoTimer = null;
   let kartProgressHydrated = false;
+  let marioController = null;
+  let marioSessionStartedAt = 0;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -1304,6 +1330,7 @@
     fruitScreen: $("fruitScreen"),
     ninjaScreen: $("ninjaScreen"),
     kartScreen: $("kartScreen"),
+    marioScreen: $("marioScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -1478,6 +1505,20 @@
     kartRaceResultClasses: $("kartRaceResultClasses"),
     kartRaceResultStatus: $("kartRaceResultStatus"),
     kartRaceResultContinueBtn: $("kartRaceResultContinueBtn"),
+    exitMarioBtn: $("exitMarioBtn"),
+    marioPauseBtn: $("marioPauseBtn"),
+    marioFrame: $("marioFrame"),
+    marioLoading: $("marioLoading"),
+    marioLoadingText: $("marioLoadingText"),
+    marioTitleOverlay: $("marioTitleOverlay"),
+    marioWorldLabel: $("marioWorldLabel"),
+    marioControls: $("marioControls"),
+    marioJoystick: $("marioJoystick"),
+    marioJoystickKnob: $("marioJoystickKnob"),
+    marioJumpBtn: $("marioJumpBtn"),
+    marioSprintBtn: $("marioSprintBtn"),
+    startMarioBtn: $("startMarioBtn"),
+    restartMarioBtn: $("restartMarioBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -1701,6 +1742,7 @@
     el.fruitScreen.classList.toggle("hidden", name !== "fruit");
     el.ninjaScreen.classList.toggle("hidden", name !== "ninja");
     el.kartScreen.classList.toggle("hidden", name !== "kart");
+    el.marioScreen.classList.toggle("hidden", name !== "mario");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -1711,14 +1753,15 @@
     if (name !== "fruit") stopFruit(false);
     if (name !== "ninja") stopNinja(false);
     if (name !== "kart") stopKart();
+    if (name !== "mario") stopMario();
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -2532,6 +2575,7 @@
         if (game.id === "fruit") openFruit();
         if (game.id === "ninja") openNinja();
         if (game.id === "kart") openKart();
+        if (game.id === "mario") openMario();
       });
       el.gameGrid.appendChild(card);
     });
@@ -2629,6 +2673,14 @@
         best: Number(state.stats.kartFirsts) || 0,
         metricLabel: "Wins",
         meta: `${formatNumber(state.stats.kartRuns)} plays · Wins ${formatNumber(state.stats.kartFirsts)} · Trophies ${formatNumber(getKartTrophyCount())} · Classes ${formatKartClasses(state.stats.kartCompletedClasses)}`
+      },
+      {
+        title: "Super Mario Bros",
+        xp: Number(state.stats.marioXpEarned) || 0,
+        runs: Number(state.stats.marioRuns) || 0,
+        best: Number(state.stats.marioLevelsCleared) || 0,
+        metricLabel: "Clears",
+        meta: `${formatNumber(state.stats.marioRuns)} plays · ${formatNumber(state.stats.marioLevelsCleared)} clears · ${formatNumber(Object.keys(state.stats.marioLevelCompletions || {}).length)}/32 unique stages`
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -2823,6 +2875,13 @@
         runs: Number(state.stats.kartRuns) || 0,
         xp: Number(state.stats.kartXpEarned) || 0,
         best: Number(state.stats.kartFirsts) || 0
+      },
+      {
+        id: "mario",
+        title: "Super Mario Bros",
+        runs: Number(state.stats.marioRuns) || 0,
+        xp: Number(state.stats.marioXpEarned) || 0,
+        best: Number(state.stats.marioHighestLevel) || 0
       }
     ];
 
@@ -11896,6 +11955,135 @@
     getKartController()?.togglePause();
   }
 
+  function getMarioController() {
+    if (marioController) return marioController;
+    if (typeof window.ArcadiaSuperMarioBros !== "function") return null;
+    marioController = new window.ArcadiaSuperMarioBros({
+      frame: el.marioFrame,
+      loading: el.marioLoading,
+      loadingText: el.marioLoadingText,
+      titleOverlay: el.marioTitleOverlay,
+      worldLabel: el.marioWorldLabel,
+      controls: el.marioControls,
+      joystick: el.marioJoystick,
+      joystickKnob: el.marioJoystickKnob,
+      jumpButton: el.marioJumpBtn,
+      sprintButton: el.marioSprintBtn,
+      startButton: el.startMarioBtn,
+      restartButton: el.restartMarioBtn,
+      pauseButton: el.marioPauseBtn,
+      onReady() {
+        if (currentScreen !== "mario") return;
+        showToast("Mushroom Kingdom Ready", "All 32 original campaign stages are loaded. Tap Start Game when you're ready.", "silent", 3200);
+      },
+      onLevelComplete(result) {
+        handleMarioLevelComplete(result);
+      },
+      onError(result) {
+        if (currentScreen !== "mario") return;
+        showToast("Mario Loading Error", result?.message || "Tap Restart to try loading the campaign again.", "fail", 4200);
+      }
+    });
+    return marioController;
+  }
+
+  function openMario() {
+    currentGame = "mario";
+    marioSessionStartedAt = 0;
+    prepareGameTheme();
+    showScreen("mario");
+    const controller = getMarioController();
+    if (!controller) {
+      showToast("Port Error", "The Super Mario Bros wrapper did not load.", "fail", 4200);
+      return;
+    }
+    controller.load(APP_VERSION);
+  }
+
+  function startMario() {
+    const controller = getMarioController();
+    if (!controller?.start({ muted: state.muteMusic && state.muteSfx })) return;
+    currentGame = "mario";
+    marioSessionStartedAt = Date.now();
+    state.stats.gamesPlayed += 1;
+    state.stats.marioRuns = (Number(state.stats.marioRuns) || 0) + 1;
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+  }
+
+  function finishMarioSession() {
+    if (!marioSessionStartedAt) return;
+    const elapsed = Math.max(1, Math.round((Date.now() - marioSessionStartedAt) / 1000));
+    marioSessionStartedAt = 0;
+    state.stats.marioPlaySeconds = (Number(state.stats.marioPlaySeconds) || 0) + elapsed;
+    saveState();
+  }
+
+  function restartMario() {
+    finishMarioSession();
+    getMarioController()?.restart(APP_VERSION);
+  }
+
+  function stopMario() {
+    finishMarioSession();
+    marioController?.stop();
+  }
+
+  function toggleMarioPause() {
+    getMarioController()?.togglePause();
+  }
+
+  function handleMarioLevelComplete(result = {}) {
+    if (currentScreen !== "mario") return;
+    const world = Math.max(1, Math.min(8, Math.round(Number(result.world) || 1)));
+    const stage = Math.max(1, Math.min(4, Math.round(Number(result.stage) || 1)));
+    const levelName = `${world}-${stage}`;
+    if (result.level && String(result.level) !== levelName) return;
+
+    const ordinal = (world - 1) * 4 + stage;
+    const completions = state.stats.marioLevelCompletions && typeof state.stats.marioLevelCompletions === "object"
+      ? { ...state.stats.marioLevelCompletions }
+      : {};
+    const worldsCleared = Array.isArray(state.stats.marioWorldsCleared)
+      ? [...new Set(state.stats.marioWorldsCleared.map(Number).filter((value) => value >= 1 && value <= 8))]
+      : [];
+    const firstLevelClear = !completions[levelName];
+    const firstWorldClear = stage === 4 && !worldsCleared.includes(world);
+    const previousArcadiaLevel = deriveLevel(state.xp);
+
+    let xpEarned = 350 + (ordinal - 1) * 24;
+    if (stage === 4) xpEarned = Math.round(xpEarned * 1.4);
+    if (firstWorldClear) {
+      const nextLevelFloor = xpForLevel(previousArcadiaLevel + 1);
+      xpEarned = Math.max(xpEarned, nextLevelFloor - (Number(state.xp) || 0));
+      worldsCleared.push(world);
+    }
+    const coinsEarned = 28 + ordinal * 2 + (stage === 4 ? 24 : 0);
+
+    completions[levelName] = (Number(completions[levelName]) || 0) + 1;
+    state.stats.marioLevelCompletions = completions;
+    state.stats.marioWorldsCleared = worldsCleared.sort((a, b) => a - b);
+    state.stats.marioLevelsCleared = (Number(state.stats.marioLevelsCleared) || 0) + 1;
+    state.stats.marioHighestLevel = Math.max(Number(state.stats.marioHighestLevel) || 0, ordinal);
+    state.stats.marioXpEarned = (Number(state.stats.marioXpEarned) || 0) + xpEarned;
+    state.xp = (Number(state.xp) || 0) + xpEarned;
+    state.coins = (Number(state.coins) || 0) + coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+
+    const levelUpText = state.level > previousArcadiaLevel ? ` Level ${state.level} reached!` : "";
+    const firstClearText = firstLevelClear ? " First clear saved." : "";
+    showToast(
+      firstWorldClear ? `World ${world} Conquered` : `World ${levelName} Complete`,
+      `+${formatNumber(xpEarned)} XP and +${formatNumber(coinsEarned)} coins.${levelUpText}${firstClearText}`,
+      "win",
+      firstWorldClear ? 5200 : 4000
+    );
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -11922,6 +12110,10 @@
       ["ninja_500", state.stats.ninjaBest >= 500],
       ["ninja_combo", state.stats.ninjaBestCombo >= 10],
       ["kart_first", state.stats.kartRuns >= 1],
+      ["mario_first", state.stats.marioRuns >= 1],
+      ["mario_level", state.stats.marioLevelsCleared >= 1],
+      ["mario_world", Array.isArray(state.stats.marioWorldsCleared) && state.stats.marioWorldsCleared.length >= 1],
+      ["mario_32", Object.keys(state.stats.marioLevelCompletions || {}).length >= 32],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -12387,6 +12579,10 @@
     el.startKartBtn.addEventListener("click", startKart);
     el.restartKartBtn.addEventListener("click", restartKart);
     el.kartRaceResultContinueBtn.addEventListener("click", () => void continueKartAfterResult());
+    el.exitMarioBtn.addEventListener("click", () => showScreen("home"));
+    el.marioPauseBtn.addEventListener("click", toggleMarioPause);
+    el.startMarioBtn.addEventListener("click", startMario);
+    el.restartMarioBtn.addEventListener("click", restartMario);
     el.ninjaCanvas.addEventListener("pointerdown", (event) => {
       if (!ninja.running || ninja.paused || casperHasGameplayControl("ninja")) return;
       event.preventDefault();
@@ -12490,6 +12686,31 @@
     document.addEventListener("pointercancel", () => cleanupBlockDrag(true));
 
     document.addEventListener("keydown", (event) => {
+      const marioInputMap = {
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowUp: "up",
+        ArrowDown: "down",
+        a: "left",
+        A: "left",
+        d: "right",
+        D: "right",
+        w: "up",
+        W: "up",
+        s: "down",
+        S: "down",
+        Shift: "sprint",
+        " ": "sprint"
+      };
+      if (currentScreen === "mario" && getMarioController()?.started) {
+        if (event.key === "p" || event.key === "P") {
+          event.preventDefault();
+          if (!event.repeat) toggleMarioPause();
+        } else if (marioInputMap[event.key]) {
+          event.preventDefault();
+          getMarioController().setInput(marioInputMap[event.key], true);
+        }
+      }
       const kartInputMap = {
         ArrowUp: "up",
         ArrowDown: "down",
@@ -12581,6 +12802,26 @@
     });
 
     document.addEventListener("keyup", (event) => {
+      const marioInputMap = {
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowUp: "up",
+        ArrowDown: "down",
+        a: "left",
+        A: "left",
+        d: "right",
+        D: "right",
+        w: "up",
+        W: "up",
+        s: "down",
+        S: "down",
+        Shift: "sprint",
+        " ": "sprint"
+      };
+      if (currentScreen === "mario" && getMarioController()?.started && marioInputMap[event.key]) {
+        event.preventDefault();
+        getMarioController().setInput(marioInputMap[event.key], false);
+      }
       const kartInputMap = {
         ArrowUp: "up",
         ArrowDown: "down",

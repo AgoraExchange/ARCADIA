@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Super Mario Bros - ARCADIA</title>
+  <style>
+    @font-face {
+      font-family: "Press Start";
+      src: url("Fonts/pressstart2p-webfont.woff") format("woff");
+      font-display: swap;
+    }
+
+    :root {
+      color-scheme: dark;
+      background: #000;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      touch-action: none;
+    }
+
+    #viewport {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #game {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 832px;
+      height: 464px;
+      overflow: hidden;
+      transform: translate(-50%, -50%) scale(var(--arcadia-mario-scale, 1));
+      transform-origin: center;
+      background: #000;
+    }
+
+    #game > * {
+      margin: 0 !important;
+    }
+
+    #controls {
+      display: none !important;
+    }
+
+    #bootMessage,
+    #fatalError {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: #fff;
+      background: #000;
+      font: 12px/1.7 "Press Start", monospace;
+      text-align: center;
+    }
+
+    #fatalError {
+      color: #ffcf73;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <main id="viewport">
+    <section id="game" aria-label="Super Mario Bros game canvas">
+      <div id="bootMessage">LOADING WORLD 1-1...</div>
+    </section>
+    <section id="controls" aria-hidden="true"></section>
+    <div id="fatalError" class="hidden" role="alert"></div>
+  </main>
+
+  <script src="References/AreaSpawnr-0.2.0.js"></script>
+  <script src="References/AudioPlayr-0.2.1.js"></script>
+  <script src="References/ChangeLinr-0.2.0.js"></script>
+  <script src="References/DeviceLayr-0.2.0.js"></script>
+  <script src="References/EightBittr-0.2.0.js"></script>
+  <script src="References/FPSAnalyzr-0.2.1.js"></script>
+  <script src="References/GamesRunnr-0.2.0.js"></script>
+  <script src="References/GameStartr-0.2.0.js"></script>
+  <script src="References/GroupHoldr-0.2.1.js"></script>
+  <script src="References/InputWritr-0.2.0.js"></script>
+  <script src="References/ItemsHoldr-0.2.1.js"></script>
+  <script src="References/LevelEditr-0.2.0.js"></script>
+  <script src="References/MapsCreatr-0.2.1.js"></script>
+  <script src="References/MapScreenr-0.2.1.js"></script>
+  <script src="References/MathDecidr-0.2.0.js"></script>
+  <script src="References/ModAttachr-0.2.2.js"></script>
+  <script src="References/NumberMakr-0.2.2.js"></script>
+  <script src="References/ObjectMakr-0.2.2.js"></script>
+  <script src="References/PixelDrawr-0.2.0.js"></script>
+  <script src="References/PixelRendr-0.2.0.js"></script>
+  <script src="References/QuadsKeepr-0.2.1.js"></script>
+  <script src="References/ScenePlayr-0.2.0.js"></script>
+  <script src="References/StringFilr-0.2.1.js"></script>
+  <script src="References/ThingHittr-0.2.0.js"></script>
+  <script src="References/TimeHandlr-0.2.0.js"></script>
+  <script src="References/TouchPassr-0.2.0.js"></script>
+  <script src="References/UsageHelpr-0.2.0.js"></script>
+  <script src="References/UserWrappr-0.2.0.js"></script>
+  <script src="References/WorldSeedr-0.2.0.js"></script>
+  <script src="References/js_beautify.js"></script>
+  <script src="PlayMario.js"></script>
+  <script src="settings/audio.js"></script>
+  <script src="settings/collisions.js"></script>
+  <script src="settings/devices.js"></script>
+  <script src="settings/editor.js"></script>
+  <script src="settings/generator.js"></script>
+  <script src="settings/groups.js"></script>
+  <script src="settings/events.js"></script>
+  <script src="settings/help.js"></script>
+  <script src="settings/input.js"></script>
+  <script src="settings/items.js"></script>
+  <script src="settings/maps.js"></script>
+  <script src="settings/maps/1-1.js"></script>
+  <script src="settings/maps/1-2.js"></script>
+  <script src="settings/maps/1-3.js"></script>
+  <script src="settings/maps/1-4.js"></script>
+  <script src="settings/maps/2-1.js"></script>
+  <script src="settings/maps/2-2.js"></script>
+  <script src="settings/maps/2-3.js"></script>
+  <script src="settings/maps/2-4.js"></script>
+  <script src="settings/maps/3-1.js"></script>
+  <script src="settings/maps/3-2.js"></script>
+  <script src="settings/maps/3-3.js"></script>
+  <script src="settings/maps/3-4.js"></script>
+  <script src="settings/maps/4-1.js"></script>
+  <script src="settings/maps/4-2.js"></script>
+  <script src="settings/maps/4-3.js"></script>
+  <script src="settings/maps/4-4.js"></script>
+  <script src="settings/maps/5-1.js"></script>
+  <script src="settings/maps/5-2.js"></script>
+  <script src="settings/maps/5-3.js"></script>
+  <script src="settings/maps/5-4.js"></script>
+  <script src="settings/maps/6-1.js"></script>
+  <script src="settings/maps/6-2.js"></script>
+  <script src="settings/maps/6-3.js"></script>
+  <script src="settings/maps/6-4.js"></script>
+  <script src="settings/maps/7-1.js"></script>
+  <script src="settings/maps/7-2.js"></script>
+  <script src="settings/maps/7-3.js"></script>
+  <script src="settings/maps/7-4.js"></script>
+  <script src="settings/maps/8-1.js"></script>
+  <script src="settings/maps/8-2.js"></script>
+  <script src="settings/maps/8-3.js"></script>
+  <script src="settings/maps/8-4.js"></script>
+  <script src="settings/math.js"></script>
+  <script src="settings/mods.js"></script>
+  <script src="settings/objects.js"></script>
+  <script src="settings/quadrants.js"></script>
+  <script src="settings/renderer.js"></script>
+  <script src="settings/runner.js"></script>
+  <script src="settings/scenes.js"></script>
+  <script src="settings/sprites.js"></script>
+  <script src="settings/touch.js"></script>
+  <script src="settings/ui.js"></script>
+  <script src="arcadia-wrapper.js"></script>
+</body>
+</html>

@@ -4218,6 +4218,465 @@ input:focus {
   overflow: hidden;
 }
 
+/* Super Mario Bros HTML5 campaign */
+.mario-stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  width: min(100%, 980px);
+  min-height: 0;
+  margin: 0 auto;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.mario-port-shell {
+  position: relative;
+  width: min(100%, 930px);
+  aspect-ratio: 832 / 464;
+  min-height: 0;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px solid rgba(73, 244, 255, 0.46);
+  border-radius: 22px;
+  background: #000;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.48),
+    0 0 36px rgba(73, 244, 255, 0.14),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.mario-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+
+.mario-loading,
+.mario-title-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 15px;
+  padding: 20px;
+  text-align: center;
+}
+
+.mario-loading {
+  z-index: 8;
+  color: white;
+  background: #05050a;
+}
+
+.mario-loading strong {
+  font-family: var(--font-display);
+  font-size: clamp(0.62rem, 1.8vw, 0.9rem);
+  letter-spacing: 0.05em;
+}
+
+.mario-loading-spinner {
+  width: 44px;
+  height: 44px;
+  border: 5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ffdc35;
+  border-right-color: #ef3f28;
+  border-radius: 50%;
+  animation: marioSpinner 0.75s linear infinite;
+}
+
+@keyframes marioSpinner {
+  to { transform: rotate(360deg); }
+}
+
+.mario-title-overlay {
+  z-index: 5;
+  color: white;
+  background:
+    radial-gradient(circle at 50% 120%, rgba(255, 220, 53, 0.28), transparent 48%),
+    linear-gradient(180deg, #2769c7, #0d2b69);
+  text-shadow: 3px 4px 0 rgba(0, 0, 0, 0.74);
+}
+
+.mario-title-overlay::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18%;
+  border-top: 4px solid #1a0800;
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(0, 0, 0, 0.75) 48% 52%, transparent 53%) 0 0 / 58px 32px,
+    linear-gradient(#de6a1d 0 45%, #8b2e0d 46% 54%, #ed8d28 55%);
+}
+
+.mario-title-logo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  line-height: 0.82;
+  transform: rotate(-2deg);
+}
+
+.mario-title-logo span,
+.mario-title-logo strong,
+.mario-title-logo b {
+  font-family: var(--font-display);
+  -webkit-text-stroke: clamp(1px, 0.32vw, 3px) #3a1504;
+  paint-order: stroke fill;
+}
+
+.mario-title-logo > span {
+  margin-bottom: 8px;
+  color: #ffe23e;
+  font-size: clamp(0.9rem, 3.7vw, 2rem);
+  letter-spacing: 0.25em;
+}
+
+.mario-title-logo strong,
+.mario-title-logo b {
+  display: block;
+  font-size: clamp(2rem, 8.5vw, 5.2rem);
+  letter-spacing: -0.08em;
+}
+
+.mario-title-logo strong {
+  color: #ee3927;
+}
+
+.mario-title-logo strong span {
+  color: #62c651;
+}
+
+.mario-title-logo b {
+  color: #f5bd28;
+}
+
+.mario-title-overlay p,
+.mario-title-overlay small {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.mario-title-overlay p {
+  font-size: clamp(0.48rem, 1.6vw, 0.78rem);
+}
+
+.mario-title-overlay small {
+  color: #e7f6ff;
+  font-size: clamp(0.42rem, 1.3vw, 0.68rem);
+  letter-spacing: 0.08em;
+}
+
+.mario-world-label {
+  position: absolute;
+  z-index: 4;
+  top: 10px;
+  left: 10px;
+  display: none;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  color: white;
+  background: rgba(0, 0, 0, 0.64);
+  font-family: var(--font-display);
+  font-size: clamp(0.48rem, 1.6vw, 0.68rem);
+  pointer-events: none;
+}
+
+.mario-world-label.is-active {
+  display: block;
+}
+
+.mario-controls {
+  display: none;
+  grid-template-columns: minmax(120px, 1fr) minmax(150px, 1fr);
+  align-items: center;
+  justify-items: center;
+  width: min(720px, 100%);
+  margin: 0 auto;
+}
+
+.mario-controls.is-active {
+  display: grid;
+  animation: kartControlsReveal 0.28s ease both;
+}
+
+.mario-joystick {
+  position: relative;
+  justify-self: start;
+  width: 112px;
+  height: 112px;
+  overflow: hidden;
+  border: 2px solid rgba(73, 244, 255, 0.4);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 45%),
+    linear-gradient(145deg, rgba(38, 97, 181, 0.62), rgba(8, 27, 70, 0.84));
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.72), 0 10px 22px rgba(0, 0, 0, 0.35);
+  touch-action: none;
+}
+
+.mario-joystick-directions {
+  position: absolute;
+  inset: 8px;
+  color: rgba(255, 255, 255, 0.35);
+  font: 500 0.72rem sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+
+.mario-joystick-directions i,
+.mario-joystick-directions b,
+.mario-joystick-directions em {
+  position: absolute;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.mario-joystick-directions i { left: 0; top: 50%; transform: translateY(-50%); }
+.mario-joystick-directions b { right: 0; top: 50%; transform: translateY(-50%); }
+.mario-joystick-directions em { bottom: 0; left: 50%; transform: translateX(-50%); }
+
+.mario-joystick-knob {
+  position: absolute;
+  left: calc(50% - 24px);
+  top: calc(50% - 24px);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 24%, #fff, transparent 18%), linear-gradient(145deg, #5ef7ff, #188bcf 58%, #12396e);
+  box-shadow: inset -5px -8px 12px rgba(0, 18, 40, 0.42), 0 8px 16px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.mario-action-buttons {
+  justify-self: end;
+  position: relative;
+  width: 164px;
+  height: 112px;
+}
+
+.mario-game-button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 86px;
+  height: 70px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.mario-jump-button {
+  top: 0;
+  right: 0;
+  background: radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.62), transparent 18%), linear-gradient(180deg, #ff765d, #d9212f 58%, #72101c);
+  box-shadow: inset 0 7px 12px rgba(255, 255, 255, 0.22), inset 0 -9px 14px rgba(75, 0, 18, 0.45), 0 9px 0 #47000e, 0 15px 22px rgba(0, 0, 0, 0.36);
+}
+
+.mario-sprint-button {
+  left: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.55), transparent 18%), linear-gradient(180deg, #ffd64c, #ef8e18 58%, #8a3c08);
+  box-shadow: inset 0 7px 12px rgba(255, 255, 255, 0.2), inset 0 -9px 14px rgba(92, 40, 0, 0.46), 0 9px 0 #542004, 0 15px 22px rgba(0, 0, 0, 0.36);
+}
+
+.mario-game-button strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.mario-game-button small {
+  font-family: var(--font-display);
+  font-size: 0.4rem;
+  letter-spacing: 0.04em;
+}
+
+.mario-game-button.is-pressed {
+  transform: translateY(6px);
+  filter: brightness(1.18);
+  box-shadow: inset 0 6px 12px rgba(255, 255, 255, 0.16), 0 3px 0 #321108, 0 7px 15px rgba(0, 0, 0, 0.34);
+}
+
+.mario-actions {
+  width: min(310px, 100%);
+  justify-self: center;
+}
+
+.mario-desktop-hint {
+  display: none;
+  margin: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mario-controls.is-active {
+    display: none;
+  }
+
+  .mario-desktop-hint {
+    display: block;
+  }
+}
+
+@media (max-width: 760px) {
+  .mario-screen {
+    padding-left: calc(4px + var(--safe-left));
+    padding-right: calc(4px + var(--safe-right));
+  }
+
+  .mario-screen .page-top h1 {
+    font-size: clamp(0.86rem, 4vw, 1.05rem);
+  }
+
+  .mario-stage {
+    width: 100%;
+    min-height: 100%;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    align-content: stretch;
+    gap: 10px;
+    padding: 4px;
+    border-radius: 26px 26px 0 0;
+  }
+
+  .mario-port-shell {
+    align-self: start;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    border-radius: 14px;
+  }
+
+  .mario-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .mario-joystick {
+    width: clamp(78px, 26vw, 96px);
+    height: clamp(78px, 26vw, 96px);
+  }
+
+  .mario-joystick-knob {
+    left: calc(50% - 20px);
+    top: calc(50% - 20px);
+    width: 40px;
+    height: 40px;
+  }
+
+  .mario-action-buttons {
+    width: clamp(132px, 38vw, 150px);
+    height: clamp(90px, 26vw, 102px);
+  }
+
+  .mario-game-button {
+    width: clamp(62px, 18vw, 70px);
+    height: clamp(50px, 15vw, 58px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .mario-screen {
+    padding-top: calc(6px + var(--safe-top));
+    padding-bottom: calc(6px + var(--safe-bottom));
+  }
+
+  .mario-screen .page-top {
+    margin-bottom: 6px;
+  }
+
+  .mario-screen .page-top h1 {
+    font-size: clamp(0.9rem, 3vw, 1.3rem);
+  }
+
+  .mario-screen .game-content {
+    height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 70px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mario-stage {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 6px;
+  }
+
+  .mario-port-shell {
+    width: min(calc(100% - 268px), calc((var(--app-height) - var(--safe-top) - var(--safe-bottom) - 150px) * 1.7931));
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0 auto;
+  }
+
+  .mario-controls.is-active {
+    position: absolute;
+    z-index: 6;
+    inset: 6px;
+    display: grid;
+    grid-template-columns: 112px minmax(24px, 1fr) 140px;
+    align-content: center;
+    width: auto;
+    pointer-events: none;
+  }
+
+  .mario-joystick,
+  .mario-game-button {
+    pointer-events: auto;
+  }
+
+  .mario-joystick {
+    width: 96px;
+    height: 96px;
+  }
+
+  .mario-action-buttons {
+    grid-column: 3;
+    align-self: center;
+    width: 136px;
+    height: 98px;
+    pointer-events: none;
+  }
+
+  .mario-game-button {
+    width: 64px;
+    height: 52px;
+  }
+
+  .mario-stage .mario-actions {
+    position: absolute;
+    z-index: 7;
+    left: 50%;
+    bottom: 8px;
+    width: min(220px, 36vw);
+    transform: translateX(-50%);
+  }
+
+  .mario-actions .arcade-btn {
+    min-height: 34px;
+    padding: 7px 10px;
+  }
+
+  .mario-desktop-hint {
+    display: none;
+  }
+}
+
 .ninja-stage {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto auto;

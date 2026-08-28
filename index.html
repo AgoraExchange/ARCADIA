@@ -587,6 +587,70 @@
       </main>
     </section>
 
+    <section id="marioScreen" class="screen game-screen mario-screen hidden">
+      <header class="page-top">
+        <button id="exitMarioBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Super Mario Bros</h1>
+        <button id="marioPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content">
+        <section class="mario-stage panel">
+          <div class="mario-port-shell">
+            <iframe
+              id="marioFrame"
+              class="mario-frame"
+              title="Super Mario Bros HTML5 campaign"
+              src="about:blank"
+              allow="autoplay; fullscreen; gamepad"
+              sandbox="allow-scripts allow-same-origin allow-pointer-lock"
+            ></iframe>
+
+            <div id="marioLoading" class="mario-loading">
+              <span class="mario-loading-spinner" aria-hidden="true"></span>
+              <strong id="marioLoadingText">Loading all 32 levels...</strong>
+            </div>
+
+            <div id="marioTitleOverlay" class="mario-title-overlay">
+              <div class="mario-title-logo" aria-label="Super Mario Bros">
+                <span>SUPER</span>
+                <strong>MAR<span>I</span>O</strong>
+                <b>BROS.</b>
+              </div>
+              <p>© 1985 NINTENDO</p>
+              <small>THE ORIGINAL 32-LEVEL CAMPAIGN</small>
+            </div>
+
+            <div id="marioWorldLabel" class="mario-world-label">WORLD 1-1</div>
+          </div>
+
+          <div id="marioControls" class="mario-controls" aria-label="Super Mario Bros touch controls">
+            <div id="marioJoystick" class="mario-joystick" role="application" aria-label="Move Mario and use pipes">
+              <span class="mario-joystick-directions" aria-hidden="true">▲<i>◀</i><b>▶</b><em>▼</em></span>
+              <span id="marioJoystickKnob" class="mario-joystick-knob"></span>
+            </div>
+            <div class="mario-action-buttons" aria-label="Super Mario Bros A and B buttons">
+              <button id="marioSprintBtn" class="mario-game-button mario-sprint-button" type="button" aria-label="Sprint or fire">
+                <strong>B</strong>
+                <small>RUN / FIRE</small>
+              </button>
+              <button id="marioJumpBtn" class="mario-game-button mario-jump-button" type="button" aria-label="Jump">
+                <strong>A</strong>
+                <small>JUMP</small>
+              </button>
+            </div>
+          </div>
+
+          <div class="game-actions mario-actions">
+            <button id="startMarioBtn" class="arcade-btn primary hidden" type="button">Start Game</button>
+            <button id="restartMarioBtn" class="arcade-btn secondary hidden" type="button">Restart</button>
+          </div>
+
+          <p class="hint mario-desktop-hint">Desktop: Arrow keys or WASD move, Space/Shift runs or fires, P pauses. A gamepad also works through the original port.</p>
+        </section>
+      </main>
+    </section>
+
     <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
     <div id="gameOverModal" class="modal hidden">
@@ -745,6 +809,7 @@
 
     <script src="fruit-ninja.js"></script>
     <script src="sm-kart-zx.js"></script>
+    <script src="super-mario-bros.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

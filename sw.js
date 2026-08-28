@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.26.0.0";
+const ARCADIA_VERSION = "19.27.0.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "script.js",
   "fruit-ninja.js",
   "sm-kart-zx.js",
+  "super-mario-bros.js",
   "manifest.webmanifest",
   "app-version.json",
   "assets/images/games/stack.png",
@@ -16,6 +17,7 @@ const APP_SHELL = [
   "assets/images/games/fruitblend.png",
   "assets/images/games/fruitninja-icon.png",
   "assets/images/games/super-mario-kart-zx.png",
+  "assets/images/games/super-mario-bros.png",
   "assets/images/arcadia-logo-180.png",
   "assets/images/arcadia-logo-192.png",
   "assets/images/arcadia-logo-512.png",
@@ -31,7 +33,9 @@ const APP_SHELL = [
   "assets/themesong/games/fruit-ninja.ogg",
   "assets/audio/sfx/fruit-ninja/cut.wav",
   "assets/audio/sfx/crossy-road/crash.mp3",
-  "games/sm-kart-zx/index.html"
+  "games/sm-kart-zx/index.html",
+  "games/super-mario-bros/index.html",
+  "games/super-mario-bros/arcadia-wrapper.js"
 ];
 const KART_RUNTIME_ASSETS = [
   "games/sm-kart-zx/runner.js",

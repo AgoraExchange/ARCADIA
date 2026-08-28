@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.27.0.0 adds Super Mario Bros as Game 11 with the complete original 32-level PlayMario campaign, the player-provided icon, a staged 1985 title screen, touch controls, responsive landscape play, native pause/audio, and escalating stage rewards with first-castle level-up guarantees.
 - Version 19.26.0.0 adds Mario Kart precision analog-style steering with a stable center lane, responsive proportional corrections, thumb-drift hysteresis, and immediate hard turns.
 - Version 19.25.4.0 disables the broken mobile Time Trial replay shortcut and directs players to press A for another run while keeping their saved best time.
 - Version 19.25.3.0 moves Mario Kart item use onto the context-aware B button, removes its separate item slot and polling, and makes every Fruit Ninja cannon pop 2.5x louder.
@@ -31,13 +32,13 @@
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
-ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play ten arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
+ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play eleven arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
 If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
 
 ## Local Launch
 
-Most ARCADIA games can run from a directly opened HTML file, but browser security blocks Super Mario Kart ZX's WebAssembly files in `file://` mode. On Windows, double-click `Launch ARCADIA.cmd` and use the `http://127.0.0.1:4179/` tab it opens. The published GitHub Pages site already runs over HTTP and does not need this launcher.
+Most ARCADIA games can run from a directly opened HTML file, but the bundled Mario web ports should be served over HTTP for reliable iframe, audio, and WebAssembly behavior. On Windows, double-click `Launch ARCADIA.cmd` and use the localhost tab it opens. The published GitHub Pages site already runs over HTTP and does not need this launcher.
 
 ## Current Layout
 
@@ -102,6 +103,12 @@ Most ARCADIA games can run from a directly opened HTML file, but browser securit
   - Left-side precision steering with hold-forward acceleration, proportional corrections, immediate hard turns, and pull-back native braking/reverse, while menu navigation remains separate from selection
   - Diagonal A/B jump-select and back-cancel buttons, plus a debounced center item slot with reliable one-press power-up use
   - Desktop keyboard and gamepad support retained from the original port, plus ARCADIA XP, coins, playtime, and an achievement
+- Super Mario Bros game page
+  - Complete numbered campaign from World 1-1 through World 8-4, with Random map and mod controls unavailable in ARCADIA
+  - Player-provided dashboard icon and staged Super Mario Bros title presentation with the 1985 Nintendo copyright line
+  - Left joystick movement, A jump, B sprint/fire, desktop keyboard/gamepad input, and top-right ARCADIA Pause/Resume
+  - Compact portrait canvas and a larger side-control landscape layout with non-overlapping A/B buttons and Restart below the game
+  - Escalating XP and coin rewards for native stage transitions, unique-stage tracking, and a guaranteed ARCADIA level-up on each world's first castle clear
 - Dev Mode Casper autopilot for ARCADIA's nine native games
 
 ## Visual Direction
@@ -111,6 +118,8 @@ The theme is based on dark arcade poster art, hot magenta, violet, purple, cyan,
 Fruit Ninja's custom ARCADIA canvas renderer is an original implementation inspired by Caleb Miller's open-source Menja cube-smashing prototype, including its tiny-renderer approach to shaded geometry, projected backboard shadows, swipe trails, and flying fragments.
 
 Super Mario Kart ZX was created by srPerez and its web port was published by burnedpopcorn. ARCADIA includes the exact compiled port with the user's confirmed permission and adds only the surrounding launch, touch-control, responsive-layout, and progression integration. See `games/sm-kart-zx/ATTRIBUTION.md` for upstream links and details.
+
+Super Mario Bros uses the PlayMario HTML5 Client's original 32 numbered campaign maps with the user's confirmed permission from its maintainer. ARCADIA adds its title launch, touch controls, responsive presentation, pause/audio bridge, and progression integration while leaving its random map and mod interfaces inaccessible. See `games/super-mario-bros/ATTRIBUTION.md` for upstream links and details.
 
 ## Asset Folders
 
