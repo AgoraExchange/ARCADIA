@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.24.2.0 raises Mario Kart's portrait controls away from Restart, separates landscape A/B buttons, and places the landscape item slot directly beneath them.
 - Version 19.24.1.0 guarantees a louder compressed cannon pop for every Fruit Ninja gameplay launch, primes the effect from trusted iOS Start/Resume gestures, and balances it clearly above the OGG soundtrack.
 - Version 19.24.0.0 adds Mario Kart's conditional Tap to Continue audio gate, automatic title advance when sound is ready, diagonal A/B mobile controls, native back/cancel navigation, debounced item detection, and reliable one-press item use.
 - Version 19.23.0.0 unlocks Mario Kart's actual GameMaker music/SFX engine from real touch gestures on iOS PWAs and precaches the complete kart runtime for dependable loading.

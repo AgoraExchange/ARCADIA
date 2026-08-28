@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.24.1.0";
+  const APP_VERSION = "19.24.2.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Mario Kart raises the portrait joystick and A/B pad away from Restart, fully separates the landscape A/B buttons, and moves collected items beneath the landscape action buttons for unobstructed use.",
     "Fruit Ninja now guarantees one cannon pop for every gameplay fruit launch, primes the effect on iOS from Start/Resume, and uses a stronger compressed pop mix that stays clear over the OGG soundtrack.",
     "Mario Kart now auto-advances from the gamepad screen when audio is available, shows an iOS-safe Tap to Continue audio gate only when needed, adds diagonal A/B controls with native back navigation, and makes item detection and use more reliable.",
     "Mario Kart now captures and unlocks the port's real GameMaker audio engine from Start Game and every touch control, including iOS installed PWAs, while caching the complete game runtime for reliable loading.",
