@@ -1,5 +1,7 @@
 # ARCADIA
 
+- Version 19.25.3.0 moves Mario Kart item use onto the context-aware B button, removes its separate item slot and polling, and makes every Fruit Ninja cannon pop 2.5x louder.
+- Version 19.25.2.0 makes Time Trial replays touch-accessible from the game canvas, separates menu Select from in-race Jump, and prevents post-load room warnings from appearing as fatal loading errors.
 - Version 19.25.1.0 doubles Mario Kart's top-three race rewards: 520 XP/60 coins for 1st, 310 XP/36 coins for 2nd, and 190 XP/22 coins for 3rd.
 - Version 19.25.0.0 adds Mario Kart race-place rewards and history, native cup trophy/class tracking, an ARCADIA results card, automatic next-race continuation, and in-place black-transition recovery that preserves Grand Prix state.
 - Version 19.24.2.0 raises Mario Kart's portrait controls away from Restart, separates landscape A/B buttons, and places the landscape item slot directly beneath them.

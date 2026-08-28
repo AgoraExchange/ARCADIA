@@ -1,6 +1,10 @@
 {
-  "version": "19.25.1.0",
+  "version": "19.25.3.0",
   "patchNotes": [
+    "Mario Kart removes the separate mystery-box item button; B now identifies itself as Back in menus and Item during active races while using the port's native item action.",
+    "Fruit Ninja raises every cannon-launch pop to 2.5x output volume through the compressed SFX bus so launches remain clear above the soundtrack.",
+    "Mario Kart Time Trial replay prompts now accept a mobile tap on the game canvas, while A cleanly selects or retries in menus and remains Jump during races.",
+    "Mario Kart no longer mislabels non-fatal post-load room-transition exceptions as game-file loading failures.",
     "Mario Kart doubles every podium payout so 1st now awards 520 XP and 60 coins, 2nd awards 310 XP and 36 coins, and 3rd awards 190 XP and 22 coins.",
     "Mario Kart now detects every race finish, records placement history and podium totals, and awards strongly placement-weighted XP and coins.",
     "Mario Kart now syncs native cup trophies and completed engine classes into ARCADIA progress, including unlocked high-CC class controls.",

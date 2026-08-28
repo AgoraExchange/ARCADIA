@@ -3,10 +3,14 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.25.1.0";
+  const APP_VERSION = "19.25.3.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Mario Kart removes the separate mystery-box item button; B now identifies itself as Back in menus and Item during active races while using the port's native item action.",
+    "Fruit Ninja raises every cannon-launch pop to 2.5x output volume through the compressed SFX bus so launches remain clear above the soundtrack.",
+    "Mario Kart Time Trial replay prompts now accept a mobile tap on the game canvas, while A cleanly selects or retries in menus and remains Jump during races.",
+    "Mario Kart no longer mislabels non-fatal post-load room-transition exceptions as game-file loading failures.",
     "Mario Kart doubles every podium payout so 1st now awards 520 XP and 60 coins, 2nd awards 310 XP and 36 coins, and 3rd awards 190 XP and 22 coins.",
     "Mario Kart now detects every race finish, records placement history and podium totals, and awards strongly placement-weighted XP and coins.",
     "Mario Kart now syncs native cup trophies and completed engine classes into ARCADIA progress, including unlocked high-CC class controls.",
@@ -181,6 +185,7 @@
   const BLOCK_PLACE_SFX = "assets/audio/sfx/block-grid/place.mp3";
   const FRUIT_NINJA_CUT_SFX = "assets/audio/sfx/fruit-ninja/cut.wav";
   const FRUIT_NINJA_MUSIC_VOLUME = 0.48;
+  const FRUIT_NINJA_CANNON_VOLUME_MULTIPLIER = 2.5;
   const THEME_SONGS = {
     lobby: [
       "assets/themesong/lobby/lobby1.mp3",
@@ -1457,7 +1462,6 @@
     kartControls: $("kartControls"),
     kartJoystick: $("kartJoystick"),
     kartJoystickKnob: $("kartJoystickKnob"),
-    kartItemBtn: $("kartItemBtn"),
     kartClassBtn: $("kartClassBtn"),
     kartJumpBtn: $("kartJumpBtn"),
     kartBackBtn: $("kartBackBtn"),
@@ -11371,15 +11375,18 @@
     if (ninjaCannonBus?.context === audioCtx) return ninjaCannonBus.input;
     const input = audioCtx.createGain();
     const compressor = audioCtx.createDynamicsCompressor();
+    const outputGain = audioCtx.createGain();
     input.gain.value = 1.16;
     compressor.threshold.value = -18;
     compressor.knee.value = 14;
     compressor.ratio.value = 6;
     compressor.attack.value = 0.003;
     compressor.release.value = 0.14;
+    outputGain.gain.value = FRUIT_NINJA_CANNON_VOLUME_MULTIPLIER;
     input.connect(compressor);
-    compressor.connect(audioCtx.destination);
-    ninjaCannonBus = { context: audioCtx, input, compressor };
+    compressor.connect(outputGain);
+    outputGain.connect(audioCtx.destination);
+    ninjaCannonBus = { context: audioCtx, input, compressor, outputGain };
     return input;
   }
 
@@ -11462,7 +11469,7 @@
       burstGain.connect(output);
       burst.start(startAt);
     } catch {
-      playToneAt(150, 0.08, "sine", 0.075);
+      playToneAt(150, 0.08, "sine", 0.075 * FRUIT_NINJA_CANNON_VOLUME_MULTIPLIER);
     }
   }
 
@@ -11771,7 +11778,6 @@
       joystickKnob: el.kartJoystickKnob,
       jumpButton: el.kartJumpBtn,
       backButton: el.kartBackBtn,
-      itemButton: el.kartItemBtn,
       classButton: el.kartClassBtn,
       onReady() {
         if (currentScreen !== "kart") return;

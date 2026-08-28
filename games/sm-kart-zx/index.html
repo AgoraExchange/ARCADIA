@@ -215,6 +215,7 @@
         back: { key: "z", code: "KeyZ", value: 90 },
         item: { key: "s", code: "KeyS", value: 83 },
         jump: { key: "c", code: "KeyC", value: 67 },
+        replay: { key: "c", code: "KeyC", value: 67 },
         start: { key: "Enter", code: "Enter", value: 13 },
         lookback: { key: " ", code: "Space", value: 32 }
       });
@@ -453,6 +454,10 @@
         }, { passive: true });
       }
 
+      document.getElementById("canvas")?.addEventListener("pointerup", (event) => {
+        arcadiaPost("canvas-tap", { pointerType: event.pointerType || "" });
+      }, { passive: true });
+
       window.addEventListener("message", (event) => {
         if (event.origin !== window.location.origin || event.source !== window.parent) return;
         const data = event.data;
@@ -582,14 +587,25 @@
         },
       };
       Module.setStatus("Downloading...");
-      window.onerror = function (event) {
-        arcadiaPost("error", { text: String(event || "Unknown game error") });
+      window.onerror = function (event, source, line, column, error) {
+        const text = String(error?.message || event || "Unknown game error");
+        if (/ResizeObserver loop|undelivered notifications|Script error\.?$/i.test(text)) {
+          console.warn("Ignored non-fatal Mario Kart browser warning:", text);
+          return true;
+        }
+        if (document.body.classList.contains("game-ready")) {
+          console.error("Mario Kart runtime exception:", text, source || "", line || 0, column || 0);
+          arcadiaPost("runtime-error", { text });
+          return false;
+        }
+        arcadiaPost("error", { text });
         // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
         Module.setStatus("Exception thrown, see JavaScript console");
         spinnerElement.style.display = "none";
         Module.setStatus = function (text) {
           if (text) Module.printErr("[post-exception status] " + text);
         };
+        return false;
       };
 
       // Route URL GET parameters to argc+argv

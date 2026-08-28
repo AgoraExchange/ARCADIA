@@ -6,9 +6,6 @@
   const DRIVE_DEAD_ZONE = 0.24;
   const STEER_DEAD_ZONE = 0.18;
   const RACE_STATE_SAMPLE_PERIOD = 320;
-  const ITEM_READY_CONFIRM_SAMPLES = 4;
-  const ITEM_USE_PULSE = 190;
-  const ITEM_USE_COOLDOWN = 900;
   const RESULT_CONFIRM_SAMPLES = 2;
   const RESULT_ADVANCE_DELAYS = [5200, 6800];
   const PROGRESS_SAMPLE_PERIOD = 1800;
@@ -155,13 +152,11 @@
       this.joystickKnob = options.joystickKnob;
       this.jumpButton = options.jumpButton;
       this.backButton = options.backButton;
-      this.itemButton = options.itemButton;
       this.classButton = options.classButton;
       this.onReady = options.onReady || (() => {});
       this.onTitleReady = options.onTitleReady || (() => {});
       this.onStart = options.onStart || (() => {});
       this.onPauseChange = options.onPauseChange || (() => {});
-      this.onItemState = options.onItemState || (() => {});
       this.onAudioState = options.onAudioState || (() => {});
       this.onRaceResult = options.onRaceResult || (() => {});
       this.onProgress = options.onProgress || (() => {});
@@ -172,7 +167,6 @@
       this.titleReady = false;
       this.started = false;
       this.paused = false;
-      this.itemReady = false;
       this.audioRunning = false;
       this.audioContextCount = 0;
       this.joystickPointerId = null;
@@ -180,7 +174,6 @@
       this.inputState = new Map();
       this.introTimer = null;
       this.titleTimer = null;
-      this.itemPressTimer = null;
       this.introGateOpen = false;
       this.advancingToTitle = false;
       this.raceStateTimer = null;
@@ -196,12 +189,6 @@
       this.progressSignature = "";
       this.progress = null;
       this.loadTimeoutTimer = null;
-      this.itemArmTimer = null;
-      this.itemSampleTimer = null;
-      this.itemBaseline = null;
-      this.itemQuietSamples = 0;
-      this.itemCandidateSamples = 0;
-      this.itemUseCooldownUntil = 0;
       this.loadSequence = 0;
       this.version = "1";
       this.boundMessage = (event) => this.handleMessage(event);
@@ -209,6 +196,7 @@
         if (document.hidden) this.releaseAll();
       };
       this.bindControls();
+      this.updateBackControl();
       window.addEventListener("message", this.boundMessage);
       document.addEventListener("visibilitychange", this.boundVisibility);
     }
@@ -246,8 +234,8 @@
         if (!this.started) return;
         event.preventDefault();
         this.resumeAudio();
-        if (!this.inputState.get("accelerate")) this.tap("accelerate", 86);
-        this.tap("jump", 92);
+        if (this.raceActive && !this.paused) this.tap("jump", 92);
+        else this.tap("accelerate", 92);
       });
 
       this.backButton?.addEventListener("pointerdown", (event) => {
@@ -255,24 +243,6 @@
         event.preventDefault();
         this.resumeAudio();
         this.tap("back", 130);
-      });
-
-      this.itemButton?.addEventListener("pointerdown", (event) => {
-        if (!this.started || !this.itemReady) return;
-        event.preventDefault();
-        this.resumeAudio();
-        this.tap("item", ITEM_USE_PULSE);
-        this.itemButton.classList.add("is-pressed");
-        window.clearTimeout(this.itemPressTimer);
-        this.itemPressTimer = window.setTimeout(() => {
-          this.itemPressTimer = null;
-          this.itemButton?.classList.remove("is-pressed");
-        }, ITEM_USE_PULSE);
-        this.itemUseCooldownUntil = performance.now() + ITEM_USE_COOLDOWN;
-        this.itemBaseline = null;
-        this.itemQuietSamples = 0;
-        this.itemCandidateSamples = 0;
-        this.setItemReady(false);
       });
 
       this.classButton?.addEventListener("pointerdown", (event) => {
@@ -319,12 +289,8 @@
       this.resultAdvanceActive = false;
       this.progressSignature = "";
       this.progress = null;
-      this.itemBaseline = null;
-      this.itemQuietSamples = 0;
-      this.itemCandidateSamples = 0;
-      this.itemUseCooldownUntil = 0;
-      this.setItemReady(false);
       this.setClassControlVisible(false);
+      this.updateBackControl();
       this.setLoading(true, "Loading Super Mario Kart ZX...");
       this.showContinuePrompt(false);
       this.controls?.classList.remove("is-active");
@@ -376,12 +342,8 @@
       this.resultAdvanceActive = false;
       this.progressSignature = "";
       this.progress = null;
-      this.itemBaseline = null;
-      this.itemQuietSamples = 0;
-      this.itemCandidateSamples = 0;
-      this.itemUseCooldownUntil = 0;
-      this.setItemReady(false);
       this.setClassControlVisible(false);
+      this.updateBackControl();
       this.showContinuePrompt(false);
       this.controls?.classList.remove("is-active");
       if (this.frame) this.frame.src = "about:blank";
@@ -399,6 +361,8 @@
       if (data.type === "error") this.handleLoadError(data.text);
       if (data.type === "ready") this.handleReady();
       if (data.type === "audio") this.handleAudioState(data);
+      if (data.type === "canvas-tap") this.handleCanvasTap(data);
+      if (data.type === "runtime-error") this.handleRuntimeError(data.text);
       if (data.type === "renderer-recovery") this.handleRecoveryState(true, data);
       if (data.type === "renderer-recovered") this.handleRecoveryState(false, data);
       if (data.type === "black-screen") this.handleBlackScreen();
@@ -412,6 +376,21 @@
         attempt: Math.max(0, Number(data.attempt) || 0),
         attempts: Math.max(0, Number(data.attempts) || 0)
       });
+    }
+
+    handleCanvasTap(data = {}) {
+      if (!this.started || this.paused || this.raceActive || this.loadFailed) return;
+      if (data.pointerType === "mouse") return;
+      this.resumeAudio();
+      this.tap("replay", 96);
+    }
+
+    handleRuntimeError(text = "") {
+      if (!this.ready) {
+        this.handleLoadError(text);
+        return;
+      }
+      console.warn("Mario Kart recovered from a post-load runtime exception:", text);
     }
 
     handleAudioState(data = {}) {
@@ -437,6 +416,10 @@
     }
 
     handleLoadError(text = "") {
+      if (this.ready) {
+        this.handleRuntimeError(text);
+        return;
+      }
       window.clearTimeout(this.loadTimeoutTimer);
       this.loadTimeoutTimer = null;
       this.loadFailed = true;
@@ -526,6 +509,7 @@
       this.paused = !this.paused;
       this.pauseButton.textContent = this.paused ? "Resume" : "Pause";
       if (this.paused) this.releaseAll();
+      this.updateBackControl();
       this.onPauseChange(this.paused);
       return this.paused;
     }
@@ -580,7 +564,6 @@
       } catch {
         this.post({ type: "release-all" });
       }
-      this.itemButton?.classList.remove("is-pressed");
     }
 
     updateJoystick(event) {
@@ -608,7 +591,6 @@
       this.setInput("down", reverse);
       this.setInput("accelerate", this.raceActive && forward && !this.paused);
       this.setInput("back", this.raceActive && reverse && !this.paused);
-      if (this.raceActive && forward) this.scheduleItemDetector();
     }
 
     applySteeringInput(value) {
@@ -662,15 +644,11 @@
         this.resultAdvanceActive = false;
         for (const timer of this.resultAdvanceTimers) window.clearTimeout(timer);
         this.resultAdvanceTimers = [];
-        this.scheduleItemDetector();
       } else {
         this.setInput("accelerate", false);
         this.setInput("back", false);
-        this.itemBaseline = null;
-        this.itemQuietSamples = 0;
-        this.itemCandidateSamples = 0;
-        this.setItemReady(false);
       }
+      this.updateBackControl();
       this.updateClassControl();
       this.applyJoystickInput();
     }
@@ -762,13 +740,15 @@
       );
     }
 
-    scheduleItemDetector() {
-      if (this.itemBaseline || this.itemArmTimer || this.itemSampleTimer) return;
-      this.itemArmTimer = window.setTimeout(() => {
-        this.itemArmTimer = null;
-        this.detectItemState();
-        this.itemSampleTimer = window.setInterval(() => this.detectItemState(), 360);
-      }, 900);
+    updateBackControl() {
+      if (!this.backButton) return;
+      const itemMode = this.started && this.raceActive && !this.paused;
+      const label = this.backButton.querySelector("small");
+      if (label) label.textContent = itemMode ? "ITEM" : "BACK";
+      this.backButton.setAttribute(
+        "aria-label",
+        itemMode ? "Use collected item" : "Go back or cancel"
+      );
     }
 
     sampleItemHud() {
@@ -798,65 +778,10 @@
           if (red < 24 && green < 28 && blue < 24) darkPixels += 1;
         }
         const hasHolder = cyanPixels >= 160 && lightPixels >= 260 && darkPixels >= 1400;
-        return { pixels, hasHolder };
+        return { hasHolder };
       } catch {
         return null;
       }
-    }
-
-    detectItemState() {
-      if (!this.started) return;
-      if (performance.now() < this.itemUseCooldownUntil) return;
-      const current = this.sampleItemHud();
-      if (!current?.hasHolder) {
-        this.itemBaseline = null;
-        this.itemQuietSamples = 0;
-        this.itemCandidateSamples = 0;
-        this.setItemReady(false);
-        return;
-      }
-      if (this.itemReady) return;
-      if (!this.itemBaseline) {
-        this.itemBaseline = new Uint8ClampedArray(current.pixels);
-        this.itemQuietSamples = 0;
-        this.itemCandidateSamples = 0;
-        this.setItemReady(false);
-        return;
-      }
-      let difference = 0;
-      let comparedChannels = 0;
-      for (let y = 6; y < 54; y += 1) {
-        for (let x = 18; x < 66; x += 1) {
-          const index = (y * 84 + x) * 4;
-          difference += Math.abs(current.pixels[index] - this.itemBaseline[index]);
-          difference += Math.abs(current.pixels[index + 1] - this.itemBaseline[index + 1]);
-          difference += Math.abs(current.pixels[index + 2] - this.itemBaseline[index + 2]);
-          comparedChannels += 3;
-        }
-      }
-      difference /= comparedChannels;
-      if (difference > 14) {
-        this.itemQuietSamples = 0;
-        this.itemCandidateSamples += 1;
-        if (this.itemCandidateSamples >= ITEM_READY_CONFIRM_SAMPLES) this.setItemReady(true);
-      } else if (difference < 6) {
-        this.itemCandidateSamples = 0;
-        this.itemQuietSamples += 1;
-        if (this.itemQuietSamples >= 4) {
-          this.itemBaseline = new Uint8ClampedArray(current.pixels);
-          this.itemQuietSamples = 0;
-        }
-      } else {
-        this.itemCandidateSamples = Math.max(0, this.itemCandidateSamples - 1);
-      }
-    }
-
-    setItemReady(ready) {
-      this.itemReady = Boolean(ready);
-      this.itemButton?.classList.toggle("is-ready", this.itemReady);
-      this.itemButton?.classList.toggle("hidden", !this.itemReady);
-      if (this.itemButton) this.itemButton.disabled = !this.itemReady;
-      this.onItemState(this.itemReady);
     }
 
     setLoading(active, text = "", isError = false) {
@@ -874,22 +799,18 @@
     }
 
     clearTimers() {
-      for (const timer of [this.introTimer, this.titleTimer, this.itemArmTimer, this.itemPressTimer, this.loadTimeoutTimer]) {
+      for (const timer of [this.introTimer, this.titleTimer, this.loadTimeoutTimer]) {
         window.clearTimeout(timer);
       }
-      window.clearInterval(this.itemSampleTimer);
       window.clearInterval(this.raceStateTimer);
       window.clearInterval(this.progressTimer);
       for (const timer of this.resultAdvanceTimers) window.clearTimeout(timer);
       this.introTimer = null;
       this.titleTimer = null;
-      this.itemPressTimer = null;
       this.raceStateTimer = null;
       this.progressTimer = null;
       this.resultAdvanceTimers = [];
       this.loadTimeoutTimer = null;
-      this.itemArmTimer = null;
-      this.itemSampleTimer = null;
     }
   }
 
