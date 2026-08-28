@@ -1,6 +1,7 @@
 {
-  "version": "19.25.3.0",
+  "version": "19.25.4.0",
   "patchNotes": [
+    "Mario Kart disables the broken mobile Time Trial replay shortcut and now explains that A safely starts another run without erasing the saved best time.",
     "Mario Kart removes the separate mystery-box item button; B now identifies itself as Back in menus and Item during active races while using the port's native item action.",
     "Fruit Ninja raises every cannon-launch pop to 2.5x output volume through the compressed SFX bus so launches remain clear above the soundtrack.",
     "Mario Kart Time Trial replay prompts now accept a mobile tap on the game canvas, while A cleanly selects or retries in menus and remains Jump during races.",

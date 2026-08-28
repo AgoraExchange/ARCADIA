@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.25.4.0 disables the broken mobile Time Trial replay shortcut and directs players to press A for another run while keeping their saved best time.
 - Version 19.25.3.0 moves Mario Kart item use onto the context-aware B button, removes its separate item slot and polling, and makes every Fruit Ninja cannon pop 2.5x louder.
 - Version 19.25.2.0 makes Time Trial replays touch-accessible from the game canvas, separates menu Select from in-race Jump, and prevents post-load room warnings from appearing as fatal loading errors.
 - Version 19.25.1.0 doubles Mario Kart's top-three race rewards: 520 XP/60 coins for 1st, 310 XP/36 coins for 2nd, and 190 XP/22 coins for 3rd.

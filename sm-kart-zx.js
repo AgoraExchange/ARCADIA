@@ -158,6 +158,7 @@
       this.onStart = options.onStart || (() => {});
       this.onPauseChange = options.onPauseChange || (() => {});
       this.onAudioState = options.onAudioState || (() => {});
+      this.onReplayUnavailable = options.onReplayUnavailable || (() => {});
       this.onRaceResult = options.onRaceResult || (() => {});
       this.onProgress = options.onProgress || (() => {});
       this.onRecoveryState = options.onRecoveryState || (() => {});
@@ -382,7 +383,7 @@
       if (!this.started || this.paused || this.raceActive || this.loadFailed) return;
       if (data.pointerType === "mouse") return;
       this.resumeAudio();
-      this.tap("replay", 96);
+      this.onReplayUnavailable();
     }
 
     handleRuntimeError(text = "") {

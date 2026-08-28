@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.25.3.0";
+  const APP_VERSION = "19.25.4.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Mario Kart disables the broken mobile Time Trial replay shortcut and now explains that A safely starts another run without erasing the saved best time.",
     "Mario Kart removes the separate mystery-box item button; B now identifies itself as Back in menus and Item during active races while using the port's native item action.",
     "Fruit Ninja raises every cannon-launch pop to 2.5x output volume through the compressed SFX bus so launches remain clear above the soundtrack.",
     "Mario Kart Time Trial replay prompts now accept a mobile tap on the game canvas, while A cleanly selects or retries in menus and remains Jump during races.",
@@ -11793,6 +11794,15 @@
       onAudioState(running) {
         if (currentScreen !== "kart" || !running) return;
         showToast("Kart Audio Ready", "Music and sound effects are enabled.", "silent", 2200);
+      },
+      onReplayUnavailable() {
+        if (currentScreen !== "kart") return;
+        showToast(
+          "Replay Unavailable",
+          "The web port's replay loader can freeze on black. Press A to race again; your best time stays saved.",
+          "silent",
+          4200
+        );
       },
       onRaceResult(result) {
         handleKartRaceResult(result);
