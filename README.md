@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.26.0.0 adds Mario Kart precision analog-style steering with a stable center lane, responsive proportional corrections, thumb-drift hysteresis, and immediate hard turns.
 - Version 19.25.4.0 disables the broken mobile Time Trial replay shortcut and directs players to press A for another run while keeping their saved best time.
 - Version 19.25.3.0 moves Mario Kart item use onto the context-aware B button, removes its separate item slot and polling, and makes every Fruit Ninja cannon pop 2.5x louder.
 - Version 19.25.2.0 makes Time Trial replays touch-accessible from the game canvas, separates menu Select from in-race Jump, and prevents post-load room warnings from appearing as fatal loading errors.
@@ -98,7 +99,7 @@ Most ARCADIA games can run from a directly opened HTML file, but browser securit
 - Super Mario Kart ZX game page
   - Original srPerez and Nintendo intro, gamepad recommendation, animated title, music, menus, races, items, and GameMaker WebGL renderer
   - Automatic gamepad-screen advance when audio is available, with a compact Tap to Continue sound gate for iOS when a real gesture is required
-  - Left-side immediate steering with hold-forward acceleration and pull-back native braking/reverse, while menu navigation remains separate from selection
+  - Left-side precision steering with hold-forward acceleration, proportional corrections, immediate hard turns, and pull-back native braking/reverse, while menu navigation remains separate from selection
   - Diagonal A/B jump-select and back-cancel buttons, plus a debounced center item slot with reliable one-press power-up use
   - Desktop keyboard and gamepad support retained from the original port, plus ARCADIA XP, coins, playtime, and an achievement
 - Dev Mode Casper autopilot for ARCADIA's nine native games

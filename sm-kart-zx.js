@@ -4,7 +4,13 @@
   const MESSAGE_SOURCE = "arcadia-sm-kart-zx";
   const PORT_URL = "games/sm-kart-zx/index.html";
   const DRIVE_DEAD_ZONE = 0.24;
-  const STEER_DEAD_ZONE = 0.18;
+  const MENU_STEER_DEAD_ZONE = 0.18;
+  const STEER_ENTER_DEAD_ZONE = 0.16;
+  const STEER_EXIT_DEAD_ZONE = 0.1;
+  const FULL_STEER_THRESHOLD = 0.7;
+  const STEER_PULSE_PERIOD = 64;
+  const STEER_MIN_HOLD = 22;
+  const STEER_MAX_HOLD = 58;
   const RACE_STATE_SAMPLE_PERIOD = 320;
   const RESULT_CONFIRM_SAMPLES = 2;
   const RESULT_ADVANCE_DELAYS = [5200, 6800];
@@ -13,6 +19,29 @@
   const INTRO_ADVANCE_DELAY = 4600;
   const LOAD_TIMEOUT = 45_000;
   const KART_CUP_NAMES = ["mushroom", "flower", "star", "special", "super"];
+
+  function getSteeringProfile(value, activeDirection = null) {
+    const horizontal = Math.max(-1, Math.min(1, Number(value) || 0));
+    const magnitude = Math.abs(horizontal);
+    const candidate = horizontal < 0 ? "left" : horizontal > 0 ? "right" : null;
+    const threshold = candidate && candidate === activeDirection
+      ? STEER_EXIT_DEAD_ZONE
+      : STEER_ENTER_DEAD_ZONE;
+    if (!candidate || magnitude < threshold) {
+      return { direction: null, strength: 0, continuous: false, heldFor: 0 };
+    }
+
+    const strength = Math.min(
+      1,
+      Math.max(0, (magnitude - STEER_ENTER_DEAD_ZONE) / (1 - STEER_ENTER_DEAD_ZONE))
+    );
+    const curvedStrength = Math.pow(strength, 0.72);
+    const continuous = magnitude >= FULL_STEER_THRESHOLD;
+    const heldFor = continuous
+      ? STEER_PULSE_PERIOD
+      : Math.round(STEER_MIN_HOLD + curvedStrength * (STEER_MAX_HOLD - STEER_MIN_HOLD));
+    return { direction: candidate, strength, continuous, heldFor };
+  }
 
   function detectRaceResultPlace(source) {
     if (!source?.width || !source?.height) return 0;
@@ -173,6 +202,11 @@
       this.joystickPointerId = null;
       this.joystickValue = { x: 0, y: 0 };
       this.inputState = new Map();
+      this.steeringTimer = null;
+      this.steeringReleaseTimer = null;
+      this.steeringDirection = null;
+      this.steeringStrength = 0;
+      this.steeringContinuous = false;
       this.introTimer = null;
       this.titleTimer = null;
       this.introGateOpen = false;
@@ -571,7 +605,9 @@
       const rect = this.joystick.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      const radius = rect.width * 0.34;
+      const knobRect = this.joystickKnob?.getBoundingClientRect();
+      const knobDiameter = Math.max(knobRect?.width || 0, knobRect?.height || 0, rect.width * 0.36);
+      const radius = Math.max(1, (Math.min(rect.width, rect.height) - knobDiameter) / 2);
       const dx = event.clientX - centerX;
       const dy = event.clientY - centerY;
       const distance = Math.hypot(dx, dy);
@@ -585,7 +621,8 @@
 
     applyJoystickInput() {
       const { x, y } = this.joystickValue;
-      this.applySteeringInput(x);
+      if (this.raceActive && !this.paused) this.applyRaceSteeringInput(x);
+      else this.applyMenuSteeringInput(x);
       const forward = y < -DRIVE_DEAD_ZONE;
       const reverse = y > DRIVE_DEAD_ZONE;
       this.setInput("up", forward);
@@ -594,13 +631,85 @@
       this.setInput("back", this.raceActive && reverse && !this.paused);
     }
 
-    applySteeringInput(value) {
-      const direction = value < -STEER_DEAD_ZONE ? "left" : value > STEER_DEAD_ZONE ? "right" : null;
+    applyMenuSteeringInput(value) {
+      this.clearSteeringTimers();
+      this.steeringDirection = null;
+      this.steeringStrength = 0;
+      this.steeringContinuous = false;
+      const direction = value < -MENU_STEER_DEAD_ZONE
+        ? "left"
+        : value > MENU_STEER_DEAD_ZONE
+          ? "right"
+          : null;
       this.setInput("left", direction === "left");
       this.setInput("right", direction === "right");
     }
 
+    applyRaceSteeringInput(value) {
+      const profile = getSteeringProfile(value, this.steeringDirection);
+      if (!profile.direction) {
+        this.clearSteeringInput();
+        return;
+      }
+
+      const directionChanged = profile.direction !== this.steeringDirection;
+      const modeChanged = profile.continuous !== this.steeringContinuous;
+      this.steeringStrength = profile.strength;
+
+      if (directionChanged || modeChanged) {
+        this.clearSteeringInput();
+        this.steeringDirection = profile.direction;
+        this.steeringStrength = profile.strength;
+        this.steeringContinuous = profile.continuous;
+        if (profile.continuous) this.setInput(profile.direction, true);
+        else this.runSteeringPulse();
+      }
+    }
+
+    runSteeringPulse() {
+      const direction = this.steeringDirection;
+      if (!direction || this.steeringContinuous) return;
+      this.clearSteeringTimers();
+      const profile = getSteeringProfile(this.joystickValue.x, direction);
+      if (!profile.direction || profile.direction !== direction) {
+        this.clearSteeringInput();
+        return;
+      }
+      if (profile.continuous) {
+        this.steeringContinuous = true;
+        this.steeringStrength = profile.strength;
+        this.setInput(direction, true);
+        return;
+      }
+
+      this.steeringStrength = profile.strength;
+      this.setInput(direction, true);
+      this.steeringReleaseTimer = window.setTimeout(() => {
+        this.steeringReleaseTimer = null;
+        if (this.steeringDirection === direction && !this.steeringContinuous) {
+          this.setInput(direction, false);
+        }
+      }, profile.heldFor);
+      this.steeringTimer = window.setTimeout(() => {
+        this.steeringTimer = null;
+        if (this.steeringDirection === direction && !this.steeringContinuous) {
+          this.runSteeringPulse();
+        }
+      }, STEER_PULSE_PERIOD);
+    }
+
+    clearSteeringTimers() {
+      window.clearTimeout(this.steeringTimer);
+      window.clearTimeout(this.steeringReleaseTimer);
+      this.steeringTimer = null;
+      this.steeringReleaseTimer = null;
+    }
+
     clearSteeringInput() {
+      this.clearSteeringTimers();
+      this.steeringDirection = null;
+      this.steeringStrength = 0;
+      this.steeringContinuous = false;
       this.setInput("left", false);
       this.setInput("right", false);
     }
@@ -806,6 +915,7 @@
       window.clearInterval(this.raceStateTimer);
       window.clearInterval(this.progressTimer);
       for (const timer of this.resultAdvanceTimers) window.clearTimeout(timer);
+      this.clearSteeringTimers();
       this.introTimer = null;
       this.titleTimer = null;
       this.raceStateTimer = null;
@@ -817,5 +927,6 @@
 
   ArcadiaSMKartZX.detectRaceResultPlace = detectRaceResultPlace;
   ArcadiaSMKartZX.parseProgress = parseKartProgress;
+  ArcadiaSMKartZX.getSteeringProfile = getSteeringProfile;
   window.ArcadiaSMKartZX = ArcadiaSMKartZX;
 })();

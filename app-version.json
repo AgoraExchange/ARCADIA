@@ -1,6 +1,7 @@
 {
-  "version": "19.25.4.0",
+  "version": "19.26.0.0",
   "patchNotes": [
+    "Mario Kart adds precision analog-style race steering with a stable center lane, rapid proportional micro-corrections, hysteresis against thumb drift, and immediate hard turns without changing menu navigation.",
     "Mario Kart disables the broken mobile Time Trial replay shortcut and now explains that A safely starts another run without erasing the saved best time.",
     "Mario Kart removes the separate mystery-box item button; B now identifies itself as Back in menus and Item during active races while using the port's native item action.",
     "Fruit Ninja raises every cannon-launch pop to 2.5x output volume through the compressed SFX bus so launches remain clear above the soundtrack.",

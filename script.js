@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.25.4.0";
+  const APP_VERSION = "19.26.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Mario Kart adds precision analog-style race steering with a stable center lane, rapid proportional micro-corrections, hysteresis against thumb drift, and immediate hard turns without changing menu navigation.",
     "Mario Kart disables the broken mobile Time Trial replay shortcut and now explains that A safely starts another run without erasing the saved best time.",
     "Mario Kart removes the separate mystery-box item button; B now identifies itself as Back in menus and Item during active races while using the port's native item action.",
     "Fruit Ninja raises every cannon-launch pop to 2.5x output volume through the compressed SFX bus so launches remain clear above the soundtrack.",
