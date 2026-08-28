@@ -5869,7 +5869,9 @@ input:focus {
 
 .progress-game-list {
   display: grid;
+  grid-auto-rows: 84px;
   gap: 8px;
+  max-height: 268px;
   margin-top: 12px;
 }
 
@@ -5878,8 +5880,10 @@ input:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
+  height: 100%;
   overflow: hidden;
   padding: 12px;
+  scroll-snap-align: start;
 }
 
 .progress-game-row > * {
@@ -5899,6 +5903,13 @@ input:focus {
   color: var(--green);
   align-self: center;
   white-space: nowrap;
+}
+
+.progress-game-row small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .progress-game-row i {
@@ -7135,7 +7146,8 @@ input:focus {
 }
 
 @media (orientation: portrait) and (max-width: 760px) {
-  .kart-controls.is-active {
+  .kart-controls.is-active,
+  .mario-controls.is-active {
     position: relative;
     top: -52px;
   }

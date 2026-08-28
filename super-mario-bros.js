@@ -14,10 +14,12 @@
       this.loadTimer = null;
       this.joystickPointerId = null;
       this.heldInputs = new Set();
+      this.actionPressedAt = new Map();
+      this.actionReleaseTimers = new Map();
       this.boundMessage = this.handleMessage.bind(this);
       window.addEventListener("message", this.boundMessage);
       this.bindJoystick();
-      this.bindActionButton(this.jumpButton, "up");
+      this.bindActionButton(this.jumpButton, "up", 260);
       this.bindActionButton(this.sprintButton, "sprint");
     }
 
@@ -103,22 +105,40 @@
     }
 
     releaseInputs() {
+      this.actionReleaseTimers.forEach((timer) => window.clearTimeout(timer));
+      this.actionReleaseTimers.clear();
+      this.actionPressedAt.clear();
       [...this.heldInputs].forEach((name) => this.setInput(name, false));
       this.heldInputs.clear();
       this.frameApi()?.releaseInputs?.();
       if (this.joystickKnob) this.joystickKnob.style.transform = "translate(0px, 0px)";
     }
 
-    bindActionButton(button, input) {
+    bindActionButton(button, input, minimumHoldMs = 0) {
       if (!button) return;
       const release = (event) => {
         event?.preventDefault?.();
-        this.setInput(input, false);
         button.classList.remove("is-pressed");
+        window.clearTimeout(this.actionReleaseTimers.get(input));
+        const pressedAt = Number(this.actionPressedAt.get(input)) || Date.now();
+        const remaining = Math.max(0, minimumHoldMs - (Date.now() - pressedAt));
+        const finishRelease = () => {
+          this.actionReleaseTimers.delete(input);
+          this.actionPressedAt.delete(input);
+          this.setInput(input, false);
+        };
+        if (remaining > 0) {
+          this.actionReleaseTimers.set(input, window.setTimeout(finishRelease, remaining));
+        } else {
+          finishRelease();
+        }
       };
       button.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         button.setPointerCapture?.(event.pointerId);
+        window.clearTimeout(this.actionReleaseTimers.get(input));
+        this.actionReleaseTimers.delete(input);
+        this.actionPressedAt.set(input, Date.now());
         this.setInput(input, true);
         button.classList.add("is-pressed");
       });
@@ -146,17 +166,15 @@
           this.joystickKnob.style.transform = `translate(${x * travel}px, ${y * travel}px)`;
         }
         const horizontal = Math.abs(x) >= 0.26;
-        const vertical = Math.abs(y) >= 0.56;
         this.setInput("left", horizontal && x < 0);
         this.setInput("right", horizontal && x > 0);
-        this.setInput("up", vertical && y < 0);
-        this.setInput("down", vertical && y > 0);
+        this.setInput("down", y >= 0.56);
       };
       const release = (event) => {
         if (event?.pointerId !== undefined && event.pointerId !== this.joystickPointerId) return;
         event?.preventDefault?.();
         this.joystickPointerId = null;
-        ["left", "right", "up", "down"].forEach((name) => this.setInput(name, false));
+        ["left", "right", "down"].forEach((name) => this.setInput(name, false));
         if (this.joystickKnob) this.joystickKnob.style.transform = "translate(0px, 0px)";
       };
       this.joystick.addEventListener("pointerdown", (event) => {

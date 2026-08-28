@@ -3,10 +3,11 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.27.0.0";
+  const APP_VERSION = "19.27.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Super Mario Bros reserves jumping exclusively for A, gives quick A taps a full 260ms jump hold, prevents joystick release from cutting jumps short, and raises the portrait joystick and A/B controls away from Restart. Player Progress now keeps the top three XP games visible and scrolls the rest.",
     "Super Mario Bros joins ARCADIA as Game 11 with the complete original 32-level PlayMario campaign, the player-provided icon, a staged 1985 title screen, mobile controls, responsive landscape play, native pause/audio, and escalating level rewards.",
     "Super Mario Bros rewards every genuine stage clear with increasing XP and coins; each world's first castle clear guarantees enough XP for an immediate ARCADIA level-up.",
     "Mario Kart adds precision analog-style race steering with a stable center lane, rapid proportional micro-corrections, hysteresis against thumb drift, and immediate hard turns without changing menu navigation.",
