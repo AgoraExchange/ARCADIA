@@ -621,7 +621,19 @@
               <small>THE ORIGINAL 32-LEVEL CAMPAIGN</small>
             </div>
 
-            <div id="marioWorldLabel" class="mario-world-label">WORLD 1-1</div>
+            <button
+              id="marioWorldLabel"
+              class="mario-world-label"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="marioMapModal"
+              aria-expanded="false"
+              aria-label="Open saved Super Mario Bros maps"
+              disabled
+            >
+              <span id="marioWorldLabelText">WORLD 1-1</span>
+              <small>MAPS</small>
+            </button>
           </div>
 
           <div id="marioControls" class="mario-controls" aria-label="Super Mario Bros touch controls">
@@ -650,6 +662,30 @@
         </section>
       </main>
     </section>
+
+    <div id="marioMapModal" class="modal mario-map-modal hidden" role="dialog" aria-modal="true" aria-labelledby="marioMapTitle">
+      <div class="modal-card mario-map-card">
+        <button id="dismissMarioMapBtn" class="modal-x" type="button" aria-label="Close saved maps">X</button>
+        <p class="system-line">Saved Campaign</p>
+        <h2 id="marioMapTitle">Select a Map</h2>
+        <div class="mario-map-summary">
+          <div>
+            <span>Continue</span>
+            <strong id="marioMapContinueLevel">World 1-1</strong>
+          </div>
+          <small id="marioMapUnlockedCount">1 of 32 maps unlocked</small>
+        </div>
+        <div id="marioMapGrid" class="mario-map-grid" aria-label="Super Mario Bros campaign maps"></div>
+        <div class="mario-map-legend" aria-hidden="true">
+          <span><i class="is-current"></i>Current</span>
+          <span><i class="is-complete"></i>Completed</span>
+          <span><i class="is-locked"></i>Locked</span>
+        </div>
+        <div class="modal-actions">
+          <button id="closeMarioMapBtn" class="arcade-btn secondary" type="button">Return to Game</button>
+        </div>
+      </div>
+    </div>
 
     <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 

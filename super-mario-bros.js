@@ -34,7 +34,8 @@
     updateUi() {
       this.loading?.classList.toggle("hidden", this.ready);
       this.titleOverlay?.classList.toggle("hidden", this.started);
-      this.worldLabel?.classList.toggle("is-active", this.started);
+      this.worldLabel?.classList.toggle("is-active", this.ready);
+      if (this.worldLabel) this.worldLabel.disabled = !this.ready;
       this.startButton?.classList.toggle("hidden", !this.ready || this.started);
       this.restartButton?.classList.toggle("hidden", !this.ready);
       this.controls?.classList.toggle("is-active", this.started);
@@ -82,6 +83,45 @@
       this.paused = false;
       this.updateUi();
       this.onStart?.();
+      return true;
+    }
+
+    setWorldLabel(map) {
+      const label = `WORLD ${map || "1-1"}`;
+      if (this.worldLabelText) this.worldLabelText.textContent = label;
+      else if (this.worldLabel) this.worldLabel.textContent = label;
+    }
+
+    currentMap() {
+      return String(this.frameApi()?.getState?.().map || "1-1");
+    }
+
+    pause() {
+      if (!this.started || this.paused) return false;
+      this.releaseInputs();
+      this.paused = Boolean(this.frameApi()?.pause?.());
+      this.updateUi();
+      this.onPauseChange?.(this.paused);
+      return this.paused;
+    }
+
+    resume() {
+      if (!this.started || !this.paused) return false;
+      this.paused = Boolean(this.frameApi()?.resume?.());
+      this.updateUi();
+      this.onPauseChange?.(this.paused);
+      return !this.paused;
+    }
+
+    selectLevel(map, options = {}) {
+      const level = String(map || "");
+      const resume = Boolean(this.started && options.resume);
+      this.releaseInputs();
+      if (!this.ready || !this.frameApi()?.selectLevel?.(level, { resume })) return false;
+      this.paused = !resume;
+      this.setWorldLabel(level);
+      this.updateUi();
+      this.onMapChange?.({ map: level, selected: true });
       return true;
     }
 
@@ -197,14 +237,14 @@
         window.clearTimeout(this.loadTimer);
         this.ready = true;
         this.paused = true;
-        if (this.worldLabel) this.worldLabel.textContent = `WORLD ${message.map || "1-1"}`;
+        this.setWorldLabel(message.map);
         this.updateUi();
         this.onReady?.(message);
       }
       if (message.type === "started") {
         this.started = true;
         this.paused = false;
-        if (this.worldLabel) this.worldLabel.textContent = `WORLD ${message.map || "1-1"}`;
+        this.setWorldLabel(message.map);
         this.updateUi();
       }
       if (message.type === "pause-state") {
@@ -212,8 +252,12 @@
         this.updateUi();
       }
       if (message.type === "level-complete") {
-        if (this.worldLabel) this.worldLabel.textContent = `WORLD ${message.nextLevel || message.level}`;
+        this.setWorldLabel(message.nextLevel || message.level);
         this.onLevelComplete?.(message);
+      }
+      if (message.type === "map-change") {
+        this.setWorldLabel(message.map);
+        this.onMapChange?.(message);
       }
       if (message.type === "error") {
         window.clearTimeout(this.loadTimer);

@@ -91,6 +91,40 @@
     return true;
   }
 
+  function selectLevel(map, options = {}) {
+    const level = String(map || "");
+    if (!game || !CAMPAIGN_MAP.test(level)) return false;
+    const shouldResume = Boolean(started && options.resume);
+    releaseInputs();
+    try {
+      game.setMap(level);
+      lastClearKey = "";
+      lastClearAt = 0;
+      if (shouldResume) {
+        game.GamesRunner.play();
+        unlockAudio(Boolean(game.AudioPlayer.getMuted?.()));
+      } else {
+        game.GamesRunner.pause();
+        game.AudioPlayer.pauseAll();
+      }
+      post("pause-state", { paused: !shouldResume });
+      return currentMap() === level;
+    } catch (error) {
+      post("runtime-warning", { message: String(error?.message || error) });
+      return false;
+    }
+  }
+
+  function installMapChangeHook() {
+    const original = game.setMap;
+    if (typeof original !== "function") return;
+    game.setMap = function arcadiaSetMap(...args) {
+      const result = original.apply(this, args);
+      post("map-change", { map: currentMap() });
+      return result;
+    };
+  }
+
   function installLevelCompletionHook() {
     const original = game.collideLevelTransport;
     if (typeof original !== "function") return;
@@ -148,6 +182,7 @@
       game = userWrapper.GameStarter;
       window.UserWrapper = userWrapper;
       window.FSM = game;
+      installMapChangeHook();
       installLevelCompletionHook();
       game.GamesRunner.pause();
       game.AudioPlayer.pauseAll();
@@ -161,6 +196,7 @@
 
   window.ArcadiaMario = {
     start,
+    selectLevel,
     setInput,
     releaseInputs,
     pause() { return setPaused(true); },

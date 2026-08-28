@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.27.1.0";
+  const APP_VERSION = "19.28.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
+  const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Super Mario Bros adds a saved 32-map campaign selector to the in-canvas World badge, with completed, current, unlocked, and locked stages plus automatic continuation from the latest reached map.",
     "Super Mario Bros reserves jumping exclusively for A, gives quick A taps a full 260ms jump hold, prevents joystick release from cutting jumps short, and raises the portrait joystick and A/B controls away from Restart. Player Progress now keeps the top three XP games visible and scrolls the rest.",
     "Super Mario Bros joins ARCADIA as Game 11 with the complete original 32-level PlayMario campaign, the player-provided icon, a staged 1985 title screen, mobile controls, responsive landscape play, native pause/audio, and escalating level rewards.",
     "Super Mario Bros rewards every genuine stage clear with increasing XP and coins; each world's first castle clear guarantees enough XP for an immediate ARCADIA level-up.",
@@ -313,6 +315,8 @@
       marioPlaySeconds: 0,
       marioLevelsCleared: 0,
       marioHighestLevel: 0,
+      marioHighestUnlockedLevel: 1,
+      marioLastLevel: "1-1",
       marioLevelCompletions: {},
       marioWorldsCleared: []
     },
@@ -1290,6 +1294,7 @@
   let kartProgressHydrated = false;
   let marioController = null;
   let marioSessionStartedAt = 0;
+  let marioMapPickerWasPlaying = false;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -1513,6 +1518,13 @@
     marioLoadingText: $("marioLoadingText"),
     marioTitleOverlay: $("marioTitleOverlay"),
     marioWorldLabel: $("marioWorldLabel"),
+    marioWorldLabelText: $("marioWorldLabelText"),
+    marioMapModal: $("marioMapModal"),
+    marioMapGrid: $("marioMapGrid"),
+    marioMapContinueLevel: $("marioMapContinueLevel"),
+    marioMapUnlockedCount: $("marioMapUnlockedCount"),
+    dismissMarioMapBtn: $("dismissMarioMapBtn"),
+    closeMarioMapBtn: $("closeMarioMapBtn"),
     marioControls: $("marioControls"),
     marioJoystick: $("marioJoystick"),
     marioJoystickKnob: $("marioJoystickKnob"),
@@ -11956,6 +11968,126 @@
     getKartController()?.togglePause();
   }
 
+  function marioLevelOrdinal(level) {
+    const index = MARIO_CAMPAIGN_LEVELS.indexOf(String(level || ""));
+    return index >= 0 ? index + 1 : 0;
+  }
+
+  function marioLevelName(ordinal) {
+    const index = Math.max(0, Math.min(31, Math.round(Number(ordinal) || 1) - 1));
+    return MARIO_CAMPAIGN_LEVELS[index];
+  }
+
+  function getMarioHighestUnlockedOrdinal() {
+    const completions = state.stats.marioLevelCompletions && typeof state.stats.marioLevelCompletions === "object"
+      ? state.stats.marioLevelCompletions
+      : {};
+    const highestCompleted = Object.keys(completions).reduce((highest, level) => {
+      return Math.max(highest, marioLevelOrdinal(level));
+    }, 0);
+    const legacyHighest = Number(state.stats.marioLevelsCleared) > 0
+      ? Math.max(0, Math.round(Number(state.stats.marioHighestLevel) || 0)) + 1
+      : 1;
+    return Math.max(
+      1,
+      Math.min(
+        32,
+        Math.max(
+          Math.round(Number(state.stats.marioHighestUnlockedLevel) || 1),
+          highestCompleted ? highestCompleted + 1 : 1,
+          legacyHighest
+        )
+      )
+    );
+  }
+
+  function syncMarioSavedProgress() {
+    const previousHighest = Math.max(1, Math.round(Number(state.stats.marioHighestUnlockedLevel) || 1));
+    const highestUnlocked = getMarioHighestUnlockedOrdinal();
+    let lastLevel = String(state.stats.marioLastLevel || "1-1");
+    const lastOrdinal = marioLevelOrdinal(lastLevel);
+    if (!lastOrdinal || lastOrdinal > highestUnlocked || (previousHighest < highestUnlocked && lastLevel === "1-1")) {
+      lastLevel = marioLevelName(highestUnlocked);
+    }
+    const changed = previousHighest !== highestUnlocked || state.stats.marioLastLevel !== lastLevel;
+    state.stats.marioHighestUnlockedLevel = highestUnlocked;
+    state.stats.marioLastLevel = lastLevel;
+    if (changed) saveState();
+    return { highestUnlocked, lastLevel };
+  }
+
+  function renderMarioMapPicker() {
+    if (!el.marioMapGrid) return;
+    const { highestUnlocked, lastLevel } = syncMarioSavedProgress();
+    const completions = state.stats.marioLevelCompletions && typeof state.stats.marioLevelCompletions === "object"
+      ? state.stats.marioLevelCompletions
+      : {};
+    const currentLevel = marioLevelOrdinal(getMarioController()?.currentMap?.())
+      ? getMarioController().currentMap()
+      : lastLevel;
+
+    el.marioMapContinueLevel.textContent = `World ${lastLevel}`;
+    el.marioMapUnlockedCount.textContent = `${formatNumber(highestUnlocked)} of 32 maps unlocked`;
+    el.marioMapGrid.innerHTML = Array.from({ length: 8 }, (_, worldIndex) => {
+      const world = worldIndex + 1;
+      const levels = Array.from({ length: 4 }, (_, stageIndex) => {
+        const level = `${world}-${stageIndex + 1}`;
+        const ordinal = marioLevelOrdinal(level);
+        const unlocked = ordinal <= highestUnlocked;
+        const complete = Boolean(completions[level]);
+        const current = level === currentLevel;
+        const classes = [
+          "mario-map-level",
+          unlocked ? "is-unlocked" : "is-locked",
+          complete ? "is-complete" : "",
+          current ? "is-current" : ""
+        ].filter(Boolean).join(" ");
+        const status = current ? "current map" : complete ? "completed" : unlocked ? "unlocked" : "locked";
+        return `<button class="${classes}" type="button" data-mario-level="${level}" aria-label="World ${level}, ${status}" ${unlocked ? "" : "disabled"}>${level}</button>`;
+      }).join("");
+      return `<section class="mario-map-world"><h3>WORLD<br>${world}</h3><div class="mario-map-levels">${levels}</div></section>`;
+    }).join("");
+  }
+
+  function openMarioMapPicker() {
+    const controller = getMarioController();
+    if (!controller?.ready || !el.marioMapModal) return;
+    marioMapPickerWasPlaying = Boolean(controller.started && !controller.paused);
+    if (marioMapPickerWasPlaying) controller.pause();
+    renderMarioMapPicker();
+    el.marioMapModal.classList.remove("hidden");
+    el.marioWorldLabel.setAttribute("aria-expanded", "true");
+    requestAnimationFrame(() => {
+      el.marioMapGrid.querySelector(".mario-map-level.is-current")?.focus({ preventScroll: true });
+    });
+  }
+
+  function closeMarioMapPicker(resume = true) {
+    if (!el.marioMapModal || el.marioMapModal.classList.contains("hidden")) return;
+    el.marioMapModal.classList.add("hidden");
+    el.marioWorldLabel.setAttribute("aria-expanded", "false");
+    const shouldResume = resume && marioMapPickerWasPlaying;
+    marioMapPickerWasPlaying = false;
+    if (shouldResume) getMarioController()?.resume();
+  }
+
+  function selectMarioMap(level) {
+    const ordinal = marioLevelOrdinal(level);
+    const highestUnlocked = getMarioHighestUnlockedOrdinal();
+    if (!ordinal || ordinal > highestUnlocked) return;
+    const controller = getMarioController();
+    const resume = marioMapPickerWasPlaying;
+    if (!controller?.selectLevel(level, { resume })) {
+      showToast("Map Loading Error", `World ${level} could not be opened. Try Restart and select it again.`, "fail", 4000);
+      return;
+    }
+    state.stats.marioHighestUnlockedLevel = Math.max(highestUnlocked, ordinal);
+    state.stats.marioLastLevel = level;
+    saveState();
+    closeMarioMapPicker(false);
+    showToast(resume ? `World ${level}` : "Continue Map Saved", resume ? "Map loaded." : `Start Game will begin at World ${level}.`, "silent", 2600);
+  }
+
   function getMarioController() {
     if (marioController) return marioController;
     if (typeof window.ArcadiaSuperMarioBros !== "function") return null;
@@ -11965,6 +12097,7 @@
       loadingText: el.marioLoadingText,
       titleOverlay: el.marioTitleOverlay,
       worldLabel: el.marioWorldLabel,
+      worldLabelText: el.marioWorldLabelText,
       controls: el.marioControls,
       joystick: el.marioJoystick,
       joystickKnob: el.marioJoystickKnob,
@@ -11973,9 +12106,15 @@
       startButton: el.startMarioBtn,
       restartButton: el.restartMarioBtn,
       pauseButton: el.marioPauseBtn,
-      onReady() {
+      onReady(message = {}) {
         if (currentScreen !== "mario") return;
-        showToast("Mushroom Kingdom Ready", "All 32 original campaign stages are loaded. Tap Start Game when you're ready.", "silent", 3200);
+        const { lastLevel } = syncMarioSavedProgress();
+        if (String(message.map || "1-1") !== lastLevel) marioController?.selectLevel(lastLevel);
+        renderMarioMapPicker();
+        showToast("Mushroom Kingdom Ready", `Continue at World ${lastLevel}, or tap the World badge to choose a saved map.`, "silent", 3600);
+      },
+      onMapChange() {
+        if (!el.marioMapModal?.classList.contains("hidden")) renderMarioMapPicker();
       },
       onLevelComplete(result) {
         handleMarioLevelComplete(result);
@@ -11991,6 +12130,7 @@
   function openMario() {
     currentGame = "mario";
     marioSessionStartedAt = 0;
+    syncMarioSavedProgress();
     prepareGameTheme();
     showScreen("mario");
     const controller = getMarioController();
@@ -12023,11 +12163,13 @@
 
   function restartMario() {
     finishMarioSession();
+    closeMarioMapPicker(false);
     getMarioController()?.restart(APP_VERSION);
   }
 
   function stopMario() {
     finishMarioSession();
+    closeMarioMapPicker(false);
     marioController?.stop();
   }
 
@@ -12043,6 +12185,10 @@
     if (result.level && String(result.level) !== levelName) return;
 
     const ordinal = (world - 1) * 4 + stage;
+    const nextLevel = marioLevelOrdinal(result.nextLevel)
+      ? String(result.nextLevel)
+      : marioLevelName(Math.min(32, ordinal + 1));
+    const nextOrdinal = marioLevelOrdinal(nextLevel) || ordinal;
     const completions = state.stats.marioLevelCompletions && typeof state.stats.marioLevelCompletions === "object"
       ? { ...state.stats.marioLevelCompletions }
       : {};
@@ -12067,6 +12213,8 @@
     state.stats.marioWorldsCleared = worldsCleared.sort((a, b) => a - b);
     state.stats.marioLevelsCleared = (Number(state.stats.marioLevelsCleared) || 0) + 1;
     state.stats.marioHighestLevel = Math.max(Number(state.stats.marioHighestLevel) || 0, ordinal);
+    state.stats.marioHighestUnlockedLevel = Math.max(getMarioHighestUnlockedOrdinal(), nextOrdinal);
+    state.stats.marioLastLevel = nextLevel;
     state.stats.marioXpEarned = (Number(state.stats.marioXpEarned) || 0) + xpEarned;
     state.xp = (Number(state.xp) || 0) + xpEarned;
     state.coins = (Number(state.coins) || 0) + coinsEarned;
@@ -12074,6 +12222,7 @@
     unlockEarnedAchievements();
     saveState();
     renderAll();
+    if (!el.marioMapModal?.classList.contains("hidden")) renderMarioMapPicker();
 
     const levelUpText = state.level > previousArcadiaLevel ? ` Level ${state.level} reached!` : "";
     const firstClearText = firstLevelClear ? " First clear saved." : "";
@@ -12582,6 +12731,17 @@
     el.kartRaceResultContinueBtn.addEventListener("click", () => void continueKartAfterResult());
     el.exitMarioBtn.addEventListener("click", () => showScreen("home"));
     el.marioPauseBtn.addEventListener("click", toggleMarioPause);
+    el.marioWorldLabel.addEventListener("click", openMarioMapPicker);
+    el.dismissMarioMapBtn.addEventListener("click", () => closeMarioMapPicker());
+    el.closeMarioMapBtn.addEventListener("click", () => closeMarioMapPicker());
+    el.marioMapModal.addEventListener("click", (event) => {
+      if (event.target === el.marioMapModal) closeMarioMapPicker();
+    });
+    el.marioMapGrid.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-mario-level]");
+      if (!button || button.disabled) return;
+      selectMarioMap(button.dataset.marioLevel);
+    });
     el.startMarioBtn.addEventListener("click", startMario);
     el.restartMarioBtn.addEventListener("click", restartMario);
     el.ninjaCanvas.addEventListener("pointerdown", (event) => {
