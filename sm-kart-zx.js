@@ -9,9 +9,137 @@
   const ITEM_READY_CONFIRM_SAMPLES = 4;
   const ITEM_USE_PULSE = 190;
   const ITEM_USE_COOLDOWN = 900;
+  const RESULT_CONFIRM_SAMPLES = 2;
+  const RESULT_ADVANCE_DELAYS = [5200, 6800];
+  const PROGRESS_SAMPLE_PERIOD = 1800;
   const TITLE_REVEAL_DELAY = 1550;
   const INTRO_ADVANCE_DELAY = 4600;
   const LOAD_TIMEOUT = 45_000;
+  const KART_CUP_NAMES = ["mushroom", "flower", "star", "special", "super"];
+
+  function detectRaceResultPlace(source) {
+    if (!source?.width || !source?.height) return 0;
+    try {
+      const header = document.createElement("canvas");
+      header.width = 160;
+      header.height = 28;
+      const headerContext = header.getContext("2d", { willReadFrequently: true });
+      headerContext.imageSmoothingEnabled = false;
+      headerContext.drawImage(
+        source,
+        Math.round(120 * source.width / 400),
+        Math.round(4 * source.height / 224),
+        Math.max(1, Math.round(160 * source.width / 400)),
+        Math.max(1, Math.round(28 * source.height / 224)),
+        0,
+        0,
+        160,
+        28
+      );
+      const headerPixels = headerContext.getImageData(0, 0, 160, 28).data;
+      let redPixels = 0;
+      let whitePixels = 0;
+      for (let index = 0; index < headerPixels.length; index += 4) {
+        const red = headerPixels[index];
+        const green = headerPixels[index + 1];
+        const blue = headerPixels[index + 2];
+        if (red >= 145 && red > green * 1.3 && red > blue * 1.18) redPixels += 1;
+        if (red >= 175 && green >= 175 && blue >= 175) whitePixels += 1;
+      }
+      if (redPixels < 30 || whitePixels < 35) return 0;
+
+      const sample = document.createElement("canvas");
+      sample.width = 16;
+      sample.height = 120;
+      const context = sample.getContext("2d", { willReadFrequently: true });
+      context.imageSmoothingEnabled = false;
+      const scaleX = source.width / 400;
+      const scaleY = source.height / 224;
+      context.drawImage(
+        source,
+        Math.round(380 * scaleX),
+        Math.round(64 * scaleY),
+        Math.max(1, Math.round(16 * scaleX)),
+        Math.max(1, Math.round(120 * scaleY)),
+        0,
+        0,
+        16,
+        120
+      );
+      const pixels = context.getImageData(0, 0, 16, 120).data;
+      for (let row = 0; row < 8; row += 1) {
+        let cyanPixels = 0;
+        for (let y = row * 16; y < row * 16 + 8; y += 1) {
+          for (let x = 0; x < 16; x += 1) {
+            const index = (y * 16 + x) * 4;
+            const red = pixels[index];
+            const green = pixels[index + 1];
+            const blue = pixels[index + 2];
+            if (green >= 150 && blue >= 190 && red <= 70 && blue >= green * 0.85) cyanPixels += 1;
+          }
+        }
+        if (cyanPixels >= 9) return row + 1;
+      }
+    } catch {}
+    return 0;
+  }
+
+  function parseKartProgress(text) {
+    if (typeof text !== "string" || !text.trim()) return null;
+    const values = (text.match(/[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi) || []).map(Number);
+    if (!values.length || !values.every(Number.isFinite)) return null;
+    const revolutions = Math.max(0, Math.min(20, Math.round(values[0])));
+    const classCount = 3 + revolutions;
+    const trophyCount = classCount * KART_CUP_NAMES.length;
+    if (values.length < 1 + trophyCount) return null;
+
+    const cups = {};
+    let index = 1;
+    for (let classIndex = 0; classIndex < classCount; classIndex += 1) {
+      const cc = 50 + classIndex * 50;
+      cups[cc] = {};
+      for (const cup of KART_CUP_NAMES) {
+        cups[cc][cup] = Math.max(0, Math.min(3, Math.round(values[index++] || 0)));
+      }
+    }
+
+    const baseClasses = [50, 100, 150];
+    const countedTrophies = baseClasses.reduce((total, cc) => (
+      total + KART_CUP_NAMES.slice(0, 4).filter((cup) => cups[cc]?.[cup] > 0).length
+    ), 0);
+    const gold100 = KART_CUP_NAMES.slice(0, 4).filter((cup) => cups[100]?.[cup] === 1).length;
+    const gold150 = KART_CUP_NAMES.slice(0, 4).filter((cup) => cups[150]?.[cup] === 1).length;
+    const specialUnlocked = countedTrophies >= 6 || gold100 >= 3;
+    const class150Unlocked = countedTrophies >= 7 || gold100 >= 4;
+    const superUnlocked = countedTrophies >= 11 || gold100 + gold150 >= 8;
+    const completedClasses = Object.keys(cups).map(Number).filter((cc) => {
+      const requiredCups = cc === 50 ? 3 : cc === 100 ? 4 : 5;
+      return KART_CUP_NAMES.slice(0, requiredCups).every((cup) => cups[cc]?.[cup] > 0);
+    });
+    const totalTrophies = Object.values(cups).reduce((total, classCups) => (
+      total + Object.values(classCups).filter((trophy) => trophy > 0).length
+    ), 0);
+    const goldTrophies = Object.values(cups).reduce((total, classCups) => (
+      total + Object.values(classCups).filter((trophy) => trophy === 1).length
+    ), 0);
+
+    return {
+      revolutions,
+      cups,
+      completedClasses,
+      totalTrophies,
+      goldTrophies,
+      unlockedClasses: [
+        50,
+        100,
+        ...(class150Unlocked ? [150] : []),
+        ...Object.keys(cups).map(Number).filter((cc) => cc > 150)
+      ],
+      specialUnlocked,
+      superUnlocked,
+      highCcUnlocked: revolutions > 0
+    };
+  }
 
   class ArcadiaSMKartZX {
     constructor(options = {}) {
@@ -28,12 +156,16 @@
       this.jumpButton = options.jumpButton;
       this.backButton = options.backButton;
       this.itemButton = options.itemButton;
+      this.classButton = options.classButton;
       this.onReady = options.onReady || (() => {});
       this.onTitleReady = options.onTitleReady || (() => {});
       this.onStart = options.onStart || (() => {});
       this.onPauseChange = options.onPauseChange || (() => {});
       this.onItemState = options.onItemState || (() => {});
       this.onAudioState = options.onAudioState || (() => {});
+      this.onRaceResult = options.onRaceResult || (() => {});
+      this.onProgress = options.onProgress || (() => {});
+      this.onRecoveryState = options.onRecoveryState || (() => {});
       this.onRecover = options.onRecover || (() => {});
       this.ready = false;
       this.loadFailed = false;
@@ -55,6 +187,14 @@
       this.raceActive = false;
       this.raceLitSamples = 0;
       this.raceQuietSamples = 0;
+      this.resultArmed = false;
+      this.resultCandidate = 0;
+      this.resultCandidateSamples = 0;
+      this.resultAdvanceActive = false;
+      this.resultAdvanceTimers = [];
+      this.progressTimer = null;
+      this.progressSignature = "";
+      this.progress = null;
       this.loadTimeoutTimer = null;
       this.itemArmTimer = null;
       this.itemSampleTimer = null;
@@ -135,6 +275,15 @@
         this.setItemReady(false);
       });
 
+      this.classButton?.addEventListener("pointerdown", (event) => {
+        if (!this.started || this.raceActive || !this.progress?.highCcUnlocked) return;
+        event.preventDefault();
+        this.resumeAudio();
+        this.tap("item", 120);
+        this.classButton.classList.add("is-pressed");
+        window.setTimeout(() => this.classButton?.classList.remove("is-pressed"), 140);
+      });
+
       this.continueButton?.addEventListener("pointerdown", () => {
         if (!this.ready || this.titleReady) return;
         this.continueButton.classList.add("is-activating");
@@ -164,11 +313,18 @@
       this.raceActive = false;
       this.raceLitSamples = 0;
       this.raceQuietSamples = 0;
+      this.resultArmed = false;
+      this.resultCandidate = 0;
+      this.resultCandidateSamples = 0;
+      this.resultAdvanceActive = false;
+      this.progressSignature = "";
+      this.progress = null;
       this.itemBaseline = null;
       this.itemQuietSamples = 0;
       this.itemCandidateSamples = 0;
       this.itemUseCooldownUntil = 0;
       this.setItemReady(false);
+      this.setClassControlVisible(false);
       this.setLoading(true, "Loading Super Mario Kart ZX...");
       this.showContinuePrompt(false);
       this.controls?.classList.remove("is-active");
@@ -214,11 +370,18 @@
       this.raceActive = false;
       this.raceLitSamples = 0;
       this.raceQuietSamples = 0;
+      this.resultArmed = false;
+      this.resultCandidate = 0;
+      this.resultCandidateSamples = 0;
+      this.resultAdvanceActive = false;
+      this.progressSignature = "";
+      this.progress = null;
       this.itemBaseline = null;
       this.itemQuietSamples = 0;
       this.itemCandidateSamples = 0;
       this.itemUseCooldownUntil = 0;
       this.setItemReady(false);
+      this.setClassControlVisible(false);
       this.showContinuePrompt(false);
       this.controls?.classList.remove("is-active");
       if (this.frame) this.frame.src = "about:blank";
@@ -236,7 +399,19 @@
       if (data.type === "error") this.handleLoadError(data.text);
       if (data.type === "ready") this.handleReady();
       if (data.type === "audio") this.handleAudioState(data);
+      if (data.type === "renderer-recovery") this.handleRecoveryState(true, data);
+      if (data.type === "renderer-recovered") this.handleRecoveryState(false, data);
       if (data.type === "black-screen") this.handleBlackScreen();
+    }
+
+    handleRecoveryState(recovering, data = {}) {
+      if (!this.started || this.loadFailed) return;
+      if (recovering) this.setLoading(true, "Restoring the next Mario Kart race...");
+      else this.setLoading(false);
+      this.onRecoveryState(Boolean(recovering), {
+        attempt: Math.max(0, Number(data.attempt) || 0),
+        attempts: Math.max(0, Number(data.attempts) || 0)
+      });
     }
 
     handleAudioState(data = {}) {
@@ -258,7 +433,7 @@
       if (!this.started || this.loadFailed) return;
       this.onRecover();
       this.load(this.version);
-      this.setLoading(true, "Recovering the Mario Kart display...");
+      this.setLoading(true, "The renderer could not be restored. Reloading Mario Kart...");
     }
 
     handleLoadError(text = "") {
@@ -280,6 +455,7 @@
       this.loadTimeoutTimer = null;
       this.ready = true;
       this.setLoading(false);
+      this.startProgressDetector();
       this.onReady();
       this.introTimer = window.setTimeout(() => {
         if (!this.ready || this.titleReady) return;
@@ -334,6 +510,7 @@
       this.startButton?.classList.add("hidden");
       this.controls?.classList.add("is-active");
       this.startRaceStateDetector();
+      this.updateClassControl();
       if (this.pauseButton) {
         this.pauseButton.disabled = false;
         this.pauseButton.textContent = "Pause";
@@ -460,6 +637,7 @@
 
     detectRaceState() {
       if (!this.started) return;
+      this.detectRaceResult();
       const sample = this.sampleItemHud();
       if (!sample) return;
       if (sample.hasHolder) {
@@ -478,6 +656,12 @@
       if (this.raceActive === next) return;
       this.raceActive = next;
       if (next) {
+        this.resultArmed = true;
+        this.resultCandidate = 0;
+        this.resultCandidateSamples = 0;
+        this.resultAdvanceActive = false;
+        for (const timer of this.resultAdvanceTimers) window.clearTimeout(timer);
+        this.resultAdvanceTimers = [];
         this.scheduleItemDetector();
       } else {
         this.setInput("accelerate", false);
@@ -487,7 +671,95 @@
         this.itemCandidateSamples = 0;
         this.setItemReady(false);
       }
+      this.updateClassControl();
       this.applyJoystickInput();
+    }
+
+    detectRaceResult() {
+      if (!this.started || !this.resultArmed) return;
+      let source = null;
+      try {
+        source = this.frame?.contentDocument?.getElementById("canvas");
+      } catch {}
+      const place = detectRaceResultPlace(source);
+      if (!place) {
+        this.resultCandidate = 0;
+        this.resultCandidateSamples = 0;
+        return;
+      }
+      if (place !== this.resultCandidate) {
+        this.resultCandidate = place;
+        this.resultCandidateSamples = 1;
+        return;
+      }
+      this.resultCandidateSamples += 1;
+      if (this.resultCandidateSamples < RESULT_CONFIRM_SAMPLES) return;
+      this.resultArmed = false;
+      this.onRaceResult({ place, detectedAt: Date.now() });
+      window.setTimeout(() => this.syncProgress(), 500);
+    }
+
+    async advanceAfterRaceResult() {
+      if (!this.started || this.resultAdvanceActive) return false;
+      this.resultAdvanceActive = true;
+      this.updateClassControl();
+      await this.resumeAudio();
+      this.tap("accelerate", 120);
+      for (const delay of RESULT_ADVANCE_DELAYS) {
+        const timer = window.setTimeout(() => {
+          if (!this.started || this.raceActive) return;
+          this.resumeAudio();
+          this.tap("accelerate", 130);
+        }, delay);
+        this.resultAdvanceTimers.push(timer);
+      }
+      const finishTimer = window.setTimeout(() => {
+        this.resultAdvanceActive = false;
+        this.resultAdvanceTimers = [];
+        this.syncProgress();
+        this.updateClassControl();
+      }, RESULT_ADVANCE_DELAYS[RESULT_ADVANCE_DELAYS.length - 1] + 1800);
+      this.resultAdvanceTimers.push(finishTimer);
+      return true;
+    }
+
+    startProgressDetector() {
+      window.clearInterval(this.progressTimer);
+      this.syncProgress();
+      this.progressTimer = window.setInterval(() => this.syncProgress(), PROGRESS_SAMPLE_PERIOD);
+    }
+
+    syncProgress() {
+      if (!this.ready) return null;
+      let text = "";
+      try {
+        text = this.frame?.contentWindow?.arcadiaSMKReadProgress?.() || "";
+      } catch {}
+      const progress = parseKartProgress(text);
+      if (!progress) return null;
+      const signature = JSON.stringify(progress);
+      this.progress = progress;
+      this.updateClassControl();
+      if (signature === this.progressSignature) return progress;
+      this.progressSignature = signature;
+      this.onProgress(progress);
+      return progress;
+    }
+
+    setClassControlVisible(visible) {
+      if (!this.classButton) return;
+      const active = Boolean(visible);
+      this.classButton.classList.toggle("hidden", !active);
+      this.classButton.disabled = !active;
+    }
+
+    updateClassControl() {
+      this.setClassControlVisible(
+        this.started
+        && !this.raceActive
+        && !this.resultAdvanceActive
+        && Boolean(this.progress?.highCcUnlocked)
+      );
     }
 
     scheduleItemDetector() {
@@ -607,15 +879,21 @@
       }
       window.clearInterval(this.itemSampleTimer);
       window.clearInterval(this.raceStateTimer);
+      window.clearInterval(this.progressTimer);
+      for (const timer of this.resultAdvanceTimers) window.clearTimeout(timer);
       this.introTimer = null;
       this.titleTimer = null;
       this.itemPressTimer = null;
       this.raceStateTimer = null;
+      this.progressTimer = null;
+      this.resultAdvanceTimers = [];
       this.loadTimeoutTimer = null;
       this.itemArmTimer = null;
       this.itemSampleTimer = null;
     }
   }
 
+  ArcadiaSMKartZX.detectRaceResultPlace = detectRaceResultPlace;
+  ArcadiaSMKartZX.parseProgress = parseKartProgress;
   window.ArcadiaSMKartZX = ArcadiaSMKartZX;
 })();

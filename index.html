@@ -538,6 +538,24 @@
 
           </div>
 
+          <div id="kartRaceResultOverlay" class="kart-race-result-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="kartRaceResultTitle">
+            <div class="kart-race-result-card">
+              <p class="system-line">RACE COMPLETE</p>
+              <strong id="kartRaceResultPlace" class="kart-race-result-place">1ST</strong>
+              <h2 id="kartRaceResultTitle">Podium Finish</h2>
+              <div class="kart-race-reward-line">
+                <span><b id="kartRaceResultXp">+0</b> XP</span>
+                <span><b id="kartRaceResultCoins">+0</b> COINS</span>
+              </div>
+              <div class="kart-race-progress-line">
+                <span>Trophies <b id="kartRaceResultTrophies">0</b></span>
+                <span>Classes <b id="kartRaceResultClasses">None</b></span>
+              </div>
+              <p id="kartRaceResultStatus">Preparing the next race...</p>
+              <button id="kartRaceResultContinueBtn" class="arcade-btn primary" type="button">Continue</button>
+            </div>
+          </div>
+
           <div id="kartControls" class="kart-controls" aria-label="Super Mario Kart ZX touch controls">
             <div id="kartJoystick" class="kart-joystick" role="application" aria-label="Steer kart, accelerate, brake, and navigate menus">
               <span class="kart-joystick-directions" aria-hidden="true">▲<i>◀</i><b>▶</b><em>▼</em></span>
@@ -546,6 +564,10 @@
             <button id="kartItemBtn" class="kart-item-slot hidden" type="button" aria-label="Use collected item" disabled>
               <span>?</span>
               <small>ITEM</small>
+            </button>
+            <button id="kartClassBtn" class="kart-item-slot kart-class-button hidden" type="button" aria-label="Cycle unlocked engine classes" disabled>
+              <span>CC</span>
+              <small>L BUTTON</small>
             </button>
             <div class="kart-action-buttons" aria-label="Mario Kart A and B buttons">
               <button id="kartBackBtn" class="kart-game-button kart-back-button" type="button" aria-label="Go back or cancel">
@@ -629,7 +651,7 @@
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
           <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 19.24.2.0</p>
+        <p id="appVersionText" class="app-version-text">Version 19.25.1.0</p>
       </div>
     </div>
 

@@ -3,10 +3,14 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.24.2.0";
+  const APP_VERSION = "19.25.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Mario Kart doubles every podium payout so 1st now awards 520 XP and 60 coins, 2nd awards 310 XP and 36 coins, and 3rd awards 190 XP and 22 coins.",
+    "Mario Kart now detects every race finish, records placement history and podium totals, and awards strongly placement-weighted XP and coins.",
+    "Mario Kart now syncs native cup trophies and completed engine classes into ARCADIA progress, including unlocked high-CC class controls.",
+    "Mario Kart now presents an ARCADIA race result card, advances smoothly through the original standings into the next Grand Prix race, and restores black WebGL transitions in place without losing cup state.",
     "Mario Kart raises the portrait joystick and A/B pad away from Restart, fully separates the landscape A/B buttons, and moves collected items beneath the landscape action buttons for unobstructed use.",
     "Fruit Ninja now guarantees one cannon pop for every gameplay fruit launch, primes the effect on iOS from Start/Resume, and uses a stronger compressed pop mix that stays clear over the OGG soundtrack.",
     "Mario Kart now auto-advances from the gamepad screen when audio is available, shows an iOS-safe Tap to Continue audio gate only when needed, adds diagonal A/B controls with native back navigation, and makes item detection and use more reliable.",
@@ -282,7 +286,18 @@
       ninjaBombs: 0,
       kartRuns: 0,
       kartXpEarned: 0,
-      kartPlaySeconds: 0
+      kartPlaySeconds: 0,
+      kartRacesFinished: 0,
+      kartFirsts: 0,
+      kartSeconds: 0,
+      kartThirds: 0,
+      kartBestPlace: 0,
+      kartLastPlace: 0,
+      kartRaceHistory: [],
+      kartCupTrophies: {},
+      kartCompletedClasses: [],
+      kartUnlockedClasses: [50, 100],
+      kartRevolutions: 0
     },
     achievements: []
   };
@@ -1238,6 +1253,9 @@
   let casperNinjaTimer = null;
   let kartController = null;
   let kartSessionStartedAt = 0;
+  let kartRaceResultsThisSession = 0;
+  let kartResultAutoTimer = null;
+  let kartProgressHydrated = false;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
   let dashboardRewardTimer = null;
@@ -1440,10 +1458,20 @@
     kartJoystick: $("kartJoystick"),
     kartJoystickKnob: $("kartJoystickKnob"),
     kartItemBtn: $("kartItemBtn"),
+    kartClassBtn: $("kartClassBtn"),
     kartJumpBtn: $("kartJumpBtn"),
     kartBackBtn: $("kartBackBtn"),
     startKartBtn: $("startKartBtn"),
     restartKartBtn: $("restartKartBtn"),
+    kartRaceResultOverlay: $("kartRaceResultOverlay"),
+    kartRaceResultPlace: $("kartRaceResultPlace"),
+    kartRaceResultTitle: $("kartRaceResultTitle"),
+    kartRaceResultXp: $("kartRaceResultXp"),
+    kartRaceResultCoins: $("kartRaceResultCoins"),
+    kartRaceResultTrophies: $("kartRaceResultTrophies"),
+    kartRaceResultClasses: $("kartRaceResultClasses"),
+    kartRaceResultStatus: $("kartRaceResultStatus"),
+    kartRaceResultContinueBtn: $("kartRaceResultContinueBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -2592,8 +2620,9 @@
         title: "Super Mario Kart ZX",
         xp: Number(state.stats.kartXpEarned) || 0,
         runs: Number(state.stats.kartRuns) || 0,
-        best: Math.floor((Number(state.stats.kartPlaySeconds) || 0) / 60),
-        metricLabel: "Minutes"
+        best: Number(state.stats.kartFirsts) || 0,
+        metricLabel: "Wins",
+        meta: `${formatNumber(state.stats.kartRuns)} plays · Wins ${formatNumber(state.stats.kartFirsts)} · Trophies ${formatNumber(getKartTrophyCount())} · Classes ${formatKartClasses(state.stats.kartCompletedClasses)}`
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -2695,7 +2724,7 @@
         <div class="progress-game-row">
           <div>
             <strong>${escapeHtml(row.title)}</strong>
-            <small>${formatNumber(row.runs)} plays &middot; ${escapeHtml(row.metricLabel)} ${formatNumber(row.best)}</small>
+            <small>${row.meta ? escapeHtml(row.meta) : `${formatNumber(row.runs)} plays · ${escapeHtml(row.metricLabel)} ${formatNumber(row.best)}`}</small>
           </div>
           <span>${formatNumber(row.xp)} XP</span>
           <i style="--xp-width: ${pct}%"></i>
@@ -2787,7 +2816,7 @@
         title: "Super Mario Kart ZX",
         runs: Number(state.stats.kartRuns) || 0,
         xp: Number(state.stats.kartXpEarned) || 0,
-        best: Math.floor((Number(state.stats.kartPlaySeconds) || 0) / 60)
+        best: Number(state.stats.kartFirsts) || 0
       }
     ];
 
@@ -11550,6 +11579,182 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function getKartTrophyEntries(cups = state.stats.kartCupTrophies) {
+    if (!cups || typeof cups !== "object" || Array.isArray(cups)) return [];
+    return Object.entries(cups).flatMap(([cc, classCups]) => {
+      if (!classCups || typeof classCups !== "object" || Array.isArray(classCups)) return [];
+      return Object.entries(classCups).flatMap(([cup, trophy]) => {
+        const rank = Math.round(Number(trophy) || 0);
+        return rank >= 1 && rank <= 3 ? [{ key: `${cc}:${cup}`, cc: Number(cc), cup, rank }] : [];
+      });
+    });
+  }
+
+  function getKartTrophyCount(cups = state.stats.kartCupTrophies) {
+    return getKartTrophyEntries(cups).length;
+  }
+
+  function formatKartClasses(classes = state.stats.kartCompletedClasses) {
+    const values = Array.isArray(classes)
+      ? [...new Set(classes.map(Number).filter((cc) => Number.isFinite(cc) && cc >= 50))].sort((a, b) => a - b)
+      : [];
+    return values.length ? values.map((cc) => `${cc}cc`).join(" · ") : "None";
+  }
+
+  function formatKartPlace(place) {
+    const value = Math.max(1, Math.min(8, Math.round(Number(place) || 1)));
+    if (value === 1) return "1ST";
+    if (value === 2) return "2ND";
+    if (value === 3) return "3RD";
+    return `${value}TH`;
+  }
+
+  function getKartPlacementReward(place) {
+    return ({
+      1: { xp: 520, coins: 60, title: "Grand Prix Champion" },
+      2: { xp: 310, coins: 36, title: "Silver Finish" },
+      3: { xp: 190, coins: 22, title: "Bronze Finish" },
+      4: { xp: 58, coins: 7, title: "Strong Finish" },
+      5: { xp: 44, coins: 5, title: "Race Complete" },
+      6: { xp: 34, coins: 4, title: "Race Complete" },
+      7: { xp: 26, coins: 3, title: "Race Complete" },
+      8: { xp: 20, coins: 2, title: "Race Complete" }
+    })[place] || { xp: 0, coins: 0, title: "Race Complete" };
+  }
+
+  function renderKartResultProgress() {
+    if (el.kartRaceResultTrophies) {
+      el.kartRaceResultTrophies.textContent = formatNumber(getKartTrophyCount());
+    }
+    if (el.kartRaceResultClasses) {
+      el.kartRaceResultClasses.textContent = formatKartClasses();
+    }
+  }
+
+  function hideKartRaceResult() {
+    if (kartResultAutoTimer) window.clearTimeout(kartResultAutoTimer);
+    kartResultAutoTimer = null;
+    el.kartRaceResultOverlay?.classList.add("hidden");
+  }
+
+  async function continueKartAfterResult() {
+    if (kartResultAutoTimer) window.clearTimeout(kartResultAutoTimer);
+    kartResultAutoTimer = null;
+    if (el.kartRaceResultStatus) el.kartRaceResultStatus.textContent = "Loading the next Grand Prix race...";
+    if (el.kartRaceResultContinueBtn) el.kartRaceResultContinueBtn.disabled = true;
+    const advanced = await getKartController()?.advanceAfterRaceResult();
+    if (advanced) {
+      el.kartRaceResultOverlay?.classList.add("hidden");
+    } else if (el.kartRaceResultStatus) {
+      el.kartRaceResultStatus.textContent = "The race results are still loading. Tap Continue again.";
+    }
+    if (el.kartRaceResultContinueBtn) el.kartRaceResultContinueBtn.disabled = false;
+  }
+
+  function handleKartRaceResult(result = {}) {
+    if (currentScreen !== "kart") return;
+    const place = Math.round(Number(result.place) || 0);
+    if (place < 1 || place > 8) return;
+    const reward = getKartPlacementReward(place);
+    const previousBest = Number(state.stats.kartBestPlace) || 0;
+
+    kartRaceResultsThisSession += 1;
+    state.stats.kartRacesFinished = (Number(state.stats.kartRacesFinished) || 0) + 1;
+    if (place === 1) state.stats.kartFirsts = (Number(state.stats.kartFirsts) || 0) + 1;
+    if (place === 2) state.stats.kartSeconds = (Number(state.stats.kartSeconds) || 0) + 1;
+    if (place === 3) state.stats.kartThirds = (Number(state.stats.kartThirds) || 0) + 1;
+    state.stats.kartBestPlace = previousBest ? Math.min(previousBest, place) : place;
+    state.stats.kartLastPlace = place;
+    state.stats.kartRaceHistory = [
+      { place, at: Number(result.detectedAt) || Date.now() },
+      ...(Array.isArray(state.stats.kartRaceHistory) ? state.stats.kartRaceHistory : [])
+    ].slice(0, 30);
+    state.xp += reward.xp;
+    state.coins += reward.coins;
+    state.stats.kartXpEarned = (Number(state.stats.kartXpEarned) || 0) + reward.xp;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+
+    el.kartRaceResultPlace.textContent = formatKartPlace(place);
+    el.kartRaceResultTitle.textContent = reward.title;
+    el.kartRaceResultXp.textContent = `+${formatNumber(reward.xp)}`;
+    el.kartRaceResultCoins.textContent = `+${formatNumber(reward.coins)}`;
+    el.kartRaceResultStatus.textContent = "Continuing automatically in a few seconds...";
+    el.kartRaceResultContinueBtn.disabled = false;
+    renderKartResultProgress();
+    el.kartRaceResultOverlay.classList.remove("hidden");
+    showToast(
+      `${formatKartPlace(place)} Place Recorded`,
+      `+${formatNumber(reward.xp)} XP and +${formatNumber(reward.coins)} coins.`,
+      place <= 3 ? "win" : "tap",
+      3400
+    );
+
+    if (kartResultAutoTimer) window.clearTimeout(kartResultAutoTimer);
+    kartResultAutoTimer = window.setTimeout(() => void continueKartAfterResult(), 4200);
+  }
+
+  function handleKartProgress(progress) {
+    if (!progress || typeof progress !== "object") return;
+    const previousTrophies = new Map(getKartTrophyEntries().map((entry) => [entry.key, entry.rank]));
+    const previousClasses = new Set(
+      Array.isArray(state.stats.kartCompletedClasses) ? state.stats.kartCompletedClasses.map(Number) : []
+    );
+    const nextCups = progress.cups && typeof progress.cups === "object" ? clone(progress.cups) : {};
+    const nextClasses = Array.isArray(progress.completedClasses) ? progress.completedClasses.map(Number) : [];
+    const nextEntries = getKartTrophyEntries(nextCups);
+    const upgradedTrophies = nextEntries.filter((entry) => {
+      const oldRank = previousTrophies.get(entry.key) || 0;
+      return oldRank === 0 || entry.rank < oldRank;
+    });
+    const completedNow = nextClasses.filter((cc) => !previousClasses.has(cc));
+    const firstSync = !kartProgressHydrated;
+
+    state.stats.kartCupTrophies = nextCups;
+    state.stats.kartCompletedClasses = [...new Set(nextClasses)].sort((a, b) => a - b);
+    state.stats.kartUnlockedClasses = Array.isArray(progress.unlockedClasses)
+      ? [...new Set(progress.unlockedClasses.map(Number))].sort((a, b) => a - b)
+      : [50, 100];
+    state.stats.kartRevolutions = Math.max(0, Math.round(Number(progress.revolutions) || 0));
+    kartProgressHydrated = true;
+    saveState();
+    renderAll();
+    renderKartResultProgress();
+
+    if (firstSync) {
+      if (!previousTrophies.size && nextEntries.length) {
+        showToast(
+          "Kart Progress Synced",
+          `${formatNumber(nextEntries.length)} cup trophies and ${formatKartClasses(nextClasses)} classes restored.`,
+          "silent",
+          3200
+        );
+      }
+      return;
+    }
+
+    if (upgradedTrophies.length) {
+      const names = ["", "Gold", "Silver", "Bronze"];
+      const latest = upgradedTrophies[upgradedTrophies.length - 1];
+      showToast(
+        "Cup Trophy Earned",
+        `${names[latest.rank]} ${latest.cup[0].toUpperCase()}${latest.cup.slice(1)} Cup trophy at ${latest.cc}cc.`,
+        "win",
+        4200
+      );
+    }
+    if (completedNow.length) {
+      showToast(
+        "Engine Class Complete",
+        `${formatKartClasses(completedNow)} Grand Prix class completed.`,
+        "win",
+        4200
+      );
+    }
+  }
+
   function getKartController() {
     if (kartController) return kartController;
     if (typeof window.ArcadiaSMKartZX !== "function") return null;
@@ -11567,6 +11772,7 @@
       jumpButton: el.kartJumpBtn,
       backButton: el.kartBackBtn,
       itemButton: el.kartItemBtn,
+      classButton: el.kartClassBtn,
       onReady() {
         if (currentScreen !== "kart") return;
         el.kartFrame?.focus({ preventScroll: true });
@@ -11582,6 +11788,16 @@
         if (currentScreen !== "kart" || !running) return;
         showToast("Kart Audio Ready", "Music and sound effects are enabled.", "silent", 2200);
       },
+      onRaceResult(result) {
+        handleKartRaceResult(result);
+      },
+      onProgress(progress) {
+        handleKartProgress(progress);
+      },
+      onRecoveryState(recovering) {
+        if (currentScreen !== "kart" || !el.kartRaceResultStatus) return;
+        if (recovering) el.kartRaceResultStatus.textContent = "Restoring the next Grand Prix race...";
+      },
       onRecover() {
         finishKartSession(true);
         if (currentScreen !== "kart") return;
@@ -11594,6 +11810,9 @@
   function openKart() {
     currentGame = "kart";
     kartSessionStartedAt = 0;
+    kartRaceResultsThisSession = 0;
+    kartProgressHydrated = false;
+    hideKartRaceResult();
     prepareGameTheme();
     showScreen("kart");
     const controller = getKartController();
@@ -11623,9 +11842,9 @@
     state.stats.kartPlaySeconds += elapsed;
     let earned = 0;
     let coinsEarned = 0;
-    if (elapsed >= 15) {
-      earned = Math.min(48, Math.max(6, Math.floor(elapsed / 25) * 4 + 4));
-      coinsEarned = Math.min(18, Math.max(2, Math.floor(elapsed / 45) + 2));
+    if (kartRaceResultsThisSession === 0 && elapsed >= 30) {
+      earned = Math.min(24, Math.max(4, Math.floor(elapsed / 60) * 3 + 3));
+      coinsEarned = Math.min(6, Math.max(1, Math.floor(elapsed / 120) + 1));
       state.xp += earned;
       state.stats.kartXpEarned += earned;
       state.coins += coinsEarned;
@@ -11634,19 +11853,25 @@
     }
     saveState();
     if (showRewards && earned > 0) {
-      showToast("Kart Session Saved", `+${formatNumber(earned)} XP and +${formatNumber(coinsEarned)} coins for ${elapsed} seconds of racing.`, "win", 3600);
+      showToast("Kart Practice Saved", `+${formatNumber(earned)} XP and +${formatNumber(coinsEarned)} coins for ${elapsed} seconds of practice.`, "win", 3600);
     }
   }
 
   function restartKart() {
     finishKartSession(true);
     kartSessionStartedAt = 0;
+    kartRaceResultsThisSession = 0;
+    kartProgressHydrated = false;
+    hideKartRaceResult();
     getKartController()?.restart(APP_VERSION);
   }
 
   function stopKart(recordSession = true) {
     if (recordSession) finishKartSession(true);
     else kartSessionStartedAt = 0;
+    kartRaceResultsThisSession = 0;
+    kartProgressHydrated = false;
+    hideKartRaceResult();
     kartController?.stop();
   }
 
@@ -12144,6 +12369,7 @@
     el.kartPauseBtn.addEventListener("click", toggleKartPause);
     el.startKartBtn.addEventListener("click", startKart);
     el.restartKartBtn.addEventListener("click", restartKart);
+    el.kartRaceResultContinueBtn.addEventListener("click", () => void continueKartAfterResult());
     el.ninjaCanvas.addEventListener("pointerdown", (event) => {
       if (!ninja.running || ninja.paused || casperHasGameplayControl("ninja")) return;
       event.preventDefault();

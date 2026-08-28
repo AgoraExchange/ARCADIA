@@ -225,6 +225,8 @@
       let arcadiaSawLitFrame = false;
       let arcadiaBlackSince = 0;
       let arcadiaBlackRecoveryIssued = false;
+      let arcadiaRendererRecoveryAttempts = 0;
+      let arcadiaRendererRecoveryInFlight = false;
 
       if (arcadiaNativeAudioContext) {
         const ArcadiaTrackedAudioContext = function (...options) {
@@ -306,6 +308,48 @@
           .catch(() => false);
       }
 
+      window.arcadiaSMKReadProgress = function () {
+        try {
+          if (typeof C !== "function" || !A || typeof A.jl !== "function") return "";
+          const node = C("/_savedata/smk_save")?.node;
+          if (!node) return "";
+          const bytes = A.jl(node);
+          return bytes ? new TextDecoder().decode(bytes) : "";
+        } catch {
+          return "";
+        }
+      };
+
+      window.arcadiaSMKRecoverRenderer = function () {
+        if (arcadiaRendererRecoveryInFlight || arcadiaRendererRecoveryAttempts >= 2) return false;
+        const source = document.getElementById("canvas");
+        if (!source) return false;
+        try {
+          const context = source.getContext("webgl2") || source.getContext("webgl");
+          const extension = context?.getExtension("WEBGL_lose_context");
+          if (!extension) return false;
+          arcadiaRendererRecoveryAttempts += 1;
+          arcadiaRendererRecoveryInFlight = true;
+          arcadiaPost("renderer-recovery", { attempt: arcadiaRendererRecoveryAttempts });
+          ensureAspectRatio();
+          window.dispatchEvent(new Event("resize"));
+          extension.loseContext();
+          window.setTimeout(() => {
+            try {
+              extension.restoreContext();
+              ensureAspectRatio();
+              window.dispatchEvent(new Event("resize"));
+            } catch {}
+            arcadiaRendererRecoveryInFlight = false;
+            arcadiaBlackSince = performance.now();
+          }, 220);
+          return true;
+        } catch {
+          arcadiaRendererRecoveryInFlight = false;
+          return false;
+        }
+      };
+
       function arcadiaSampleFrameHealth() {
         const source = document.getElementById("canvas");
         if (!document.body.classList.contains("game-ready") || !source?.width || !source?.height) return;
@@ -326,14 +370,23 @@
           const average = brightness / (pixels.length / 4) / 3;
           const hasVisibleFrame = litPixels >= 8 || average >= 1.5;
           if (hasVisibleFrame) {
+            const recoveredAttempts = arcadiaRendererRecoveryAttempts;
             arcadiaSawLitFrame = true;
             arcadiaBlackSince = 0;
             arcadiaBlackRecoveryIssued = false;
+            arcadiaRendererRecoveryInFlight = false;
+            arcadiaRendererRecoveryAttempts = 0;
+            if (recoveredAttempts > 0) arcadiaPost("renderer-recovered", { attempts: recoveredAttempts });
             return;
           }
           if (!arcadiaSawLitFrame || arcadiaBlackRecoveryIssued) return;
           if (!arcadiaBlackSince) arcadiaBlackSince = performance.now();
-          if (performance.now() - arcadiaBlackSince < 7000) return;
+          if (arcadiaRendererRecoveryInFlight) return;
+          const blackDuration = performance.now() - arcadiaBlackSince;
+          if (blackDuration < 2600) return;
+          if (arcadiaRendererRecoveryAttempts < 2 && window.arcadiaSMKRecoverRenderer()) return;
+          if (arcadiaRendererRecoveryAttempts > 0 && blackDuration < 5200) return;
+          if (arcadiaRendererRecoveryAttempts === 0 && blackDuration < 7000) return;
           arcadiaBlackRecoveryIssued = true;
           arcadiaPost("black-screen");
           if (window.parent === window) window.setTimeout(() => window.location.reload(), 120);

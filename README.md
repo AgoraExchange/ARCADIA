@@ -1,5 +1,7 @@
 # ARCADIA
 
+- Version 19.25.1.0 doubles Mario Kart's top-three race rewards: 520 XP/60 coins for 1st, 310 XP/36 coins for 2nd, and 190 XP/22 coins for 3rd.
+- Version 19.25.0.0 adds Mario Kart race-place rewards and history, native cup trophy/class tracking, an ARCADIA results card, automatic next-race continuation, and in-place black-transition recovery that preserves Grand Prix state.
 - Version 19.24.2.0 raises Mario Kart's portrait controls away from Restart, separates landscape A/B buttons, and places the landscape item slot directly beneath them.
 - Version 19.24.1.0 guarantees a louder compressed cannon pop for every Fruit Ninja gameplay launch, primes the effect from trusted iOS Start/Resume gestures, and balances it clearly above the OGG soundtrack.
 - Version 19.24.0.0 adds Mario Kart's conditional Tap to Continue audio gate, automatic title advance when sound is ready, diagonal A/B mobile controls, native back/cancel navigation, debounced item detection, and reliable one-press item use.

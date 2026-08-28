@@ -4360,6 +4360,7 @@ input:focus {
 }
 
 .kart-stage {
+  position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto auto auto;
   gap: 14px;
@@ -4369,6 +4370,102 @@ input:focus {
     radial-gradient(circle at 50% 0%, rgba(255, 67, 43, 0.14), transparent 34%),
     radial-gradient(circle at 18% 85%, rgba(73, 244, 255, 0.11), transparent 30%),
     rgba(8, 5, 18, 0.72);
+}
+
+.kart-race-result-overlay {
+  position: absolute;
+  z-index: 12;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 211, 90, 0.24), transparent 34%),
+    rgba(3, 2, 10, 0.76);
+  backdrop-filter: blur(4px);
+  animation: kartRaceResultReveal 0.34s ease both;
+}
+
+.kart-race-result-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(430px, 100%);
+  padding: clamp(18px, 4vw, 28px);
+  border: 1px solid rgba(255, 230, 99, 0.72);
+  border-radius: 26px;
+  color: white;
+  background:
+    linear-gradient(145deg, rgba(84, 24, 80, 0.97), rgba(19, 9, 47, 0.98) 58%, rgba(4, 24, 42, 0.98));
+  box-shadow:
+    inset 0 0 34px rgba(255, 255, 255, 0.06),
+    0 22px 60px rgba(0, 0, 0, 0.58),
+    0 0 34px rgba(255, 211, 90, 0.24);
+  text-align: center;
+}
+
+.kart-race-result-card .system-line {
+  margin: 0;
+  color: #ffe767;
+}
+
+.kart-race-result-place {
+  color: #fff5a5;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 11vw, 5.2rem);
+  line-height: 0.9;
+  text-shadow:
+    0 4px 0 #a43a1b,
+    0 0 26px rgba(255, 225, 79, 0.72);
+}
+
+.kart-race-result-card h2 {
+  margin: 0;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+}
+
+.kart-race-reward-line,
+.kart-race-progress-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.kart-race-reward-line span,
+.kart-race-progress-line span {
+  min-width: 120px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  font-family: var(--font-numbers);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+.kart-race-reward-line b {
+  color: #76f7ff;
+}
+
+.kart-race-progress-line b {
+  color: #ffe767;
+}
+
+.kart-race-result-card > p:last-of-type {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+}
+
+.kart-race-result-card .arcade-btn {
+  width: min(260px, 100%);
+}
+
+@keyframes kartRaceResultReveal {
+  from { opacity: 0; transform: scale(1.025); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .kart-port-shell {
@@ -4604,6 +4701,23 @@ input:focus {
   animation: kartItemReady 0.72s ease-in-out infinite alternate;
 }
 
+.kart-class-button {
+  color: white;
+  border-color: rgba(119, 246, 255, 0.82);
+  background:
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.6), transparent 20%),
+    linear-gradient(145deg, #37e7ee, #4960db 58%, #602080);
+  box-shadow:
+    inset 0 0 12px rgba(255, 255, 255, 0.25),
+    0 7px 0 #26124f,
+    0 12px 20px rgba(0, 0, 0, 0.3),
+    0 0 25px rgba(73, 244, 255, 0.38);
+}
+
+.kart-class-button span {
+  font-size: 0.88rem;
+}
+
 .kart-item-slot span {
   font-family: var(--font-display);
   font-size: 1.45rem;
@@ -4734,6 +4848,37 @@ input:focus {
     min-height: 0;
     padding: 6px;
     border-radius: 22px 22px 0 0;
+  }
+
+  .kart-race-result-overlay {
+    padding: 7px;
+  }
+
+  .kart-race-result-card {
+    gap: 5px;
+    width: min(390px, 58vw);
+    padding: 10px 16px;
+    border-radius: 18px;
+  }
+
+  .kart-race-result-place {
+    font-size: clamp(2rem, 9vh, 3rem);
+  }
+
+  .kart-race-reward-line span,
+  .kart-race-progress-line span {
+    min-width: 104px;
+    padding: 5px 8px;
+    font-size: 0.62rem;
+  }
+
+  .kart-race-result-card > p:last-of-type {
+    font-size: 0.68rem;
+  }
+
+  .kart-race-result-card .arcade-btn {
+    min-height: 32px;
+    padding: 6px 10px;
   }
 
   .kart-port-shell {

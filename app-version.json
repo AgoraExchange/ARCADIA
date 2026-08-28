@@ -1,6 +1,10 @@
 {
-  "version": "19.24.2.0",
+  "version": "19.25.1.0",
   "patchNotes": [
+    "Mario Kart doubles every podium payout so 1st now awards 520 XP and 60 coins, 2nd awards 310 XP and 36 coins, and 3rd awards 190 XP and 22 coins.",
+    "Mario Kart now detects every race finish, records placement history and podium totals, and awards strongly placement-weighted XP and coins.",
+    "Mario Kart now syncs native cup trophies and completed engine classes into ARCADIA progress, including unlocked high-CC class controls.",
+    "Mario Kart now presents an ARCADIA race result card, advances smoothly through the original standings into the next Grand Prix race, and restores black WebGL transitions in place without losing cup state.",
     "Mario Kart raises the portrait joystick and A/B pad away from Restart, fully separates the landscape A/B buttons, and moves collected items beneath the landscape action buttons for unobstructed use.",
     "Fruit Ninja now guarantees one cannon pop for every gameplay fruit launch, primes the effect on iOS from Start/Resume, and uses a stronger compressed pop mix that stays clear over the OGG soundtrack.",
     "Mario Kart now auto-advances from the gamepad screen when audio is available, shows an iOS-safe Tap to Continue audio gate only when needed, adds diagonal A/B controls with native back navigation, and makes item detection and use more reliable.",
