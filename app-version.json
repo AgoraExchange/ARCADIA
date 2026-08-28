@@ -1,6 +1,8 @@
 {
-  "version": "19.23.0.0",
+  "version": "19.24.1.0",
   "patchNotes": [
+    "Fruit Ninja now guarantees one cannon pop for every gameplay fruit launch, primes the effect on iOS from Start/Resume, and uses a stronger compressed pop mix that stays clear over the OGG soundtrack.",
+    "Mario Kart now auto-advances from the gamepad screen when audio is available, shows an iOS-safe Tap to Continue audio gate only when needed, adds diagonal A/B controls with native back navigation, and makes item detection and use more reliable.",
     "Mario Kart now captures and unlocks the port's real GameMaker audio engine from Start Game and every touch control, including iOS installed PWAs, while caching the complete game runtime for reliable loading.",
     "Mario Kart restores immediate held steering so small left and right joystick movements turn responsively again instead of using delayed steering pulses.",
     "Mario Kart now keeps joystick-up as menu navigation until the race HUD appears, then maps up to acceleration and down to native brake/reverse so wall crashes are recoverable.",

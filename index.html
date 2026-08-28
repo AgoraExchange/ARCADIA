@@ -530,6 +530,12 @@
               <strong id="kartLoadingText">Loading Super Mario Kart ZX...</strong>
             </div>
 
+            <button id="kartContinueBtn" class="kart-continue-button hidden" type="button">
+              <span aria-hidden="true">♪</span>
+              <strong>Tap to Continue</strong>
+              <small>ENABLE GAME AUDIO</small>
+            </button>
+
           </div>
 
           <div id="kartControls" class="kart-controls" aria-label="Super Mario Kart ZX touch controls">
@@ -541,10 +547,16 @@
               <span>?</span>
               <small>ITEM</small>
             </button>
-            <button id="kartJumpBtn" class="kart-jump-button" type="button" aria-label="Jump or select">
-              <strong>A</strong>
-              <small>JUMP</small>
-            </button>
+            <div class="kart-action-buttons" aria-label="Mario Kart A and B buttons">
+              <button id="kartBackBtn" class="kart-game-button kart-back-button" type="button" aria-label="Go back or cancel">
+                <strong>B</strong>
+                <small>BACK</small>
+              </button>
+              <button id="kartJumpBtn" class="kart-game-button kart-jump-button" type="button" aria-label="Jump or select">
+                <strong>A</strong>
+                <small>JUMP</small>
+              </button>
+            </div>
           </div>
 
           <div class="game-actions kart-actions">
@@ -552,7 +564,7 @@
             <button id="restartKartBtn" class="arcade-btn secondary hidden" type="button">Restart</button>
           </div>
 
-          <p class="hint kart-hint">Touch: joystick up drives, down brakes/reverses, and left/right steer; use A to select or jump. Desktop: Arrow keys navigate, X accelerates/selects, C jumps, S uses items, Z brakes/goes back, and Enter pauses.</p>
+          <p class="hint kart-hint">Touch: joystick up drives, down brakes/reverses, and left/right steer; A selects/jumps and B goes back/cancels. Desktop: Arrow keys navigate, X accelerates/selects, C jumps, S uses items, Z brakes/goes back, and Enter pauses.</p>
         </section>
       </main>
     </section>
@@ -617,7 +629,7 @@
           <button id="closeDeveloperBtn" class="arcade-btn secondary" type="button">Close</button>
           <button id="openBackdoorBtn" class="arcade-btn secondary backdoor-btn" type="button">Operator Gate</button>
         </div>
-        <p id="appVersionText" class="app-version-text">Version 19.23.0.0</p>
+        <p id="appVersionText" class="app-version-text">Version 19.24.1.0</p>
       </div>
     </div>
 

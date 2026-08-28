@@ -487,6 +487,13 @@
       };
     }
 
+    launchGameplayEntity(kind, x, y, overrides = {}, details = {}) {
+      const entity = this.createEntity(kind, x, y, overrides);
+      this.entities.push(entity);
+      this.callbacks.onLaunch?.(kind, details);
+      return entity;
+    }
+
     spawnPreviewFruit() {
       const kind = FRUIT_NAMES[this.previewIndex % FRUIT_NAMES.length];
       this.previewIndex += 1;
@@ -511,12 +518,11 @@
         const laneWidth = (this.canvas.width - 120) / count;
         const x = 60 + laneWidth * index + random(18, Math.max(24, laneWidth - 18));
         const centerPull = (this.canvas.width / 2 - x) * random(0.18, 0.34);
-        this.entities.push(this.createEntity(kind, x, this.canvas.height + 80 + index * 12, {
+        this.launchGameplayEntity(kind, x, this.canvas.height + 80 + index * 12, {
           vx: centerPull + random(-70, 70),
           vy: random(-930, -790) - Math.min(90, this.elapsed * 1.2),
           vz: random(-45, 85)
-        }));
-        this.callbacks.onLaunch?.(kind, { waveIndex: index, minuteVolley: false });
+        }, { waveIndex: index, minuteVolley: false });
       }
       this.spawnIn = clamp(0.94 - this.elapsed * 0.009, 0.28, 0.94) + random(-0.07, 0.11);
     }
@@ -527,12 +533,11 @@
       const x = lanes[launchIndex] + random(-17, 17);
       const kind = choose(FRUIT_NAMES);
       const centerPull = (this.canvas.width / 2 - x) * random(0.2, 0.32);
-      this.entities.push(this.createEntity(kind, x, this.canvas.height + 82, {
+      this.launchGameplayEntity(kind, x, this.canvas.height + 82, {
         vx: centerPull + random(-48, 48),
         vy: random(-990, -895) - Math.min(105, this.elapsed * 0.9),
         vz: random(-35, 90)
-      }));
-      this.callbacks.onLaunch?.(kind, { waveIndex: launchIndex, minuteVolley: true });
+      }, { waveIndex: launchIndex, minuteVolley: true });
       this.minuteVolleyRemaining -= 1;
       this.minuteVolleyIn = this.minuteVolleyRemaining > 0 ? 0.13 : 0;
       if (this.minuteVolleyRemaining <= 0) {
@@ -553,13 +558,12 @@
 
       const x = random(105, this.canvas.width - 105);
       const centerPull = (this.canvas.width / 2 - x) * random(0.22, 0.34);
-      this.entities.push(this.createEntity("banana", x, this.canvas.height + 84, {
+      this.launchGameplayEntity("banana", x, this.canvas.height + 84, {
         vx: centerPull + random(-48, 48),
         vy: random(-985, -895) - Math.min(100, this.elapsed),
         vz: random(25, 105),
         powerUp: "slow"
-      }));
-      this.callbacks.onLaunch?.("banana", { waveIndex: 0, minuteVolley: false, powerUp: "slow" });
+      }, { waveIndex: 0, minuteVolley: false, powerUp: "slow" });
       this.callbacks.onPowerUpSpawn?.("slow");
       this.spawnIn = Math.max(this.spawnIn, 0.5);
       this.nextSlowNanaAt = this.elapsed + random(55, 78);

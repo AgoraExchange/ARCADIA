@@ -3,10 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.23.0.0";
+  const APP_VERSION = "19.24.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const PATCH_NOTES = [
+    "Fruit Ninja now guarantees one cannon pop for every gameplay fruit launch, primes the effect on iOS from Start/Resume, and uses a stronger compressed pop mix that stays clear over the OGG soundtrack.",
+    "Mario Kart now auto-advances from the gamepad screen when audio is available, shows an iOS-safe Tap to Continue audio gate only when needed, adds diagonal A/B controls with native back navigation, and makes item detection and use more reliable.",
     "Mario Kart now captures and unlocks the port's real GameMaker audio engine from Start Game and every touch control, including iOS installed PWAs, while caching the complete game runtime for reliable loading.",
     "Mario Kart restores immediate held steering so small left and right joystick movements turn responsively again instead of using delayed steering pulses.",
     "Mario Kart now keeps joystick-up as menu navigation until the race HUD appears, then maps up to acceleration and down to native brake/reverse so wall crashes are recoverable.",
@@ -173,6 +175,7 @@
   const BLOCK_GRAB_SFX = "assets/audio/sfx/block-grid/grab.mp3";
   const BLOCK_PLACE_SFX = "assets/audio/sfx/block-grid/place.mp3";
   const FRUIT_NINJA_CUT_SFX = "assets/audio/sfx/fruit-ninja/cut.wav";
+  const FRUIT_NINJA_MUSIC_VOLUME = 0.48;
   const THEME_SONGS = {
     lobby: [
       "assets/themesong/lobby/lobby1.mp3",
@@ -1201,6 +1204,7 @@
 
   let state = loadState();
   let audioCtx = null;
+  let ninjaCannonBus = null;
   let currentScreen = "boot";
   let currentGame = "";
   let snakeTimer = null;
@@ -1430,11 +1434,13 @@
     kartFrame: $("kartFrame"),
     kartLoading: $("kartLoading"),
     kartLoadingText: $("kartLoadingText"),
+    kartContinueBtn: $("kartContinueBtn"),
     kartControls: $("kartControls"),
     kartJoystick: $("kartJoystick"),
     kartJoystickKnob: $("kartJoystickKnob"),
     kartItemBtn: $("kartItemBtn"),
     kartJumpBtn: $("kartJumpBtn"),
+    kartBackBtn: $("kartBackBtn"),
     startKartBtn: $("startKartBtn"),
     restartKartBtn: $("restartKartBtn"),
     toastStack: $("toastStack"),
@@ -2161,7 +2167,7 @@
     if (currentScreen === "crossy" && crossy.running) playGameTheme("crossy", { volume: 0.4 });
     if (currentScreen === "solitaire" && solitaire.running) playGameTheme("solitaire", { volume: 0.52 });
     if (currentScreen === "fruit" && fruit.running) playGameTheme("fruit", { playlist: true, volume: 0.5 });
-    if (currentScreen === "ninja" && ninja.running) playGameTheme("ninja", { volume: 0.56 });
+    if (currentScreen === "ninja" && ninja.running) playGameTheme("ninja", { volume: FRUIT_NINJA_MUSIC_VOLUME });
     if (currentScreen === "star" && star.running) {
       const bossOnScreen = star.enemies.some((enemy) => enemy.type === "boss" && !enemy.dead);
       playStarTheme(bossOnScreen ? "boss" : "normal");
@@ -2172,7 +2178,10 @@
     state.muteSfx = !state.muteSfx;
     saveState();
     updateAudioToggleButtons();
-    if (!state.muteSfx) playTone("win");
+    if (!state.muteSfx) {
+      if (currentScreen === "ninja" && ninja.running) primeNinjaCannonAudio();
+      playTone("win");
+    }
     showToast("Sound FX", state.muteSfx ? "Sound effects muted." : "Sound effects enabled.", "silent", 3000);
   }
 
@@ -11258,6 +11267,7 @@
   }
 
   function startNinja() {
+    primeNinjaCannonAudio();
     stopNinja(false);
     el.gameOverModal.classList.add("hidden");
     ninja = createNinjaState();
@@ -11265,7 +11275,7 @@
     ninja.runStartedAt = Date.now();
     currentGame = "ninja";
     getNinjaEngine().start();
-    playGameTheme("ninja", { restart: true, volume: 0.56 });
+    playGameTheme("ninja", { restart: true, volume: FRUIT_NINJA_MUSIC_VOLUME });
     prepareCasperRun("ninja");
     if (state.devModeEnabled && state.casperEnabled) {
       casperNinjaTimer = setInterval(() => getNinjaEngine().autoSlice(), 145);
@@ -11302,6 +11312,7 @@
 
   function toggleNinjaPause() {
     if (!ninja.running || getNinjaEngine().mode === "exploding") return;
+    primeNinjaCannonAudio();
     ninja.paused = getNinjaEngine().togglePause();
     renderNinjaStats();
   }
@@ -11325,25 +11336,80 @@
     setTimeout(() => playToneAt(38, 0.58, "sawtooth", 0.08), 130);
   }
 
+  function getNinjaCannonBus() {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (ninjaCannonBus?.context === audioCtx) return ninjaCannonBus.input;
+    const input = audioCtx.createGain();
+    const compressor = audioCtx.createDynamicsCompressor();
+    input.gain.value = 1.16;
+    compressor.threshold.value = -18;
+    compressor.knee.value = 14;
+    compressor.ratio.value = 6;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.14;
+    input.connect(compressor);
+    compressor.connect(audioCtx.destination);
+    ninjaCannonBus = { context: audioCtx, input, compressor };
+    return input;
+  }
+
+  function primeNinjaCannonAudio() {
+    if (state.muteSfx) return false;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      getNinjaCannonBus();
+      if (audioCtx.state !== "running") audioCtx.resume().catch(() => {});
+      const source = audioCtx.createBufferSource();
+      const gain = audioCtx.createGain();
+      source.buffer = audioCtx.createBuffer(1, 1, Math.max(8_000, audioCtx.sampleRate || 22_050));
+      gain.gain.value = 0;
+      source.connect(gain);
+      gain.connect(audioCtx.destination);
+      source.start(0);
+      source.onended = () => {
+        try {
+          source.disconnect();
+          gain.disconnect();
+        } catch {}
+      };
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function playNinjaCannonPop(delay = 0, isMinuteVolley = false) {
     if (state.muteSfx) return;
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+      if (audioCtx.state !== "running") audioCtx.resume().catch(() => {});
+      const output = getNinjaCannonBus();
       const startAt = audioCtx.currentTime + Math.max(0, delay);
-      const duration = isMinuteVolley ? 0.13 : 0.105;
+      const duration = isMinuteVolley ? 0.145 : 0.12;
       const thump = audioCtx.createOscillator();
       const thumpGain = audioCtx.createGain();
       thump.type = "sine";
-      thump.frequency.setValueAtTime(isMinuteVolley ? 185 : 165, startAt);
-      thump.frequency.exponentialRampToValueAtTime(62, startAt + duration);
+      thump.frequency.setValueAtTime(isMinuteVolley ? 205 : 188, startAt);
+      thump.frequency.exponentialRampToValueAtTime(58, startAt + duration);
       thumpGain.gain.setValueAtTime(0.001, startAt);
-      thumpGain.gain.exponentialRampToValueAtTime(isMinuteVolley ? 0.13 : 0.105, startAt + 0.006);
+      thumpGain.gain.exponentialRampToValueAtTime(isMinuteVolley ? 0.21 : 0.18, startAt + 0.006);
       thumpGain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
       thump.connect(thumpGain);
-      thumpGain.connect(audioCtx.destination);
+      thumpGain.connect(output);
       thump.start(startAt);
       thump.stop(startAt + duration + 0.02);
+
+      const crack = audioCtx.createOscillator();
+      const crackGain = audioCtx.createGain();
+      crack.type = "triangle";
+      crack.frequency.setValueAtTime(isMinuteVolley ? 620 : 560, startAt);
+      crack.frequency.exponentialRampToValueAtTime(115, startAt + 0.062);
+      crackGain.gain.setValueAtTime(isMinuteVolley ? 0.105 : 0.09, startAt);
+      crackGain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.068);
+      crack.connect(crackGain);
+      crackGain.connect(output);
+      crack.start(startAt);
+      crack.stop(startAt + 0.08);
 
       const noiseFrames = Math.max(1, Math.round(audioCtx.sampleRate * duration));
       const noiseBuffer = audioCtx.createBuffer(1, noiseFrames, audioCtx.sampleRate);
@@ -11357,13 +11423,13 @@
       const burstGain = audioCtx.createGain();
       burst.buffer = noiseBuffer;
       filter.type = "bandpass";
-      filter.frequency.setValueAtTime(isMinuteVolley ? 720 : 620, startAt);
-      filter.Q.value = 0.72;
-      burstGain.gain.setValueAtTime(isMinuteVolley ? 0.085 : 0.065, startAt);
+      filter.frequency.setValueAtTime(isMinuteVolley ? 860 : 760, startAt);
+      filter.Q.value = 0.78;
+      burstGain.gain.setValueAtTime(isMinuteVolley ? 0.14 : 0.115, startAt);
       burstGain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
       burst.connect(filter);
       filter.connect(burstGain);
-      burstGain.connect(audioCtx.destination);
+      burstGain.connect(output);
       burst.start(startAt);
     } catch {
       playToneAt(150, 0.08, "sine", 0.075);
@@ -11490,6 +11556,7 @@
       frame: el.kartFrame,
       loading: el.kartLoading,
       loadingText: el.kartLoadingText,
+      continueButton: el.kartContinueBtn,
       startButton: el.startKartBtn,
       restartButton: el.restartKartBtn,
       pauseButton: el.kartPauseBtn,
@@ -11497,6 +11564,7 @@
       joystick: el.kartJoystick,
       joystickKnob: el.kartJoystickKnob,
       jumpButton: el.kartJumpBtn,
+      backButton: el.kartBackBtn,
       itemButton: el.kartItemBtn,
       onReady() {
         if (currentScreen !== "kart") return;

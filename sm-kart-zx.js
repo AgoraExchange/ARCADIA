@@ -6,6 +6,9 @@
   const DRIVE_DEAD_ZONE = 0.24;
   const STEER_DEAD_ZONE = 0.18;
   const RACE_STATE_SAMPLE_PERIOD = 320;
+  const ITEM_READY_CONFIRM_SAMPLES = 4;
+  const ITEM_USE_PULSE = 190;
+  const ITEM_USE_COOLDOWN = 900;
   const TITLE_REVEAL_DELAY = 1550;
   const INTRO_ADVANCE_DELAY = 4600;
   const LOAD_TIMEOUT = 45_000;
@@ -15,6 +18,7 @@
       this.frame = options.frame;
       this.loading = options.loading;
       this.loadingText = options.loadingText;
+      this.continueButton = options.continueButton;
       this.startButton = options.startButton;
       this.restartButton = options.restartButton;
       this.pauseButton = options.pauseButton;
@@ -22,6 +26,7 @@
       this.joystick = options.joystick;
       this.joystickKnob = options.joystickKnob;
       this.jumpButton = options.jumpButton;
+      this.backButton = options.backButton;
       this.itemButton = options.itemButton;
       this.onReady = options.onReady || (() => {});
       this.onTitleReady = options.onTitleReady || (() => {});
@@ -43,6 +48,9 @@
       this.inputState = new Map();
       this.introTimer = null;
       this.titleTimer = null;
+      this.itemPressTimer = null;
+      this.introGateOpen = false;
+      this.advancingToTitle = false;
       this.raceStateTimer = null;
       this.raceActive = false;
       this.raceLitSamples = 0;
@@ -52,6 +60,8 @@
       this.itemSampleTimer = null;
       this.itemBaseline = null;
       this.itemQuietSamples = 0;
+      this.itemCandidateSamples = 0;
+      this.itemUseCooldownUntil = 0;
       this.loadSequence = 0;
       this.version = "1";
       this.boundMessage = (event) => this.handleMessage(event);
@@ -100,22 +110,37 @@
         this.tap("jump", 92);
       });
 
+      this.backButton?.addEventListener("pointerdown", (event) => {
+        if (!this.started) return;
+        event.preventDefault();
+        this.resumeAudio();
+        this.tap("back", 130);
+      });
+
       this.itemButton?.addEventListener("pointerdown", (event) => {
         if (!this.started || !this.itemReady) return;
         event.preventDefault();
         this.resumeAudio();
-        this.setInput("item", true);
+        this.tap("item", ITEM_USE_PULSE);
         this.itemButton.classList.add("is-pressed");
+        window.clearTimeout(this.itemPressTimer);
+        this.itemPressTimer = window.setTimeout(() => {
+          this.itemPressTimer = null;
+          this.itemButton?.classList.remove("is-pressed");
+        }, ITEM_USE_PULSE);
+        this.itemUseCooldownUntil = performance.now() + ITEM_USE_COOLDOWN;
+        this.itemBaseline = null;
+        this.itemQuietSamples = 0;
+        this.itemCandidateSamples = 0;
+        this.setItemReady(false);
       });
-      const releaseItem = (event) => {
-        if (!this.inputState.get("item")) return;
-        event?.preventDefault?.();
-        this.setInput("item", false);
-        this.itemButton?.classList.remove("is-pressed");
-      };
-      this.itemButton?.addEventListener("pointerup", releaseItem);
-      this.itemButton?.addEventListener("pointercancel", releaseItem);
-      this.itemButton?.addEventListener("pointerleave", releaseItem);
+
+      this.continueButton?.addEventListener("pointerdown", () => {
+        if (!this.ready || this.titleReady) return;
+        this.continueButton.classList.add("is-activating");
+        this.resumeAudio();
+      });
+      this.continueButton?.addEventListener("click", () => this.continueToTitle());
 
       this.startButton?.addEventListener("pointerdown", () => {
         if (this.ready) this.resumeAudio();
@@ -132,14 +157,20 @@
       this.titleReady = false;
       this.started = false;
       this.paused = false;
+      this.introGateOpen = false;
+      this.advancingToTitle = false;
       this.audioRunning = false;
       this.audioContextCount = 0;
       this.raceActive = false;
       this.raceLitSamples = 0;
       this.raceQuietSamples = 0;
       this.itemBaseline = null;
+      this.itemQuietSamples = 0;
+      this.itemCandidateSamples = 0;
+      this.itemUseCooldownUntil = 0;
       this.setItemReady(false);
       this.setLoading(true, "Loading Super Mario Kart ZX...");
+      this.showContinuePrompt(false);
       this.controls?.classList.remove("is-active");
       this.startButton?.classList.add("hidden");
       this.restartButton?.classList.add("hidden");
@@ -176,13 +207,19 @@
       this.titleReady = false;
       this.started = false;
       this.paused = false;
+      this.introGateOpen = false;
+      this.advancingToTitle = false;
       this.audioRunning = false;
       this.audioContextCount = 0;
       this.raceActive = false;
       this.raceLitSamples = 0;
       this.raceQuietSamples = 0;
       this.itemBaseline = null;
+      this.itemQuietSamples = 0;
+      this.itemCandidateSamples = 0;
+      this.itemUseCooldownUntil = 0;
       this.setItemReady(false);
+      this.showContinuePrompt(false);
       this.controls?.classList.remove("is-active");
       if (this.frame) this.frame.src = "about:blank";
     }
@@ -206,6 +243,9 @@
       const wasRunning = this.audioRunning;
       this.audioRunning = Boolean(data.running);
       this.audioContextCount = Math.max(0, Number(data.contexts) || 0);
+      if (this.audioRunning && this.ready && this.introGateOpen && !this.titleReady) {
+        this.advanceToTitle();
+      }
       if (wasRunning !== this.audioRunning) {
         this.onAudioState(this.audioRunning, {
           contexts: this.audioContextCount,
@@ -225,6 +265,7 @@
       window.clearTimeout(this.loadTimeoutTimer);
       this.loadTimeoutTimer = null;
       this.loadFailed = true;
+      this.showContinuePrompt(false);
       const message = /wasm|runner\.data|game\.unx|network|fetch|abort/i.test(text)
         ? "Mario Kart could not download its game files. Check your connection, then tap Restart."
         : "Mario Kart hit a loading error. Tap Restart to try again.";
@@ -242,21 +283,46 @@
       this.onReady();
       this.introTimer = window.setTimeout(() => {
         if (!this.ready || this.titleReady) return;
-        this.advanceToTitle();
+        this.introGateOpen = true;
+        if (this.audioRunning) this.advanceToTitle();
+        else this.showContinuePrompt(true);
       }, INTRO_ADVANCE_DELAY);
     }
 
     async advanceToTitle() {
-      if (!this.ready) return;
-      await this.resumeAudio();
+      if (!this.ready || this.titleReady || this.advancingToTitle) return false;
+      this.advancingToTitle = true;
+      window.clearTimeout(this.introTimer);
+      this.introTimer = null;
+      const audioReady = await this.resumeAudio();
+      if (!audioReady) {
+        this.advancingToTitle = false;
+        this.showContinuePrompt(true);
+        return false;
+      }
+      this.showContinuePrompt(false);
       this.tap("start", 110);
       window.clearTimeout(this.titleTimer);
       this.titleTimer = window.setTimeout(() => {
         this.titleReady = true;
+        this.advancingToTitle = false;
         this.startButton?.classList.remove("hidden");
         this.restartButton?.classList.remove("hidden");
         this.onTitleReady();
       }, TITLE_REVEAL_DELAY);
+      return true;
+    }
+
+    async continueToTitle() {
+      if (!this.ready || this.titleReady) return false;
+      this.introGateOpen = true;
+      const audioReady = await this.resumeAudio();
+      this.continueButton?.classList.remove("is-activating");
+      if (!audioReady) {
+        this.showContinuePrompt(true, "Tap Again for Sound");
+        return false;
+      }
+      return this.advanceToTitle();
     }
 
     async start() {
@@ -411,9 +477,14 @@
       const next = Boolean(active);
       if (this.raceActive === next) return;
       this.raceActive = next;
-      if (!next) {
+      if (next) {
+        this.scheduleItemDetector();
+      } else {
         this.setInput("accelerate", false);
         this.setInput("back", false);
+        this.itemBaseline = null;
+        this.itemQuietSamples = 0;
+        this.itemCandidateSamples = 0;
         this.setItemReady(false);
       }
       this.applyJoystickInput();
@@ -463,16 +534,20 @@
 
     detectItemState() {
       if (!this.started) return;
+      if (performance.now() < this.itemUseCooldownUntil) return;
       const current = this.sampleItemHud();
       if (!current?.hasHolder) {
         this.itemBaseline = null;
         this.itemQuietSamples = 0;
+        this.itemCandidateSamples = 0;
         this.setItemReady(false);
         return;
       }
+      if (this.itemReady) return;
       if (!this.itemBaseline) {
         this.itemBaseline = new Uint8ClampedArray(current.pixels);
         this.itemQuietSamples = 0;
+        this.itemCandidateSamples = 0;
         this.setItemReady(false);
         return;
       }
@@ -490,10 +565,17 @@
       difference /= comparedChannels;
       if (difference > 14) {
         this.itemQuietSamples = 0;
-        this.setItemReady(true);
+        this.itemCandidateSamples += 1;
+        if (this.itemCandidateSamples >= ITEM_READY_CONFIRM_SAMPLES) this.setItemReady(true);
       } else if (difference < 6) {
+        this.itemCandidateSamples = 0;
         this.itemQuietSamples += 1;
-        if (this.itemQuietSamples >= 3) this.setItemReady(false);
+        if (this.itemQuietSamples >= 4) {
+          this.itemBaseline = new Uint8ClampedArray(current.pixels);
+          this.itemQuietSamples = 0;
+        }
+      } else {
+        this.itemCandidateSamples = Math.max(0, this.itemCandidateSamples - 1);
       }
     }
 
@@ -511,14 +593,23 @@
       if (text && this.loadingText) this.loadingText.textContent = text;
     }
 
+    showContinuePrompt(active, label = "Tap to Continue") {
+      if (!this.continueButton) return;
+      this.continueButton.classList.toggle("hidden", !active);
+      this.continueButton.classList.remove("is-activating");
+      const text = this.continueButton.querySelector("strong");
+      if (text) text.textContent = label;
+    }
+
     clearTimers() {
-      for (const timer of [this.introTimer, this.titleTimer, this.itemArmTimer, this.loadTimeoutTimer]) {
+      for (const timer of [this.introTimer, this.titleTimer, this.itemArmTimer, this.itemPressTimer, this.loadTimeoutTimer]) {
         window.clearTimeout(timer);
       }
       window.clearInterval(this.itemSampleTimer);
       window.clearInterval(this.raceStateTimer);
       this.introTimer = null;
       this.titleTimer = null;
+      this.itemPressTimer = null;
       this.raceStateTimer = null;
       this.loadTimeoutTimer = null;
       this.itemArmTimer = null;

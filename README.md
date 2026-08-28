@@ -1,5 +1,7 @@
 # ARCADIA
 
+- Version 19.24.1.0 guarantees a louder compressed cannon pop for every Fruit Ninja gameplay launch, primes the effect from trusted iOS Start/Resume gestures, and balances it clearly above the OGG soundtrack.
+- Version 19.24.0.0 adds Mario Kart's conditional Tap to Continue audio gate, automatic title advance when sound is ready, diagonal A/B mobile controls, native back/cancel navigation, debounced item detection, and reliable one-press item use.
 - Version 19.23.0.0 unlocks Mario Kart's actual GameMaker music/SFX engine from real touch gestures on iOS PWAs and precaches the complete kart runtime for dependable loading.
 - Version 19.22.0.0 restores responsive held Mario Kart steering, separates joystick menu navigation from confirmation, and adds native joystick-down braking/reverse during races.
 - Version 19.21.0.0 adds Fruit Ninja's blue-glowing Slow Motion Nana, six-second time slowing, escalating survival score, bonus power-up XP, and guaranteed level gains for new personal high scores across ARCADIA.
@@ -84,14 +86,14 @@ Most ARCADIA games can run from a directly opened HTML file, but browser securit
   - Six recognizable voxel fruit shapes built from shaded 3D cubes
   - Directional wall shadows that follow intact fruit and every flying fragment
   - Mouse and touch swipe slicing with a neon blade trail and dedicated cut sound
-  - Increasing launch speed and multi-fruit waves, combos, three-miss survival, and instant-loss bombs
+  - Increasing launch speed, a clear cannon pop for every gameplay fruit, multi-fruit waves, combos, three-miss survival, and instant-loss bombs
   - Full-screen bomb flash and fragment explosion before the shared result modal
   - Animated attract mode before Start Game, dedicated OGG soundtrack, XP, coins, high scores, and achievements
 - Super Mario Kart ZX game page
   - Original srPerez and Nintendo intro, gamepad recommendation, animated title, music, menus, races, items, and GameMaker WebGL renderer
-  - ARCADIA touch guide followed by a Start Game button that appears only after the title and music begin
+  - Automatic gamepad-screen advance when audio is available, with a compact Tap to Continue sound gate for iOS when a real gesture is required
   - Left-side immediate steering with hold-forward acceleration and pull-back native braking/reverse, while menu navigation remains separate from selection
-  - Right-side jump/select button and a center item slot that reveals itself when the race HUD receives a power-up
+  - Diagonal A/B jump-select and back-cancel buttons, plus a debounced center item slot with reliable one-press power-up use
   - Desktop keyboard and gamepad support retained from the original port, plus ARCADIA XP, coins, playtime, and an achievement
 - Dev Mode Casper autopilot for ARCADIA's nine native games
 
