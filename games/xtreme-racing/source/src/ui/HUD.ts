@@ -331,6 +331,10 @@ export class HUD implements System {
     this.menus.beginFromArcadia();
   }
 
+  openControlsFromArcadia() {
+    this.menus.openControlsFromArcadia();
+  }
+
   restartFromArcadia() {
     this.menus.restartFromArcadia();
   }

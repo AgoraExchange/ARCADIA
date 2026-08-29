@@ -4052,6 +4052,26 @@ input:focus {
   overflow: hidden;
 }
 
+.xtreme-screen .page-top {
+  grid-template-columns: minmax(118px, auto) minmax(0, 1fr) 92px;
+}
+
+.xtreme-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.xtreme-header-tools .arcade-btn {
+  min-width: 52px;
+  padding-inline: 10px;
+}
+
+.xtreme-settings-btn {
+  color: #8ff9ff;
+  border-color: rgba(73, 244, 255, 0.45);
+}
+
 .xtreme-game-content {
   min-height: 0;
 }
@@ -4277,14 +4297,18 @@ input:focus {
 .xtreme-action-buttons {
   grid-column: 3;
   justify-self: end;
-  position: relative;
-  width: 150px;
-  height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 154px;
+  height: 58px;
   pointer-events: none;
 }
 
 .xtreme-game-button {
-  position: absolute;
+  position: relative;
+  flex: 0 0 auto;
   display: grid;
   place-items: center;
   align-content: center;
@@ -4312,8 +4336,6 @@ input:focus {
 }
 
 .xtreme-drift-button {
-  top: 0;
-  right: 0;
   background:
     radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.64), transparent 18%),
     linear-gradient(180deg, #4fdfff, #167dbf 58%, #12396f);
@@ -4326,8 +4348,6 @@ input:focus {
 }
 
 .xtreme-item-button {
-  left: 0;
-  bottom: 0;
   background:
     radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.58), transparent 18%),
     linear-gradient(180deg, #d181ff, #7735d1 58%, #35146f);
@@ -4352,7 +4372,7 @@ input:focus {
 
 @media (orientation: landscape) and (max-width: 1180px) {
   .xtreme-port-shell {
-    width: min(calc(100% - 286px), 1120px);
+    width: min(calc(100% - 320px), 1120px);
   }
 
   .xtreme-controls.is-active {
@@ -4360,7 +4380,7 @@ input:focus {
     z-index: 6;
     inset: 8px 8px 72px;
     display: grid;
-    grid-template-columns: 126px minmax(0, 1fr) 150px;
+    grid-template-columns: 126px minmax(0, 1fr) 158px;
     align-items: center;
     width: auto;
     pointer-events: none;
@@ -4403,7 +4423,18 @@ input:focus {
   }
 
   .xtreme-screen .page-top {
+    grid-template-columns: 112px minmax(0, 1fr) 76px;
     margin-bottom: 5px;
+  }
+
+  .xtreme-header-tools {
+    gap: 4px;
+  }
+
+  .xtreme-header-tools .arcade-btn {
+    min-width: 48px;
+    min-height: 34px;
+    padding: 5px 7px;
   }
 
   .xtreme-screen .page-top h1 {
@@ -4425,7 +4456,10 @@ input:focus {
   }
 
   .xtreme-port-shell {
-    width: min(100%, calc((var(--app-height) - var(--safe-top) - var(--safe-bottom) - 108px) * 1.7778));
+    width: min(
+      calc(100% - 252px),
+      calc((var(--app-height) - var(--safe-top) - var(--safe-bottom) - 108px) * 1.7778)
+    );
     height: 100%;
     max-height: 100%;
     border-radius: 12px;
@@ -4433,12 +4467,12 @@ input:focus {
 
   .xtreme-controls.is-active {
     inset: 4px 4px 50px;
-    grid-template-columns: 112px minmax(0, 1fr) 132px;
+    grid-template-columns: 104px minmax(0, 1fr) 120px;
   }
 
   .xtreme-joystick {
-    width: 94px;
-    height: 94px;
+    width: 88px;
+    height: 88px;
   }
 
   .xtreme-joystick-knob {
@@ -4449,13 +4483,14 @@ input:focus {
   }
 
   .xtreme-action-buttons {
-    width: 130px;
-    height: 98px;
+    gap: 8px;
+    width: 104px;
+    height: 48px;
   }
 
   .xtreme-game-button {
-    width: 62px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
   }
 
   .xtreme-hint {

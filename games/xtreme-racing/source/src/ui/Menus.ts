@@ -410,6 +410,11 @@ export class Menus {
     this.ui('confirm');
   }
 
+  /** Open ARCADIA's compact mobile steering picker from the outer header. */
+  openControlsFromArcadia() {
+    this.controls.show();
+  }
+
   /** Start a fresh race while preserving the currently selected racer. */
   restartFromArcadia() {
     if (!this.ctx) return;

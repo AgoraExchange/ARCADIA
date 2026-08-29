@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.30.1.0";
+const ARCADIA_VERSION = "19.30.2.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -44,7 +44,7 @@ const APP_SHELL = [
   "games/xtreme-racing/manifest.webmanifest",
   "games/xtreme-racing/LICENSE",
   "games/xtreme-racing/assets/index-9JzJTszz.css",
-  "games/xtreme-racing/assets/index-BsBwKrE_.js"
+  "games/xtreme-racing/assets/index-Dmj1DEJW.js"
 ];
 const KART_RUNTIME_ASSETS = [
   "games/sm-kart-zx/runner.js",

@@ -451,4 +451,55 @@ html[data-kc-open] .kr-screens { opacity: 0; }
   margin-top: 6px; font-size: clamp(9px, 1.5vmin, 12px);
   color: #8797ac; letter-spacing: .04em;
 }
+
+/* In ARCADIA the outer SET button opens a purpose-built steering picker. The
+   surrounding app owns pause, throttle and action buttons, so only the two
+   steering choices belong in this compact iframe sheet. */
+html[data-arcadia-embed] .kc-root {
+  padding: 6px 8px 0;
+  background: rgba(5, 9, 18, .97);
+}
+html[data-arcadia-embed] .kc-head {
+  gap: 10px;
+  margin-bottom: 8px;
+}
+html[data-arcadia-embed] .kc-title {
+  font-size: 18px;
+}
+html[data-arcadia-embed] .kc-done {
+  min-width: 72px;
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+html[data-arcadia-embed] .kc-meter,
+html[data-arcadia-embed] .kc-right,
+html[data-arcadia-embed] .kc-try {
+  display: none;
+}
+html[data-arcadia-embed] .kc-body {
+  display: block;
+}
+html[data-arcadia-embed] .kc-schemes {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+html[data-arcadia-embed] .kc-card {
+  min-height: 105px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px;
+  text-align: center;
+}
+html[data-arcadia-embed] .kc-glyph {
+  width: 38px;
+  height: 38px;
+}
+html[data-arcadia-embed] .kc-card-t em {
+  font-size: 14px;
+}
+html[data-arcadia-embed] .kc-card-t span {
+  font-size: 11px;
+}
 `;

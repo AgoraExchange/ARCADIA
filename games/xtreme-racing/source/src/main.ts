@@ -164,6 +164,9 @@ window.addEventListener('message', (event) => {
     input.setArcadiaControl(String(message.name || ''), message.value);
   } else if (message.type === 'release-input') {
     input.releaseArcadiaControls();
+  } else if (message.type === 'open-controls') {
+    input.releaseArcadiaControls();
+    hud.openControlsFromArcadia();
   } else if (message.type === 'status') {
     postArcadiaState();
   }

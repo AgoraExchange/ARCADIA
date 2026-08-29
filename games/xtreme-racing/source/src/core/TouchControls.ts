@@ -1911,8 +1911,8 @@ html[data-arcadia-embed] .tc-coach { display: none !important; }
 /* Use the complete embedded canvas instead of clustering readouts around the
    middle: lap/time own the top corners, MPH/item own the bottom corners. */
 html[data-arcadia-embed][data-touch] .kr {
-  --safe: 7px;
-  --safe-x: 9px;
+  --safe: 3px;
+  --safe-x: 2px;
   --rail: 62px;
   --rail-top: 42px;
   --map-w: 104px;
@@ -1923,6 +1923,76 @@ html[data-arcadia-embed][data-touch] .kr {
   --t4: 22px;
   --t5: 26px;
   --t6: 34px;
+}
+/* The outer ARCADIA shell already clears the iPhone notch and home indicator.
+   Do not apply those device insets a second time inside the iframe: doing so
+   pulled Lap and Time toward the centre on installed landscape PWAs. */
+html[data-arcadia-embed][data-touch] .kr-hud {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+html[data-arcadia-embed][data-touch] .kr.is-counting .kr-hud {
+  transform: none;
+}
+
+/* ARCADIA's iframe is deliberately narrower than the whole phone because the
+   live controls occupy side gutters. Reflow the picker to four readable cards
+   per row instead of squeezing all eight names into one tiny row. */
+html[data-arcadia-embed] .kr-s-select > .kr-screen-in {
+  width: 100%;
+  padding: 5px 7px;
+  overflow: hidden;
+}
+html[data-arcadia-embed] .kr-s-select .kr-title {
+  font-size: 18px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-roster {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 3px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-card {
+  min-width: 0;
+  padding: 4px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-card.sel {
+  transform: translateY(-1px) scale(1.018);
+}
+html[data-arcadia-embed] .kr-s-select .kr-card-chip {
+  height: 25px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-card-name {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 11px;
+  letter-spacing: .04em;
+  line-height: 1.1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-arcadia-embed] .kr-s-select .kr-card-you {
+  top: 3px;
+  right: 3px;
+  padding: 1px 3px;
+  font-size: 7px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-stats {
+  margin-top: 2px;
+  gap: 1px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-bar {
+  height: 3px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-menu-list {
+  width: min(180px, 55vw);
+  margin-top: 3px;
+}
+html[data-arcadia-embed] .kr-s-select .kr-btn {
+  padding: 4px 10px 5px;
+  font-size: 12px;
 }
 html[data-arcadia-embed][data-touch] .kr .kr-speed,
 html[data-arcadia-embed][data-touch][data-touch-hand="left"] .kr .kr-speed {

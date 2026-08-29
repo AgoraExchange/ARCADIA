@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.30.1.0";
+  const APP_VERSION = "19.30.2.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "XTREME RACING keeps landscape B and A side by side entirely outside the canvas, reserves separate left/right control gutters, enlarges the mobile racer roster, moves HUD readouts to the true iframe corners, and adds a top-left SET steering picker.",
     "XTREME RACING now adds real circuit-building progress, places its floating steering stick and diagonal Drift/Item buttons outside the landscape race canvas, hides the stick in Tilt mode, and spreads the race HUD to the canvas edges.",
     "XTREME RACING joins ARCADIA as Game 13 with Kart Royale's procedural 3D racing, native mobile controls, racer selection, items, drifting, placement rewards, saved progress, the player-provided icon, and a true MPH speedometer.",
     "Hello Kitty World now shows saved lifetime Kuromi finds in the HUD, keeps the total through retries, adds twelve hiding locations, and gives returning players varied rematch dialogue.",
@@ -1613,6 +1614,7 @@
     startKittyBtn: $("startKittyBtn"),
     restartKittyBtn: $("restartKittyBtn"),
     exitXtremeBtn: $("exitXtremeBtn"),
+    xtremeSettingsBtn: $("xtremeSettingsBtn"),
     xtremePauseBtn: $("xtremePauseBtn"),
     xtremeFrame: $("xtremeFrame"),
     xtremeLoading: $("xtremeLoading"),
@@ -12570,6 +12572,7 @@
       joystickKnob: el.xtremeJoystickKnob,
       driftButton: el.xtremeDriftBtn,
       itemButton: el.xtremeItemBtn,
+      settingsButton: el.xtremeSettingsBtn,
       startButton: el.startXtremeBtn,
       restartButton: el.restartXtremeBtn,
       pauseButton: el.xtremePauseBtn,

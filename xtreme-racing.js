@@ -22,6 +22,7 @@
       this.boundMessage = (event) => this.handleMessage(event);
       window.addEventListener("message", this.boundMessage);
       this.bindControls();
+      this.settingsButton?.addEventListener("click", () => this.openSettings());
     }
 
     load(version = "1") {
@@ -35,6 +36,7 @@
       this.releaseInputs(false);
       this.startButton?.classList.add("hidden");
       this.restartButton?.classList.add("hidden");
+      if (this.settingsButton) this.settingsButton.disabled = true;
       if (this.pauseButton) {
         this.pauseButton.disabled = true;
         this.pauseButton.textContent = "Pause";
@@ -68,6 +70,7 @@
       this.startButton?.classList.add("hidden");
       this.restartButton?.classList.remove("hidden");
       if (this.pauseButton) this.pauseButton.disabled = false;
+      if (this.settingsButton) this.settingsButton.disabled = false;
       this.post("start", options);
       this.onStart?.();
       return true;
@@ -89,6 +92,7 @@
         this.pauseButton.disabled = false;
         this.pauseButton.textContent = "Pause";
       }
+      if (this.settingsButton) this.settingsButton.disabled = false;
       this.post("restart", options);
       return true;
     }
@@ -122,10 +126,23 @@
       this.controls?.classList.remove("is-active");
       if (this.frame) this.frame.src = "about:blank";
       this.setLoading(false);
+      if (this.settingsButton) this.settingsButton.disabled = true;
     }
 
     post(type, detail = {}) {
       this.frame?.contentWindow?.postMessage({ source: PARENT_SOURCE, type, ...detail }, window.location.origin);
+    }
+
+    openSettings() {
+      if (!this.ready || !this.started) return;
+      if (this.raceActive && !this.paused) {
+        this.paused = true;
+        this.releaseInputs();
+        this.post("pause", { paused: true });
+        if (this.pauseButton) this.pauseButton.textContent = "Resume";
+        this.onPauseChange?.(true);
+      }
+      this.post("open-controls");
     }
 
     bindControls() {
