@@ -739,6 +739,40 @@
       </main>
     </section>
 
+    <section id="xtremeScreen" class="screen game-screen xtreme-screen hidden">
+      <header class="page-top">
+        <button id="exitXtremeBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>XTREME RACING</h1>
+        <button id="xtremePauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content xtreme-game-content">
+        <section class="xtreme-stage panel">
+          <div class="xtreme-port-shell">
+            <iframe
+              id="xtremeFrame"
+              class="xtreme-frame"
+              title="XTREME RACING game"
+              allow="autoplay; fullscreen; gamepad"
+              scrolling="no"
+            ></iframe>
+            <div id="xtremeLoading" class="xtreme-loading">
+              <span class="xtreme-loading-spinner" aria-hidden="true"></span>
+              <strong id="xtremeLoadingText">Building the XTREME RACING circuit...</strong>
+              <small>Procedural track, karts, lighting, music, and effects are loading.</small>
+            </div>
+          </div>
+
+          <p class="hint xtreme-hint">Landscape recommended. Choose a racer, then use the native steering control, DRIFT, BRAKE, and item buttons. Desktop: arrows steer and accelerate, Shift drifts, Space uses an item, and Escape pauses.</p>
+
+          <div class="game-actions xtreme-actions">
+            <button id="startXtremeBtn" class="arcade-btn primary hidden" type="button">Start Game</button>
+            <button id="restartXtremeBtn" class="arcade-btn secondary hidden" type="button">Restart</button>
+          </div>
+        </section>
+      </main>
+    </section>
+
     <div id="marioMapModal" class="modal mario-map-modal hidden" role="dialog" aria-modal="true" aria-labelledby="marioMapTitle">
       <div class="modal-card mario-map-card">
         <button id="dismissMarioMapBtn" class="modal-x" type="button" aria-label="Close saved maps">X</button>
@@ -923,6 +957,7 @@
     <script src="sm-kart-zx.js"></script>
     <script src="super-mario-bros.js"></script>
     <script src="hello-kitty-world.js"></script>
+    <script src="xtreme-racing.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

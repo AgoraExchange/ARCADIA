@@ -4046,6 +4046,190 @@ input:focus {
   --kitty-cream: #fff7df;
 }
 
+/* XTREME RACING / Kart Royale integration */
+.xtreme-screen {
+  min-height: var(--app-height);
+  overflow: hidden;
+}
+
+.xtreme-game-content {
+  min-height: 0;
+}
+
+.xtreme-stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  width: min(100%, 1180px);
+  min-height: 0;
+  margin: 0 auto;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.xtreme-port-shell {
+  position: relative;
+  align-self: start;
+  width: min(100%, 1120px);
+  max-height: calc(var(--app-height) - 220px);
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px solid rgba(73, 244, 255, 0.48);
+  border-radius: 22px;
+  background: #05070d;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.52),
+    0 0 38px rgba(73, 244, 255, 0.16),
+    0 0 58px rgba(255, 47, 173, 0.09),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.xtreme-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #05070d;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.xtreme-frame.is-active {
+  pointer-events: auto;
+}
+
+.xtreme-loading {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 20px;
+  color: #f3f6fb;
+  text-align: center;
+  background:
+    radial-gradient(110% 90% at 50% 5%, rgba(71, 82, 145, 0.72), transparent 52%),
+    linear-gradient(180deg, #11172d, #05070d);
+}
+
+.xtreme-loading.is-error {
+  background: radial-gradient(circle at 50% 20%, rgba(255, 52, 93, 0.22), transparent 45%), #08070d;
+}
+
+.xtreme-loading strong {
+  font-family: var(--font-display);
+  font-size: clamp(0.64rem, 2vw, 0.94rem);
+  line-height: 1.5;
+}
+
+.xtreme-loading small {
+  max-width: 520px;
+  color: rgba(241, 247, 255, 0.66);
+  font-family: var(--font-ui);
+}
+
+.xtreme-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid rgba(255, 255, 255, 0.13);
+  border-top-color: #ffbe62;
+  border-right-color: #49f4ff;
+  border-bottom-color: #ff2fad;
+  border-radius: 50%;
+  animation: marioSpinner 0.72s linear infinite;
+}
+
+.xtreme-actions {
+  width: min(320px, 100%);
+  justify-self: center;
+}
+
+.xtreme-hint {
+  margin: 0;
+  text-align: center;
+}
+
+@media (orientation: portrait) and (max-width: 760px) {
+  .xtreme-screen {
+    padding-left: calc(4px + var(--safe-left));
+    padding-right: calc(4px + var(--safe-right));
+  }
+
+  .xtreme-screen .page-top h1 {
+    font-size: clamp(0.84rem, 4vw, 1.04rem);
+  }
+
+  .xtreme-stage {
+    width: 100%;
+    min-height: 100%;
+    padding: 5px;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .xtreme-port-shell {
+    width: 100%;
+    max-height: calc(var(--app-height) - 260px);
+    aspect-ratio: 4 / 5;
+    border-radius: 15px;
+  }
+
+  .xtreme-hint {
+    font-size: 0.72rem;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .xtreme-screen {
+    padding-top: calc(5px + var(--safe-top));
+    padding-bottom: calc(5px + var(--safe-bottom));
+  }
+
+  .xtreme-screen .page-top {
+    margin-bottom: 5px;
+  }
+
+  .xtreme-screen .page-top h1 {
+    font-size: clamp(0.88rem, 3vw, 1.2rem);
+  }
+
+  .xtreme-game-content {
+    height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 66px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .xtreme-stage {
+    grid-template-rows: minmax(0, 1fr) auto;
+    width: 100%;
+    height: 100%;
+    padding: 4px;
+    gap: 5px;
+  }
+
+  .xtreme-port-shell {
+    width: min(100%, calc((var(--app-height) - var(--safe-top) - var(--safe-bottom) - 108px) * 1.7778));
+    height: 100%;
+    max-height: 100%;
+    border-radius: 12px;
+  }
+
+  .xtreme-hint {
+    display: none;
+  }
+
+  .xtreme-actions {
+    width: min(230px, 36vw);
+  }
+
+  .xtreme-actions .arcade-btn {
+    min-height: 32px;
+    padding: 6px 10px;
+  }
+}
+
 .kitty-screen .page-top {
   border-bottom-color: rgba(239, 85, 126, 0.55);
   background:

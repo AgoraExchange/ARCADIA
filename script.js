@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.29.6.0";
+  const APP_VERSION = "19.30.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "XTREME RACING joins ARCADIA as Game 13 with Kart Royale's procedural 3D racing, native mobile controls, racer selection, items, drifting, placement rewards, saved progress, the player-provided icon, and a true MPH speedometer.",
     "Hello Kitty World now shows saved lifetime Kuromi finds in the HUD, keeps the total through retries, adds twelve hiding locations, and gives returning players varied rematch dialogue.",
     "Hello Kitty World now keeps its joystick and A/B controls hidden during the title preview and reveals them only after Start Game is pressed.",
     "Hello Kitty World now anchors its joystick and diagonal A/B controls to the exact same vertical control centers as Super Mario Bros in portrait and landscape play.",
@@ -331,7 +332,17 @@
       kittyBest: 0,
       kittyFastest: 0,
       kittyXpEarned: 0,
-      kittyTotalScore: 0
+      kittyTotalScore: 0,
+      xtremeRuns: 0,
+      xtremeRacesFinished: 0,
+      xtremeFirsts: 0,
+      xtremeSeconds: 0,
+      xtremeThirds: 0,
+      xtremeBestPlace: 0,
+      xtremeLastPlace: 0,
+      xtremeBestLap: 0,
+      xtremeXpEarned: 0,
+      xtremePlaySeconds: 0
     },
     achievements: []
   };
@@ -468,6 +479,17 @@
       available: true,
       image: "assets/images/games/hello-kitty-world.png",
       mark: "H"
+    },
+    {
+      id: "xtreme",
+      title: "XTREME RACING",
+      gameNo: "13",
+      tags: ["xtreme", "racing", "kart", "3d", "drift", "items", "multiplayer ai", "procedural", "mobile"],
+      description: "Drift through Sunset Bay, unleash items, and race eight karts for first place.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/xtreme-racing.png",
+      mark: "X"
     }
   ];
 
@@ -503,6 +525,9 @@
     { id: "kitty_first", title: "Friendship Village", text: "Begin your first Hello Kitty adventure." },
     { id: "kitty_found", title: "Found You, Kuromi!", text: "Win a game of Hide and Seek." },
     { id: "kitty_quick", title: "Super Seeker", text: "Find Kuromi in 30 seconds or less." },
+    { id: "xtreme_first", title: "Sunset Grid", text: "Start your first XTREME RACING race." },
+    { id: "xtreme_finish", title: "Checkered Flag", text: "Finish an XTREME RACING race." },
+    { id: "xtreme_win", title: "XTREME Champion", text: "Win an XTREME RACING race." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -1322,6 +1347,7 @@
   let marioController = null;
   let marioSessionStartedAt = 0;
   let kittyEngine = null;
+  let xtremeController = null;
   let marioMapPickerWasPlaying = false;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
@@ -1366,6 +1392,7 @@
     kartScreen: $("kartScreen"),
     marioScreen: $("marioScreen"),
     kittyScreen: $("kittyScreen"),
+    xtremeScreen: $("xtremeScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -1584,6 +1611,13 @@
     kittyBLabel: $("kittyBLabel"),
     startKittyBtn: $("startKittyBtn"),
     restartKittyBtn: $("restartKittyBtn"),
+    exitXtremeBtn: $("exitXtremeBtn"),
+    xtremePauseBtn: $("xtremePauseBtn"),
+    xtremeFrame: $("xtremeFrame"),
+    xtremeLoading: $("xtremeLoading"),
+    xtremeLoadingText: $("xtremeLoadingText"),
+    startXtremeBtn: $("startXtremeBtn"),
+    restartXtremeBtn: $("restartXtremeBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -1809,6 +1843,7 @@
     el.kartScreen.classList.toggle("hidden", name !== "kart");
     el.marioScreen.classList.toggle("hidden", name !== "mario");
     el.kittyScreen.classList.toggle("hidden", name !== "kitty");
+    el.xtremeScreen.classList.toggle("hidden", name !== "xtreme");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -1821,14 +1856,15 @@
     if (name !== "kart") stopKart();
     if (name !== "mario") stopMario();
     if (name !== "kitty") stopKitty();
+    if (name !== "xtreme") stopXtreme();
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -2322,6 +2358,7 @@
   function toggleSoundEffects() {
     state.muteSfx = !state.muteSfx;
     kittyEngine?.setMuted({ mutedSfx: state.muteSfx });
+    xtremeController?.setMuted({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx });
     saveState();
     updateAudioToggleButtons();
     if (!state.muteSfx) {
@@ -2334,6 +2371,7 @@
   function toggleSoundtrack() {
     state.muteMusic = !state.muteMusic;
     kittyEngine?.setMuted({ mutedMusic: state.muteMusic });
+    xtremeController?.setMuted({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx });
     saveState();
     updateAudioToggleButtons();
     if (state.muteMusic) {
@@ -2646,6 +2684,7 @@
         if (game.id === "kart") openKart();
         if (game.id === "mario") openMario();
         if (game.id === "kitty") openKitty();
+        if (game.id === "xtreme") openXtreme();
       });
       el.gameGrid.appendChild(card);
     });
@@ -2759,6 +2798,14 @@
         best: Number(state.stats.kittyFinds) || 0,
         metricLabel: "Finds",
         meta: `${formatNumber(state.stats.kittyRuns)} visits · ${formatNumber(state.stats.kittyFinds)} Kuromi finds · Best ${formatNumber(state.stats.kittyBest)}`
+      },
+      {
+        title: "XTREME RACING",
+        xp: Number(state.stats.xtremeXpEarned) || 0,
+        runs: Number(state.stats.xtremeRuns) || 0,
+        best: Number(state.stats.xtremeFirsts) || 0,
+        metricLabel: "Wins",
+        meta: `${formatNumber(state.stats.xtremeRuns)} races · ${formatNumber(state.stats.xtremeRacesFinished)} finishes · ${formatNumber(state.stats.xtremeFirsts)} wins · Best ${formatXtremePlace(state.stats.xtremeBestPlace)}`
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -2967,6 +3014,13 @@
         runs: Number(state.stats.kittyRuns) || 0,
         xp: Number(state.stats.kittyXpEarned) || 0,
         best: Number(state.stats.kittyBest) || 0
+      },
+      {
+        id: "xtreme",
+        title: "XTREME RACING",
+        runs: Number(state.stats.xtremeRuns) || 0,
+        xp: Number(state.stats.xtremeXpEarned) || 0,
+        best: Number(state.stats.xtremeFirsts) || 0
       }
     ];
 
@@ -12459,6 +12513,170 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function formatXtremePlace(place) {
+    const value = Math.round(Number(place) || 0);
+    if (value < 1 || value > 8) return "None";
+    if (value === 1) return "1ST";
+    if (value === 2) return "2ND";
+    if (value === 3) return "3RD";
+    return `${value}TH`;
+  }
+
+  function formatXtremeTime(seconds) {
+    const value = Number(seconds);
+    if (!Number.isFinite(value) || value <= 0) return "--:--.---";
+    const totalMilliseconds = Math.max(0, Math.round(value * 1000));
+    const minutes = Math.floor(totalMilliseconds / 60000);
+    const wholeSeconds = Math.floor((totalMilliseconds % 60000) / 1000);
+    const milliseconds = totalMilliseconds % 1000;
+    return `${minutes}:${String(wholeSeconds).padStart(2, "0")}.${String(milliseconds).padStart(3, "0")}`;
+  }
+
+  function getXtremePlacementReward(place) {
+    return ({
+      1: { xp: 650, coins: 75, title: "XTREME Champion" },
+      2: { xp: 430, coins: 50, title: "Silver Finish" },
+      3: { xp: 300, coins: 35, title: "Podium Finish" },
+      4: { xp: 190, coins: 22, title: "Strong Finish" },
+      5: { xp: 155, coins: 18, title: "Race Complete" },
+      6: { xp: 125, coins: 14, title: "Race Complete" },
+      7: { xp: 100, coins: 11, title: "Race Complete" },
+      8: { xp: 80, coins: 9, title: "Race Complete" }
+    })[place] || { xp: 0, coins: 0, title: "Race Complete" };
+  }
+
+  function getXtremeController() {
+    if (xtremeController) return xtremeController;
+    if (typeof window.ArcadiaXtremeRacing !== "function") return null;
+    xtremeController = new window.ArcadiaXtremeRacing({
+      frame: el.xtremeFrame,
+      loading: el.xtremeLoading,
+      loadingText: el.xtremeLoadingText,
+      startButton: el.startXtremeBtn,
+      restartButton: el.restartXtremeBtn,
+      pauseButton: el.xtremePauseBtn,
+      onReady() {
+        if (currentScreen !== "xtreme") return;
+        showToast("XTREME RACING Ready", "Tap Start Game, choose your racer, and hit the circuit.", "silent", 2800);
+      },
+      onRaceStart: handleXtremeRaceStart,
+      onFinish: handleXtremeRaceFinish,
+      onError() {
+        if (currentScreen !== "xtreme") return;
+        showToast("Racing Port Error", "XTREME RACING could not finish loading. Tap Restart to try again.", "fail", 4200);
+      }
+    });
+    return xtremeController;
+  }
+
+  function openXtreme() {
+    currentGame = "xtreme";
+    prepareGameTheme();
+    showScreen("xtreme");
+    const controller = getXtremeController();
+    if (!controller) {
+      showToast("Port Error", "The XTREME RACING wrapper did not load.", "fail", 4200);
+      return;
+    }
+    controller.load(APP_VERSION);
+  }
+
+  function startXtreme() {
+    currentGame = "xtreme";
+    const controller = getXtremeController();
+    controller?.start({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx });
+  }
+
+  function restartXtreme() {
+    currentGame = "xtreme";
+    el.gameOverModal.classList.add("hidden");
+    getXtremeController()?.restart({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx });
+  }
+
+  function stopXtreme() {
+    xtremeController?.stop();
+  }
+
+  function toggleXtremePause() {
+    getXtremeController()?.togglePause();
+  }
+
+  function handleXtremeRaceStart() {
+    if (currentScreen !== "xtreme") return;
+    currentGame = "xtreme";
+    state.stats.gamesPlayed = (Number(state.stats.gamesPlayed) || 0) + 1;
+    state.stats.xtremeRuns = (Number(state.stats.xtremeRuns) || 0) + 1;
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+  }
+
+  function handleXtremeRaceFinish(result = {}) {
+    if (currentScreen !== "xtreme") return;
+    const place = Math.round(Number(result.place) || 0);
+    if (place < 1 || place > 8) return;
+
+    currentGame = "xtreme";
+    const reward = getXtremePlacementReward(place);
+    const previousBestPlace = Number(state.stats.xtremeBestPlace) || 0;
+    const newBest = !previousBestPlace || place < previousBestPlace;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem("xtreme");
+    const earned = applyRewardBooster(reward.xp);
+    const coinsEarned = applyRewardBooster(reward.coins);
+    const raceTime = Math.max(0, Number(result.raceTime) || 0);
+    const bestLap = Math.max(0, Number(result.bestLap) || 0);
+
+    state.stats.xtremeRacesFinished = (Number(state.stats.xtremeRacesFinished) || 0) + 1;
+    if (place === 1) state.stats.xtremeFirsts = (Number(state.stats.xtremeFirsts) || 0) + 1;
+    if (place === 2) state.stats.xtremeSeconds = (Number(state.stats.xtremeSeconds) || 0) + 1;
+    if (place === 3) state.stats.xtremeThirds = (Number(state.stats.xtremeThirds) || 0) + 1;
+    state.stats.xtremeBestPlace = previousBestPlace ? Math.min(previousBestPlace, place) : place;
+    state.stats.xtremeLastPlace = place;
+    if (bestLap > 0) {
+      const previousBestLap = Number(state.stats.xtremeBestLap) || 0;
+      state.stats.xtremeBestLap = previousBestLap ? Math.min(previousBestLap, bestLap) : bestLap;
+    }
+    state.stats.xtremePlaySeconds = (Number(state.stats.xtremePlaySeconds) || 0) + Math.max(0, Math.round(raceTime));
+    state.stats.xtremeXpEarned = (Number(state.stats.xtremeXpEarned) || 0) + earned;
+    state.xp = (Number(state.xp) || 0) + earned;
+    state.coins = (Number(state.coins) || 0) + coinsEarned;
+
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    el.resultKicker.textContent = "XTREME RACING Results";
+    el.resultTitle.textContent = `${formatXtremePlace(place)} Place!`;
+    el.resultScore.textContent = formatXtremeTime(raceTime);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatXtremePlace(state.stats.xtremeBestPlace);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    const racer = escapeHtml(String(result.racer || "Racer"));
+    el.resultMessage.innerHTML = `${racer} finished in ${formatXtremePlace(place)}. Best lap: ${formatXtremeTime(bestLap)}. ${reward.title}.`;
+    if (newBest) showToast("New Racing Best", `${formatXtremePlace(place)} is your best finish.`, "win");
+    showToast(
+      `${formatXtremePlace(place)} Place Recorded`,
+      `+${formatNumber(earned)} XP and +${formatNumber(coinsEarned)} coins.`,
+      place <= 3 ? "win" : "tap",
+      3600
+    );
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -12492,6 +12710,9 @@
       ["kitty_first", state.stats.kittyRuns >= 1],
       ["kitty_found", state.stats.kittyFinds >= 1],
       ["kitty_quick", state.stats.kittyFastest > 0 && state.stats.kittyFastest <= 30],
+      ["xtreme_first", state.stats.xtremeRuns >= 1],
+      ["xtreme_finish", state.stats.xtremeRacesFinished >= 1],
+      ["xtreme_win", state.stats.xtremeFirsts >= 1],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -12911,6 +13132,8 @@
         startNinja();
       } else if (currentGame === "kitty") {
         restartKitty();
+      } else if (currentGame === "xtreme") {
+        restartXtreme();
       } else {
         startSnake();
       }
@@ -12979,6 +13202,10 @@
     el.kittyPauseBtn.addEventListener("click", toggleKittyPause);
     el.startKittyBtn.addEventListener("click", startKitty);
     el.restartKittyBtn.addEventListener("click", restartKitty);
+    el.exitXtremeBtn.addEventListener("click", () => showScreen("home"));
+    el.xtremePauseBtn.addEventListener("click", toggleXtremePause);
+    el.startXtremeBtn.addEventListener("click", startXtreme);
+    el.restartXtremeBtn.addEventListener("click", restartXtreme);
     el.ninjaCanvas.addEventListener("pointerdown", (event) => {
       if (!ninja.running || ninja.paused || casperHasGameplayControl("ninja")) return;
       event.preventDefault();

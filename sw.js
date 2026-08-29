@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.29.6.0";
+const ARCADIA_VERSION = "19.30.0.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "sm-kart-zx.js",
   "super-mario-bros.js",
   "hello-kitty-world.js",
+  "xtreme-racing.js",
   "manifest.webmanifest",
   "app-version.json",
   "assets/images/games/stack.png",
@@ -20,6 +21,7 @@ const APP_SHELL = [
   "assets/images/games/super-mario-kart-zx.png",
   "assets/images/games/super-mario-bros.png",
   "assets/images/games/hello-kitty-world.png",
+  "assets/images/games/xtreme-racing.png",
   "assets/images/arcadia-logo-180.png",
   "assets/images/arcadia-logo-192.png",
   "assets/images/arcadia-logo-512.png",
@@ -37,7 +39,12 @@ const APP_SHELL = [
   "assets/audio/sfx/crossy-road/crash.mp3",
   "games/sm-kart-zx/index.html",
   "games/super-mario-bros/index.html",
-  "games/super-mario-bros/arcadia-wrapper.js"
+  "games/super-mario-bros/arcadia-wrapper.js",
+  "games/xtreme-racing/index.html",
+  "games/xtreme-racing/manifest.webmanifest",
+  "games/xtreme-racing/LICENSE",
+  "games/xtreme-racing/assets/index-9JzJTszz.css",
+  "games/xtreme-racing/assets/index-RPJgmImI.js"
 ];
 const KART_RUNTIME_ASSETS = [
   "games/sm-kart-zx/runner.js",

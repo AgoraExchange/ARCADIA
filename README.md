@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.30.0.0 adds XTREME RACING as Game 13 with Kart Royale's procedural 3D racing, native touch controls, racer selection, items, drifting, race-place rewards, saved progress, the player-provided icon, and a true MPH speedometer.
 - Version 19.29.6.0 gives Hello Kitty World a persistent lifetime Kuromi-find counter, twelve hiding locations, and varied returning-player rematch conversations.
 - Version 19.29.5.0 hides the Hello Kitty World joystick and A/B controls during the title preview and reveals them only after Start Game is pressed.
 - Version 19.29.4.0 aligns the Hello Kitty World joystick and diagonal A/B controls to the same portrait and landscape control heights as Super Mario Bros.
@@ -42,7 +43,7 @@
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
-ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play twelve arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
+ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play thirteen arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
 If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
 
@@ -125,6 +126,11 @@ Most ARCADIA games can run from a directly opened HTML file, but the bundled Mar
   - Kuromi's multi-step greeting personalized with the active ARCADIA player name, tappable speech bubbles, and conversations with My Melody, Keroppi, and Cinnamoroll
   - Timed Hide-and-Seek rounds with randomized hiding places, late-round purple sparkle clues, score, XP, coins, best times, and three achievements
   - Original synthesized chiptune music and interaction, quest, success, and timeout sound effects
+- XTREME RACING game page
+  - Procedurally generated 3D tracks, karts, lighting, effects, music, and sound from the MIT-licensed Kart Royale project
+  - Native landscape touch steering, brake, drift, and item controls, plus desktop keyboard and gamepad support
+  - Racer selection, AI opponents, race placement, lap timing, a true MPH speedometer, Pause, Restart, XP, coins, and three achievements
+  - Player-provided neon racing artwork as the dashboard icon
 - Dev Mode Casper autopilot for ARCADIA's nine native games
 
 ## Visual Direction
@@ -138,6 +144,8 @@ Super Mario Kart ZX was created by srPerez and its web port was published by bur
 Super Mario Bros uses the PlayMario HTML5 Client's original 32 numbered campaign maps with the user's confirmed permission from its maintainer. ARCADIA adds its title launch, touch controls, responsive presentation, pause/audio bridge, and progression integration while leaving its random map and mod interfaces inaccessible. See `games/super-mario-bros/ATTRIBUTION.md` for upstream links and details.
 
 Hello Kitty World is an original fan-made ARCADIA canvas game. Its neighborhood, code, pixel-style drawings, music, dialogue system, and Hide-and-Seek mechanics were created for this project; Hello Kitty, Kuromi, My Melody, Keroppi, Cinnamoroll, and related character names remain trademarks and intellectual property of Sanrio.
+
+XTREME RACING is a customized build of Ryan Campbell's MIT-licensed Kart Royale. ARCADIA adds its title treatment, launch and pause bridge, saved race progress, placement rewards, dashboard icon, and miles-per-hour speed display. See `games/xtreme-racing/UPSTREAM.md` and `games/xtreme-racing/LICENSE` for source and license details.
 
 ## Asset Folders
 
