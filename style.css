@@ -4437,6 +4437,7 @@ input:focus {
 
 @media (max-width: 700px) {
   .kitty-stage {
+    position: relative;
     gap: 11px;
     padding: 12px 8px 16px;
   }
@@ -4485,8 +4486,21 @@ input:focus {
   }
 
   .kitty-controls {
-    margin-top: 22px;
+    position: absolute;
+    z-index: 15;
+    inset: auto 4px 88px;
+    width: auto;
+    max-width: none;
+    margin-top: 0;
     padding: 4px 14px 0;
+  }
+
+  .kitty-action-buttons {
+    height: calc(82px + clamp(90px, 26vw, 102px) - clamp(50px, 15vw, 58px));
+  }
+
+  .kitty-hint {
+    display: none;
   }
 
   .kitty-actions {
@@ -4531,11 +4545,15 @@ input:focus {
   .kitty-controls {
     position: absolute;
     z-index: 15;
-    inset: auto 10px 2px;
+    top: calc(50% - 10.5px);
+    right: 10px;
+    bottom: auto;
+    left: 10px;
     width: auto;
     max-width: none;
     margin-top: 0;
     padding: 0;
+    transform: translateY(-50%);
     pointer-events: none;
   }
 
@@ -4545,17 +4563,17 @@ input:focus {
   }
 
   .kitty-joystick {
-    width: min(22vh, 128px);
+    width: min(24.62vh, 96px);
     opacity: 0.92;
   }
 
   .kitty-action-buttons {
-    width: min(30vh, 180px);
-    height: min(23vh, 138px);
+    width: min(34.87vh, 136px);
+    height: min(28.21vh, 110px);
   }
 
   .kitty-game-button {
-    width: min(15vh, 88px);
+    width: min(16.41vh, 64px);
     border-width: 4px;
     opacity: 0.94;
   }
@@ -4579,6 +4597,52 @@ input:focus {
 
   .kitty-hint {
     display: none;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .kitty-screen {
+    padding-top: calc(6px + var(--safe-top));
+    padding-bottom: calc(6px + var(--safe-bottom));
+  }
+
+  .kitty-screen .page-top {
+    margin-bottom: 6px;
+  }
+
+  .kitty-screen .page-top h1 {
+    font-size: clamp(0.9rem, 3vw, 1.3rem);
+  }
+
+  .kitty-game-content {
+    flex: 0 0 auto;
+    height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 70px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .kitty-stage {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 6px;
+  }
+
+  .kitty-canvas-shell {
+    margin: 0 auto;
+  }
+
+  .kitty-controls {
+    top: calc(50% + 8px);
+    right: 6px;
+    left: 6px;
+  }
+
+  .kitty-actions {
+    bottom: 8px;
   }
 }
 

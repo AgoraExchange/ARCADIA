@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.29.3.0";
+  const APP_VERSION = "19.29.4.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Hello Kitty World now anchors its joystick and diagonal A/B controls to the exact same vertical control centers as Super Mario Bros in portrait and landscape play.",
     "Hello Kitty World now uses the player-provided pixel neighborhood artwork as its official ARCADIA game icon.",
     "Game 12 is now titled Hello Kitty World throughout ARCADIA.",
     "Hello Kitty World now uses the active ARCADIA player name in character conversations, gives My Melody rotating location-aware hints during each search, lowers the mobile controls, and keeps Restart in the bottom action area.",

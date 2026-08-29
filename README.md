@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.29.4.0 aligns the Hello Kitty World joystick and diagonal A/B controls to the same portrait and landscape control heights as Super Mario Bros.
 - Version 19.29.3.0 installs the player-provided pixel neighborhood artwork as the official Hello Kitty World game icon.
 - Version 19.29.2.0 renames Game 12 to Hello Kitty World throughout ARCADIA.
 - Version 19.29.1.0 improves Hello Kitty World with active-player-name dialogue, rotating My Melody hints tied to Kuromi's hiding place, lower mobile controls, and a bottom-aligned Restart action.
