@@ -4312,7 +4312,7 @@ input:focus {
 }
 
 .kitty-controls {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
   width: min(100%, 980px);
@@ -4320,6 +4320,11 @@ input:focus {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.kitty-controls.is-active {
+  display: flex;
+  animation: kartControlsReveal 0.28s ease both;
 }
 
 .kitty-joystick {

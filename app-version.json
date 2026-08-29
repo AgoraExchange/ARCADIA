@@ -1,6 +1,8 @@
 {
-  "version": "19.29.4.0",
+  "version": "19.29.6.0",
   "patchNotes": [
+    "Hello Kitty World now shows the player's saved lifetime Kuromi finds in the game HUD, keeps the total through retries and restarts, expands Hide and Seek to twelve locations, and gives returning players varied rematch dialogue.",
+    "Hello Kitty World now keeps its joystick and A/B controls hidden during the title preview and reveals them only after Start Game is pressed.",
     "Hello Kitty World now anchors its joystick and diagonal A/B controls to the exact same vertical control centers as Super Mario Bros in portrait and landscape play.",
     "Hello Kitty World now uses the player-provided pixel neighborhood artwork as its official ARCADIA game icon.",
     "Game 12 is now titled Hello Kitty World throughout ARCADIA.",

@@ -3,11 +3,13 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.29.4.0";
+  const APP_VERSION = "19.29.6.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Hello Kitty World now shows saved lifetime Kuromi finds in the HUD, keeps the total through retries, adds twelve hiding locations, and gives returning players varied rematch dialogue.",
+    "Hello Kitty World now keeps its joystick and A/B controls hidden during the title preview and reveals them only after Start Game is pressed.",
     "Hello Kitty World now anchors its joystick and diagonal A/B controls to the exact same vertical control centers as Super Mario Bros in portrait and landscape play.",
     "Hello Kitty World now uses the player-provided pixel neighborhood artwork as its official ARCADIA game icon.",
     "Game 12 is now titled Hello Kitty World throughout ARCADIA.",
@@ -12325,6 +12327,8 @@
     if (typeof window.ArcadiaHelloKittyWorld !== "function") return null;
     kittyEngine = new window.ArcadiaHelloKittyWorld({
       playerName: state.playerName,
+      totalFinds: state.stats.kittyFinds,
+      adventureRuns: state.stats.kittyRuns,
       canvas: el.kittyCanvas,
       titleOverlay: el.kittyTitleOverlay,
       dialogue: el.kittyDialogue,
@@ -12343,6 +12347,15 @@
     return kittyEngine;
   }
 
+  function syncKittyPlayerContext(engine = kittyEngine) {
+    if (!engine) return;
+    engine.setPlayerName?.(state.playerName);
+    engine.setPlayerProgress?.({
+      totalFinds: state.stats.kittyFinds,
+      adventureRuns: state.stats.kittyRuns
+    });
+  }
+
   function openKitty() {
     currentGame = "kitty";
     prepareGameTheme();
@@ -12352,17 +12365,18 @@
       showToast("Game Error", "Hello Kitty's Friendship Village could not open.", "fail", 4200);
       return;
     }
-    engine.setPlayerName?.(state.playerName);
+    syncKittyPlayerContext(engine);
     engine.open();
   }
 
   function startKitty() {
     currentGame = "kitty";
     const engine = getKittyEngine();
-    engine?.setPlayerName?.(state.playerName);
+    syncKittyPlayerContext(engine);
     if (!engine?.start({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx })) return;
     state.stats.gamesPlayed += 1;
     state.stats.kittyRuns = (Number(state.stats.kittyRuns) || 0) + 1;
+    syncKittyPlayerContext(engine);
     unlockEarnedAchievements();
     saveState();
     renderAll();
@@ -12371,10 +12385,11 @@
   function restartKitty() {
     currentGame = "kitty";
     const engine = getKittyEngine();
-    engine?.setPlayerName?.(state.playerName);
+    syncKittyPlayerContext(engine);
     if (!engine?.restart({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx })) return;
     state.stats.gamesPlayed += 1;
     state.stats.kittyRuns = (Number(state.stats.kittyRuns) || 0) + 1;
+    syncKittyPlayerContext(engine);
     unlockEarnedAchievements();
     saveState();
     renderAll();
@@ -12410,6 +12425,7 @@
         ? Math.min(Number(state.stats.kittyFastest), elapsed)
         : elapsed;
     }
+    syncKittyPlayerContext(kittyEngine);
     if (boosterUsed) {
       state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
       state.equippedBooster = null;

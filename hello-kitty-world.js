@@ -27,7 +27,10 @@
       this.frame = 0;
       this.elapsed = 0;
       this.timeLeft = SEEK_SECONDS;
-      this.finds = 0;
+      this.totalFinds = Math.max(0, Math.floor(Number(options.totalFinds) || 0));
+      this.adventureRuns = Math.max(0, Math.floor(Number(options.adventureRuns) || 0));
+      this.finds = this.totalFinds;
+      this.returningAdventure = this.totalFinds > 0 || this.adventureRuns > 0;
       this.score = 0;
       this.prompt = "";
       this.objective = "Find Kuromi in Friendship Village";
@@ -76,7 +79,13 @@
         { id: "bakery", x: 532, y: 334, label: "beside My Melody's house" },
         { id: "moon-garden", x: 1460, y: 444, label: "inside the moon garden" },
         { id: "cafe", x: 1228, y: 570, label: "behind Cinnamon Cafe" },
-        { id: "pond", x: 1050, y: 700, label: "behind the tree near the pond" }
+        { id: "pond", x: 1050, y: 700, label: "behind the tree near the pond" },
+        { id: "fountain", x: 1110, y: 456, label: "behind Friendship Fountain" },
+        { id: "friendship-hall", x: 950, y: 350, label: "behind the hedge beside Friendship Hall" },
+        { id: "cafe-garden", x: 1518, y: 844, label: "in the garden behind Cinnamon Cafe" },
+        { id: "south-meadow", x: 930, y: 856, label: "among the flowers in the south meadow" },
+        { id: "melody-hedge", x: 850, y: 350, label: "behind the hedge near My Melody's house" },
+        { id: "village-sign", x: 78, y: 906, label: "behind the Friendship Village sign" }
       ];
 
       this.obstacles = [
@@ -101,6 +110,18 @@
     setPlayerName(name) {
       this.playerName = this.normalizePlayerName(name);
       return this.playerName;
+    }
+
+    setPlayerProgress(progress = {}) {
+      if (Object.hasOwn(progress, "totalFinds")) {
+        this.totalFinds = Math.max(0, Math.floor(Number(progress.totalFinds) || 0));
+      }
+      if (Object.hasOwn(progress, "adventureRuns")) {
+        this.adventureRuns = Math.max(0, Math.floor(Number(progress.adventureRuns) || 0));
+      }
+      this.finds = this.totalFinds;
+      this.emitState(true);
+      return { totalFinds: this.totalFinds, adventureRuns: this.adventureRuns };
     }
 
     bindControls() {
@@ -249,6 +270,7 @@
     start(options = {}) {
       if (!this.opened) this.open();
       this.setMuted(options);
+      this.returningAdventure = this.totalFinds > 0 || this.adventureRuns > 0;
       this.started = true;
       this.paused = false;
       this.mode = "explore";
@@ -260,7 +282,7 @@
       this.camera.y = 380;
       this.elapsed = 0;
       this.timeLeft = SEEK_SECONDS;
-      this.finds = 0;
+      this.finds = this.totalFinds;
       this.score = 0;
       this.activeHideSpot = null;
       this.resultPending = false;
@@ -460,6 +482,36 @@
           "I heard a tiny splash near the pond!",
           "Try the trees beside the bright blue water.",
           "Kuromi may be somewhere she can watch the fish."
+        ],
+        fountain: [
+          "I heard a giggle over the splashing Friendship Fountain!",
+          "Look around the fountain in the middle of the village.",
+          "Kuromi may be hiding where the water sparkles."
+        ],
+        "friendship-hall": [
+          "Tiny footsteps disappeared beside Friendship Hall!",
+          "Check the hedge beside the big hall with the blue roof.",
+          "Kuromi may be peeking around Friendship Hall."
+        ],
+        "cafe-garden": [
+          "The flowers behind Cinnamon Cafe were rustling!",
+          "Search the little garden on the far side of the cafe.",
+          "Kuromi may be hiding where the cafe garden smells sweet."
+        ],
+        "south-meadow": [
+          "I saw purple ears moving through the south meadow flowers!",
+          "Try the flower patch toward the bottom of the village.",
+          "Kuromi picked a colorful hiding place this time."
+        ],
+        "melody-hedge": [
+          "I heard someone giggling just past my garden hedge!",
+          "Search the hedge on the Friendship Hall side of my house.",
+          "Kuromi is hiding very close to My Melody's flowers."
+        ],
+        "village-sign": [
+          "Someone ducked behind the Friendship Village sign!",
+          "Look near the wooden welcome sign in the lower-left meadow.",
+          "Kuromi may be hiding where every visitor enters the village."
         ]
       };
       const choices = hints[this.activeHideSpot.id] || ["I heard Kuromi giggling somewhere nearby!"];
@@ -474,14 +526,9 @@
       return [clue, followUp];
     }
 
-    pressA() {
-      if (!this.started || this.paused || this.resultPending) return false;
-      if (this.dialogueLines.length) {
-        this.advanceDialogue();
-        return true;
-      }
-      if (this.mode === "explore" && distance(this.player, this.kuromiMeeting) < 100) {
-        this.showDialogue("Kuromi", [
+    getKuromiMeetingDialogue() {
+      if (!this.returningAdventure) {
+        return [
           "Hello, hehe! Nice to meet you.",
           `I've heard lots about you, ${this.playerName}!`,
           "I hope you enjoy the world I live in.",
@@ -489,7 +536,71 @@
           "We play lots of games in this world. One of our favorites is Hide and Seek!",
           "Since you're here, you can play with us anytime!",
           "To start playing, meet me at Hello Kitty's house. I'll see you there!"
-        ], () => {
+        ];
+      }
+
+      const rematches = [
+        [
+          `You're back, ${this.playerName}! Are you ready to play Hide and Seek again?`,
+          "I found a few new hiding spots, so keep your eyes open!",
+          "Meet me at Hello Kitty's house when you're ready for our rematch."
+        ],
+        [
+          `Hey, ${this.playerName}! I was hoping you'd come back for another round.`,
+          "Think you can find me even faster this time?",
+          "Let's meet at Hello Kitty's house and start the game!"
+        ],
+        [
+          `Welcome back, ${this.playerName}! You're becoming a great Kuromi seeker.`,
+          "My Melody might share a hint if my hiding place is extra sneaky.",
+          "Come meet me at Hello Kitty's house when you're ready!"
+        ],
+        [
+          `There you are, ${this.playerName}! Kuromi's Hide-and-Seek challenge is ready again.`,
+          "I promise I won't make this round too easy, hehe!",
+          "Race me to Hello Kitty's house and I'll go hide."
+        ]
+      ];
+      return rematches[(this.adventureRuns + this.totalFinds) % rematches.length];
+    }
+
+    getKuromiHouseDialogue() {
+      if (!this.returningAdventure) {
+        return [
+          "You found Hello Kitty's house! Ready to play?",
+          "I'll hide while you count... three, two, one!",
+          "Ready or not, come find me!"
+        ];
+      }
+
+      const rematches = [
+        [
+          "You made it! Ready for another Hide-and-Seek round?",
+          "Count to three while I choose a brand-new hiding place...",
+          "Ready or not, come find me!"
+        ],
+        [
+          "Welcome back to our starting spot! Let's make this round fun.",
+          "Close your eyes while I sneak away... three, two, one!",
+          "Okay, seeker—come find Kuromi!"
+        ],
+        [
+          `This is rematch time, ${this.playerName}! Do you remember all my hiding tricks?`,
+          "I'll hide somewhere around the village while you count.",
+          "No peeking... ready or not, here we go!"
+        ]
+      ];
+      return rematches[(this.adventureRuns + this.totalFinds) % rematches.length];
+    }
+
+    pressA() {
+      if (!this.started || this.paused || this.resultPending) return false;
+      if (this.dialogueLines.length) {
+        this.advanceDialogue();
+        return true;
+      }
+      if (this.mode === "explore" && distance(this.player, this.kuromiMeeting) < 100) {
+        this.showDialogue("Kuromi", this.getKuromiMeetingDialogue(), () => {
           this.mode = "to-house";
           this.objective = "Meet Kuromi at Hello Kitty's house";
           this.prompt = "";
@@ -498,11 +609,7 @@
         return true;
       }
       if (this.mode === "to-house" && distance(this.player, this.kuromiAtHouse) < 112) {
-        this.showDialogue("Kuromi", [
-          "You found Hello Kitty's house! Ready to play?",
-          "I'll hide while you count... three, two, one!",
-          "Ready or not, come find me!"
-        ], () => this.startHideAndSeek());
+        this.showDialogue("Kuromi", this.getKuromiHouseDialogue(), () => this.startHideAndSeek());
         return true;
       }
       if (this.mode === "seeking" && this.activeHideSpot && distance(this.player, this.activeHideSpot) < 100) {
@@ -565,7 +672,7 @@
       this.melodyHintIndex = 0;
       this.mode = "seeking";
       this.timeLeft = SEEK_SECONDS;
-      this.objective = "Find Kuromi! Search behind houses, trees, and gardens";
+      this.objective = "Find Kuromi! Search every landmark in Friendship Village";
       this.prompt = "";
       this.playSfx("start");
       this.emitState(true);
@@ -575,7 +682,7 @@
       if (this.resultPending) return;
       this.resultPending = true;
       this.releaseControls();
-      this.finds = found ? 1 : 0;
+      this.finds = this.totalFinds + (found ? 1 : 0);
       this.score = found ? 1000 + Math.ceil(this.timeLeft) * 25 : 0;
       this.mode = found ? "found" : "timeout";
       this.objective = found ? "You found Kuromi!" : "Time's up — Kuromi was hiding nearby!";

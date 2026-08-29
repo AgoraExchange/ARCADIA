@@ -1,5 +1,7 @@
 # ARCADIA
 
+- Version 19.29.6.0 gives Hello Kitty World a persistent lifetime Kuromi-find counter, twelve hiding locations, and varied returning-player rematch conversations.
+- Version 19.29.5.0 hides the Hello Kitty World joystick and A/B controls during the title preview and reveals them only after Start Game is pressed.
 - Version 19.29.4.0 aligns the Hello Kitty World joystick and diagonal A/B controls to the same portrait and landscape control heights as Super Mario Bros.
 - Version 19.29.3.0 installs the player-provided pixel neighborhood artwork as the official Hello Kitty World game icon.
 - Version 19.29.2.0 renames Game 12 to Hello Kitty World throughout ARCADIA.
