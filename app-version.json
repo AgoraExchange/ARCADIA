@@ -1,6 +1,7 @@
 {
-  "version": "19.29.2.0",
+  "version": "19.29.3.0",
   "patchNotes": [
+    "Hello Kitty World now uses the player-provided pixel neighborhood artwork as its official ARCADIA game icon.",
     "Game 12 is now titled Hello Kitty World throughout ARCADIA.",
     "Hello Kitty World now uses the active ARCADIA player name in character conversations, gives My Melody rotating location-aware hints during each search, lowers the mobile controls, and keeps Restart in the bottom action area.",
     "Hello Kitty World joins ARCADIA as Game 12 with an original pixel-style Friendship Village, mobile and desktop controls, personalized Kuromi dialogue, NPC conversations, a guided story objective, and timed randomized Hide-and-Seek rewards.",

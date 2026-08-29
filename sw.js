@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.29.2.0";
+const ARCADIA_VERSION = "19.29.3.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -19,7 +19,7 @@ const APP_SHELL = [
   "assets/images/games/fruitninja-icon.png",
   "assets/images/games/super-mario-kart-zx.png",
   "assets/images/games/super-mario-bros.png",
-  "assets/images/games/hello-kitty-hide-and-seek.svg",
+  "assets/images/games/hello-kitty-world.png",
   "assets/images/arcadia-logo-180.png",
   "assets/images/arcadia-logo-192.png",
   "assets/images/arcadia-logo-512.png",

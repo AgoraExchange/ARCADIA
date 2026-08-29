@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.29.2.0";
+  const APP_VERSION = "19.29.3.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Hello Kitty World now uses the player-provided pixel neighborhood artwork as its official ARCADIA game icon.",
     "Game 12 is now titled Hello Kitty World throughout ARCADIA.",
     "Hello Kitty World now uses the active ARCADIA player name in character conversations, gives My Melody rotating location-aware hints during each search, lowers the mobile controls, and keeps Restart in the bottom action area.",
     "Hello Kitty World joins ARCADIA as Game 12 with an original pixel-style Friendship Village, mobile and desktop controls, personalized Kuromi dialogue, NPC conversations, a guided story objective, and timed randomized Hide-and-Seek rewards.",
@@ -462,7 +463,7 @@
       description: "Explore Friendship Village, meet Kuromi, and find her before time runs out.",
       status: "Play",
       available: true,
-      image: "assets/images/games/hello-kitty-hide-and-seek.svg",
+      image: "assets/images/games/hello-kitty-world.png",
       mark: "H"
     }
   ];

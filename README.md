@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.29.3.0 installs the player-provided pixel neighborhood artwork as the official Hello Kitty World game icon.
 - Version 19.29.2.0 renames Game 12 to Hello Kitty World throughout ARCADIA.
 - Version 19.29.1.0 improves Hello Kitty World with active-player-name dialogue, rotating My Melody hints tied to Kuromi's hiding place, lower mobile controls, and a bottom-aligned Restart action.
 - Version 19.29.0.0 adds Hello Kitty World as Game 12 with a pixel-style Friendship Village, Hello Kitty and Kuromi, personalized player conversation, explorable NPCs, mobile A/B controls, randomized hiding places, a timed search, chiptune audio, XP, coins, progress, and achievements.
