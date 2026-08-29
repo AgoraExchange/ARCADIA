@@ -6,12 +6,17 @@
   const GAME_HEIGHT = 464;
   const CAMPAIGN_MAP = /^([1-8])-([1-4])$/;
   const INPUTS = new Set(["left", "right", "up", "down", "sprint"]);
+  const JUMP_BUFFER_MS = 240;
+  const JUMP_HOLD_MS = 260;
   const heldInputs = new Set();
   let userWrapper = null;
   let game = null;
   let started = false;
   let lastClearKey = "";
   let lastClearAt = 0;
+  let jumpBufferUntil = 0;
+  let jumpBufferFrame = 0;
+  let jumpReleaseTimer = 0;
 
   function post(type, detail = {}) {
     window.parent.postMessage({ source: SOURCE, type, ...detail }, window.location.origin);
@@ -42,8 +47,62 @@
     }
   }
 
+  function clearJumpRequest() {
+    jumpBufferUntil = 0;
+    if (jumpBufferFrame) cancelAnimationFrame(jumpBufferFrame);
+    jumpBufferFrame = 0;
+    window.clearTimeout(jumpReleaseTimer);
+    jumpReleaseTimer = 0;
+  }
+
   function releaseInputs() {
+    clearJumpRequest();
     [...heldInputs].forEach((name) => setInput(name, false));
+  }
+
+  function canStartJump() {
+    const player = game?.player;
+    return Boolean(
+      started
+      && player
+      && player.alive !== false
+      && !game.GamesRunner.getPaused()
+      && player.canjump
+      && (player.resting || game.MapScreener.underwater)
+    );
+  }
+
+  function startFullJump() {
+    jumpBufferUntil = 0;
+    window.clearTimeout(jumpReleaseTimer);
+    setInput("up", false);
+    setInput("up", true);
+    jumpReleaseTimer = window.setTimeout(() => {
+      jumpReleaseTimer = 0;
+      setInput("up", false);
+    }, JUMP_HOLD_MS);
+  }
+
+  function tryBufferedJump(now = performance.now()) {
+    jumpBufferFrame = 0;
+    if (!jumpBufferUntil) return false;
+    if (!started || !game || game.GamesRunner.getPaused() || now > jumpBufferUntil) {
+      jumpBufferUntil = 0;
+      return false;
+    }
+    if (canStartJump()) {
+      startFullJump();
+      return true;
+    }
+    jumpBufferFrame = requestAnimationFrame(tryBufferedJump);
+    return false;
+  }
+
+  function pressJump() {
+    if (!started || !game || game.GamesRunner.getPaused()) return false;
+    jumpBufferUntil = performance.now() + JUMP_BUFFER_MS;
+    if (!jumpBufferFrame) tryBufferedJump();
+    return true;
   }
 
   function setPaused(paused) {
@@ -198,6 +257,7 @@
     start,
     selectLevel,
     setInput,
+    pressJump,
     releaseInputs,
     pause() { return setPaused(true); },
     resume() { return setPaused(false); },
@@ -222,6 +282,7 @@
     if (event.origin !== window.location.origin || event.data?.source !== "arcadia") return;
     const { type, name, pressed, muted } = event.data;
     if (type === "input") setInput(name, Boolean(pressed));
+    if (type === "jump") pressJump();
     if (type === "release-inputs") releaseInputs();
     if (type === "pause") setPaused(true);
     if (type === "resume") setPaused(false);

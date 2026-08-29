@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.28.0.0";
+  const APP_VERSION = "19.28.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);

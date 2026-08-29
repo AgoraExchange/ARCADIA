@@ -19,7 +19,7 @@
       this.boundMessage = this.handleMessage.bind(this);
       window.addEventListener("message", this.boundMessage);
       this.bindJoystick();
-      this.bindActionButton(this.jumpButton, "up", 260);
+      this.bindJumpButton(this.jumpButton);
       this.bindActionButton(this.sprintButton, "sprint");
     }
 
@@ -152,6 +152,31 @@
       this.heldInputs.clear();
       this.frameApi()?.releaseInputs?.();
       if (this.joystickKnob) this.joystickKnob.style.transform = "translate(0px, 0px)";
+    }
+
+    pressJump() {
+      if (!this.started || this.paused) return false;
+      const api = this.frameApi();
+      if (api?.pressJump) return Boolean(api.pressJump());
+      this.frame?.contentWindow?.postMessage({ source: "arcadia", type: "jump" }, window.location.origin);
+      return true;
+    }
+
+    bindJumpButton(button) {
+      if (!button) return;
+      const release = (event) => {
+        event?.preventDefault?.();
+        button.classList.remove("is-pressed");
+      };
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        button.setPointerCapture?.(event.pointerId);
+        this.pressJump();
+        button.classList.add("is-pressed");
+      });
+      button.addEventListener("pointerup", release);
+      button.addEventListener("pointercancel", release);
+      button.addEventListener("lostpointercapture", release);
     }
 
     bindActionButton(button, input, minimumHoldMs = 0) {

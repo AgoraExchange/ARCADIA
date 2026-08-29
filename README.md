@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.28.1.0 gives every Super Mario Bros A-button tap its own buffered jump request, allowing rapid taps to trigger the next jump on landing while keeping full-height jumps and preventing hold-to-auto-jump.
 - Version 19.28.0.0 turns Super Mario Bros' in-canvas World badge into a saved 32-map campaign selector with automatic continuation, replayable unlocked stages, completed/current states, and gray locked stages.
 - Version 19.27.1.0 reserves Super Mario Bros jumping for A, turns quick taps into full jumps, prevents joystick release from shortening a jump, raises the portrait touch controls away from Restart, and keeps Player Progress compact with the top three XP games visible plus scrolling for the rest.
 - Version 19.27.0.0 adds Super Mario Bros as Game 11 with the complete original 32-level PlayMario campaign, the player-provided icon, a staged 1985 title screen, touch controls, responsive landscape play, native pause/audio, and escalating stage rewards with first-castle level-up guarantees.
