@@ -1,5 +1,8 @@
 # ARCADIA
 
+- Version 19.29.2.0 renames Game 12 to Hello Kitty World throughout ARCADIA.
+- Version 19.29.1.0 improves Hello Kitty World with active-player-name dialogue, rotating My Melody hints tied to Kuromi's hiding place, lower mobile controls, and a bottom-aligned Restart action.
+- Version 19.29.0.0 adds Hello Kitty World as Game 12 with a pixel-style Friendship Village, Hello Kitty and Kuromi, personalized player conversation, explorable NPCs, mobile A/B controls, randomized hiding places, a timed search, chiptune audio, XP, coins, progress, and achievements.
 - Version 19.28.1.0 gives every Super Mario Bros A-button tap its own buffered jump request, allowing rapid taps to trigger the next jump on landing while keeping full-height jumps and preventing hold-to-auto-jump.
 - Version 19.28.0.0 turns Super Mario Bros' in-canvas World badge into a saved 32-map campaign selector with automatic continuation, replayable unlocked stages, completed/current states, and gray locked stages.
 - Version 19.27.1.0 reserves Super Mario Bros jumping for A, turns quick taps into full jumps, prevents joystick release from shortening a jump, raises the portrait touch controls away from Restart, and keeps Player Progress compact with the top three XP games visible plus scrolling for the rest.
@@ -35,7 +38,7 @@
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
-ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play eleven arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
+ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play twelve arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
 If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
 
@@ -112,6 +115,12 @@ Most ARCADIA games can run from a directly opened HTML file, but the bundled Mar
   - Left joystick movement, A jump, B sprint/fire, desktop keyboard/gamepad input, and top-right ARCADIA Pause/Resume
   - Compact portrait canvas and a larger side-control landscape layout with non-overlapping A/B buttons and Restart below the game
   - Escalating XP and coin rewards for native stage transitions, unique-stage tracking, and a guaranteed ARCADIA level-up on each world's first castle clear
+- Hello Kitty World game page
+  - Original top-down pixel-style Friendship Village with houses, paths, gardens, a pond, a cafe, animated scenery, and child-friendly objective guidance
+  - Hello Kitty exploration with a mobile analog joystick, A to talk/search, B to run, keyboard controls, responsive portrait play, and a large landscape layout
+  - Kuromi's multi-step greeting personalized with the active ARCADIA player name, tappable speech bubbles, and conversations with My Melody, Keroppi, and Cinnamoroll
+  - Timed Hide-and-Seek rounds with randomized hiding places, late-round purple sparkle clues, score, XP, coins, best times, and three achievements
+  - Original synthesized chiptune music and interaction, quest, success, and timeout sound effects
 - Dev Mode Casper autopilot for ARCADIA's nine native games
 
 ## Visual Direction
@@ -123,6 +132,8 @@ Fruit Ninja's custom ARCADIA canvas renderer is an original implementation inspi
 Super Mario Kart ZX was created by srPerez and its web port was published by burnedpopcorn. ARCADIA includes the exact compiled port with the user's confirmed permission and adds only the surrounding launch, touch-control, responsive-layout, and progression integration. See `games/sm-kart-zx/ATTRIBUTION.md` for upstream links and details.
 
 Super Mario Bros uses the PlayMario HTML5 Client's original 32 numbered campaign maps with the user's confirmed permission from its maintainer. ARCADIA adds its title launch, touch controls, responsive presentation, pause/audio bridge, and progression integration while leaving its random map and mod interfaces inaccessible. See `games/super-mario-bros/ATTRIBUTION.md` for upstream links and details.
+
+Hello Kitty World is an original fan-made ARCADIA canvas game. Its neighborhood, code, pixel-style drawings, music, dialogue system, and Hide-and-Seek mechanics were created for this project; Hello Kitty, Kuromi, My Melody, Keroppi, Cinnamoroll, and related character names remain trademarks and intellectual property of Sanrio.
 
 ## Asset Folders
 

@@ -663,6 +663,82 @@
       </main>
     </section>
 
+    <section id="kittyScreen" class="screen game-screen kitty-screen hidden">
+      <header class="page-top">
+        <button id="exitKittyBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Hello Kitty World</h1>
+        <button id="kittyPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content kitty-game-content">
+        <section class="kitty-stage panel">
+          <div class="kitty-canvas-shell">
+            <canvas id="kittyCanvas" width="960" height="600" aria-label="Hello Kitty Friendship Village. Explore with the joystick and press A to talk or search."></canvas>
+
+            <div class="kitty-hud" aria-live="polite">
+              <div class="kitty-objective-card">
+                <small>OBJECTIVE</small>
+                <strong id="kittyObjective">A tiny friendship adventure</strong>
+              </div>
+              <div id="kittyTimerCard" class="kitty-timer-card hidden">
+                <small>TIME</small>
+                <strong id="kittyTimer">60</strong>
+              </div>
+              <div class="kitty-finds-card">
+                <small>FOUND</small>
+                <strong id="kittyFinds">0</strong>
+              </div>
+            </div>
+
+            <div id="kittyTitleOverlay" class="kitty-title-overlay">
+              <span class="kitty-title-heart" aria-hidden="true">♥</span>
+              <p>WELCOME TO</p>
+              <h2>HELLO KITTY</h2>
+              <strong>HIDE &amp; SEEK</strong>
+              <small>A FRIENDSHIP VILLAGE ADVENTURE</small>
+            </div>
+
+            <div id="kittyPrompt" class="kitty-prompt hidden">A&nbsp;&nbsp;TALK</div>
+
+            <div id="kittyDialogue" class="kitty-dialogue hidden" role="dialog" aria-modal="false" aria-labelledby="kittyDialogueSpeaker">
+              <button id="kittyDialogueAdvance" type="button" aria-label="Continue conversation">
+                <span id="kittyDialoguePortrait" class="kitty-dialogue-portrait" aria-hidden="true"></span>
+                <span class="kitty-dialogue-copy">
+                  <strong id="kittyDialogueSpeaker">Kuromi</strong>
+                  <span id="kittyDialogueText"></span>
+                  <small><b id="kittyDialogueCounter">1 / 1</b> &middot; A OR TAP TO CONTINUE</small>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div id="kittyControls" class="kitty-controls" aria-label="Hello Kitty touch controls">
+            <div id="kittyJoystick" class="kitty-joystick" role="application" aria-label="Move Hello Kitty around Friendship Village">
+              <span class="kitty-joystick-directions" aria-hidden="true">▲<i>◀</i><b>▶</b><em>▼</em></span>
+              <span id="kittyJoystickKnob" class="kitty-joystick-knob"></span>
+            </div>
+            <div class="kitty-action-buttons" aria-label="Hello Kitty A and B buttons">
+              <button id="kittyBBtn" class="kitty-game-button kitty-b-button" type="button" aria-label="Hold to run">
+                <strong>B</strong>
+                <small id="kittyBLabel">RUN</small>
+              </button>
+              <button id="kittyABtn" class="kitty-game-button kitty-a-button" type="button" aria-label="Talk, interact, or search">
+                <strong>A</strong>
+                <small id="kittyALabel">TALK</small>
+              </button>
+            </div>
+          </div>
+
+          <p class="hint kitty-hint">Explore with the joystick. Press A to talk, continue speech bubbles, and search hiding places. Hold B to run. Desktop: WASD/Arrows, E or Z, and Shift or X.</p>
+
+          <div class="game-actions kitty-actions">
+            <button id="startKittyBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="restartKittyBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+        </section>
+      </main>
+    </section>
+
     <div id="marioMapModal" class="modal mario-map-modal hidden" role="dialog" aria-modal="true" aria-labelledby="marioMapTitle">
       <div class="modal-card mario-map-card">
         <button id="dismissMarioMapBtn" class="modal-x" type="button" aria-label="Close saved maps">X</button>
@@ -846,6 +922,7 @@
     <script src="fruit-ninja.js"></script>
     <script src="sm-kart-zx.js"></script>
     <script src="super-mario-bros.js"></script>
+    <script src="hello-kitty-world.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

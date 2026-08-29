@@ -3,11 +3,14 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.28.1.0";
+  const APP_VERSION = "19.29.2.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Game 12 is now titled Hello Kitty World throughout ARCADIA.",
+    "Hello Kitty World now uses the active ARCADIA player name in character conversations, gives My Melody rotating location-aware hints during each search, lowers the mobile controls, and keeps Restart in the bottom action area.",
+    "Hello Kitty World joins ARCADIA as Game 12 with an original pixel-style Friendship Village, mobile and desktop controls, personalized Kuromi dialogue, NPC conversations, a guided story objective, and timed randomized Hide-and-Seek rewards.",
     "Super Mario Bros adds a saved 32-map campaign selector to the in-canvas World badge, with completed, current, unlocked, and locked stages plus automatic continuation from the latest reached map.",
     "Super Mario Bros reserves jumping exclusively for A, gives quick A taps a full 260ms jump hold, prevents joystick release from cutting jumps short, and raises the portrait joystick and A/B controls away from Restart. Player Progress now keeps the top three XP games visible and scrolls the rest.",
     "Super Mario Bros joins ARCADIA as Game 11 with the complete original 32-level PlayMario campaign, the player-provided icon, a staged 1985 title screen, mobile controls, responsive landscape play, native pause/audio, and escalating level rewards.",
@@ -318,7 +321,13 @@
       marioHighestUnlockedLevel: 1,
       marioLastLevel: "1-1",
       marioLevelCompletions: {},
-      marioWorldsCleared: []
+      marioWorldsCleared: [],
+      kittyRuns: 0,
+      kittyFinds: 0,
+      kittyBest: 0,
+      kittyFastest: 0,
+      kittyXpEarned: 0,
+      kittyTotalScore: 0
     },
     achievements: []
   };
@@ -444,6 +453,17 @@
       available: true,
       image: "assets/images/games/super-mario-bros.png",
       mark: "M"
+    },
+    {
+      id: "kitty",
+      title: "Hello Kitty World",
+      gameNo: "12",
+      tags: ["hello kitty", "kuromi", "sanrio", "hide and seek", "open world", "exploration", "kids", "pixel", "adventure"],
+      description: "Explore Friendship Village, meet Kuromi, and find her before time runs out.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/hello-kitty-hide-and-seek.svg",
+      mark: "H"
     }
   ];
 
@@ -476,6 +496,9 @@
     { id: "mario_level", title: "Flagpole Finish", text: "Clear a Super Mario Bros stage." },
     { id: "mario_world", title: "Castle Conqueror", text: "Clear all four stages in a Super Mario Bros world." },
     { id: "mario_32", title: "Princess Rescued", text: "Clear all 32 original Super Mario Bros stages." },
+    { id: "kitty_first", title: "Friendship Village", text: "Begin your first Hello Kitty adventure." },
+    { id: "kitty_found", title: "Found You, Kuromi!", text: "Win a game of Hide and Seek." },
+    { id: "kitty_quick", title: "Super Seeker", text: "Find Kuromi in 30 seconds or less." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -1294,6 +1317,7 @@
   let kartProgressHydrated = false;
   let marioController = null;
   let marioSessionStartedAt = 0;
+  let kittyEngine = null;
   let marioMapPickerWasPlaying = false;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
@@ -1337,6 +1361,7 @@
     ninjaScreen: $("ninjaScreen"),
     kartScreen: $("kartScreen"),
     marioScreen: $("marioScreen"),
+    kittyScreen: $("kittyScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -1532,6 +1557,29 @@
     marioSprintBtn: $("marioSprintBtn"),
     startMarioBtn: $("startMarioBtn"),
     restartMarioBtn: $("restartMarioBtn"),
+    exitKittyBtn: $("exitKittyBtn"),
+    kittyPauseBtn: $("kittyPauseBtn"),
+    kittyCanvas: $("kittyCanvas"),
+    kittyTitleOverlay: $("kittyTitleOverlay"),
+    kittyObjective: $("kittyObjective"),
+    kittyTimerCard: $("kittyTimerCard"),
+    kittyTimer: $("kittyTimer"),
+    kittyFinds: $("kittyFinds"),
+    kittyPrompt: $("kittyPrompt"),
+    kittyDialogue: $("kittyDialogue"),
+    kittyDialogueAdvance: $("kittyDialogueAdvance"),
+    kittyDialogueSpeaker: $("kittyDialogueSpeaker"),
+    kittyDialogueText: $("kittyDialogueText"),
+    kittyDialogueCounter: $("kittyDialogueCounter"),
+    kittyControls: $("kittyControls"),
+    kittyJoystick: $("kittyJoystick"),
+    kittyJoystickKnob: $("kittyJoystickKnob"),
+    kittyABtn: $("kittyABtn"),
+    kittyBBtn: $("kittyBBtn"),
+    kittyALabel: $("kittyALabel"),
+    kittyBLabel: $("kittyBLabel"),
+    startKittyBtn: $("startKittyBtn"),
+    restartKittyBtn: $("restartKittyBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -1756,6 +1804,7 @@
     el.ninjaScreen.classList.toggle("hidden", name !== "ninja");
     el.kartScreen.classList.toggle("hidden", name !== "kart");
     el.marioScreen.classList.toggle("hidden", name !== "mario");
+    el.kittyScreen.classList.toggle("hidden", name !== "kitty");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -1767,14 +1816,15 @@
     if (name !== "ninja") stopNinja(false);
     if (name !== "kart") stopKart();
     if (name !== "mario") stopMario();
+    if (name !== "kitty") stopKitty();
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -2267,6 +2317,7 @@
 
   function toggleSoundEffects() {
     state.muteSfx = !state.muteSfx;
+    kittyEngine?.setMuted({ mutedSfx: state.muteSfx });
     saveState();
     updateAudioToggleButtons();
     if (!state.muteSfx) {
@@ -2278,6 +2329,7 @@
 
   function toggleSoundtrack() {
     state.muteMusic = !state.muteMusic;
+    kittyEngine?.setMuted({ mutedMusic: state.muteMusic });
     saveState();
     updateAudioToggleButtons();
     if (state.muteMusic) {
@@ -2589,6 +2641,7 @@
         if (game.id === "ninja") openNinja();
         if (game.id === "kart") openKart();
         if (game.id === "mario") openMario();
+        if (game.id === "kitty") openKitty();
       });
       el.gameGrid.appendChild(card);
     });
@@ -2694,6 +2747,14 @@
         best: Number(state.stats.marioLevelsCleared) || 0,
         metricLabel: "Clears",
         meta: `${formatNumber(state.stats.marioRuns)} plays · ${formatNumber(state.stats.marioLevelsCleared)} clears · ${formatNumber(Object.keys(state.stats.marioLevelCompletions || {}).length)}/32 unique stages`
+      },
+      {
+        title: "Hello Kitty World",
+        xp: Number(state.stats.kittyXpEarned) || 0,
+        runs: Number(state.stats.kittyRuns) || 0,
+        best: Number(state.stats.kittyFinds) || 0,
+        metricLabel: "Finds",
+        meta: `${formatNumber(state.stats.kittyRuns)} visits · ${formatNumber(state.stats.kittyFinds)} Kuromi finds · Best ${formatNumber(state.stats.kittyBest)}`
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -2895,6 +2956,13 @@
         runs: Number(state.stats.marioRuns) || 0,
         xp: Number(state.stats.marioXpEarned) || 0,
         best: Number(state.stats.marioHighestLevel) || 0
+      },
+      {
+        id: "kitty",
+        title: "Hello Kitty World",
+        runs: Number(state.stats.kittyRuns) || 0,
+        xp: Number(state.stats.kittyXpEarned) || 0,
+        best: Number(state.stats.kittyBest) || 0
       }
     ];
 
@@ -12234,6 +12302,145 @@
     );
   }
 
+  function syncKittyUi(snapshot = {}) {
+    if (!el.kittyObjective) return;
+    el.kittyObjective.textContent = snapshot.objective || "Explore Friendship Village";
+    el.kittyTimerCard.classList.toggle("hidden", snapshot.time === null || snapshot.time === undefined);
+    if (snapshot.time !== null && snapshot.time !== undefined) el.kittyTimer.textContent = String(snapshot.time);
+    el.kittyFinds.textContent = formatNumber(snapshot.finds || 0);
+    el.kittyPrompt.textContent = snapshot.prompt || "";
+    el.kittyPrompt.classList.toggle("hidden", !snapshot.prompt);
+    el.kittyALabel.textContent = snapshot.aLabel || "TALK";
+    el.kittyBLabel.textContent = snapshot.bLabel || "RUN";
+    el.kittyControls.classList.toggle("is-active", Boolean(snapshot.started));
+    el.startKittyBtn.classList.toggle("hidden", Boolean(snapshot.started));
+    el.kittyPauseBtn.disabled = !snapshot.started || ["found", "timeout"].includes(snapshot.mode);
+    el.kittyPauseBtn.textContent = snapshot.paused ? "Resume" : "Pause";
+  }
+
+  function getKittyEngine() {
+    if (kittyEngine) return kittyEngine;
+    if (typeof window.ArcadiaHelloKittyWorld !== "function") return null;
+    kittyEngine = new window.ArcadiaHelloKittyWorld({
+      playerName: state.playerName,
+      canvas: el.kittyCanvas,
+      titleOverlay: el.kittyTitleOverlay,
+      dialogue: el.kittyDialogue,
+      dialogueAdvance: el.kittyDialogueAdvance,
+      dialogueSpeaker: el.kittyDialogueSpeaker,
+      dialogueText: el.kittyDialogueText,
+      dialogueCounter: el.kittyDialogueCounter,
+      joystick: el.kittyJoystick,
+      joystickKnob: el.kittyJoystickKnob,
+      aButton: el.kittyABtn,
+      bButton: el.kittyBBtn,
+      onUpdate: syncKittyUi,
+      onPauseRequest: toggleKittyPause,
+      onRoundEnd: handleKittyRoundEnd
+    });
+    return kittyEngine;
+  }
+
+  function openKitty() {
+    currentGame = "kitty";
+    prepareGameTheme();
+    showScreen("kitty");
+    const engine = getKittyEngine();
+    if (!engine) {
+      showToast("Game Error", "Hello Kitty's Friendship Village could not open.", "fail", 4200);
+      return;
+    }
+    engine.setPlayerName?.(state.playerName);
+    engine.open();
+  }
+
+  function startKitty() {
+    currentGame = "kitty";
+    const engine = getKittyEngine();
+    engine?.setPlayerName?.(state.playerName);
+    if (!engine?.start({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx })) return;
+    state.stats.gamesPlayed += 1;
+    state.stats.kittyRuns = (Number(state.stats.kittyRuns) || 0) + 1;
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+  }
+
+  function restartKitty() {
+    currentGame = "kitty";
+    const engine = getKittyEngine();
+    engine?.setPlayerName?.(state.playerName);
+    if (!engine?.restart({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx })) return;
+    state.stats.gamesPlayed += 1;
+    state.stats.kittyRuns = (Number(state.stats.kittyRuns) || 0) + 1;
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+  }
+
+  function stopKitty() {
+    kittyEngine?.stop();
+  }
+
+  function toggleKittyPause() {
+    getKittyEngine()?.togglePause();
+  }
+
+  function handleKittyRoundEnd(result = {}) {
+    if (currentScreen !== "kitty") return;
+    const found = Boolean(result.found);
+    const score = Math.max(0, Math.round(Number(result.score) || 0));
+    const previousBest = Number(state.stats.kittyBest) || 0;
+    const newBest = score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem("kitty");
+    const baseXp = found ? 450 + Math.max(0, Number(result.timeLeft) || 0) * 8 : 120;
+    let earned = applyRewardBooster(Math.round(baseXp));
+    earned += highScoreLevelUpBonus(newBest, earned);
+    const coinsEarned = applyRewardBooster(found ? 45 + Math.ceil((Number(result.timeLeft) || 0) / 3) : 12);
+
+    state.stats.kittyTotalScore = (Number(state.stats.kittyTotalScore) || 0) + score;
+    state.stats.kittyBest = Math.max(previousBest, score);
+    if (found) {
+      state.stats.kittyFinds = (Number(state.stats.kittyFinds) || 0) + 1;
+      const elapsed = Math.max(1, Math.round(Number(result.elapsed) || 1));
+      state.stats.kittyFastest = state.stats.kittyFastest
+        ? Math.min(Number(state.stats.kittyFastest), elapsed)
+        : elapsed;
+    }
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+    state.xp = (Number(state.xp) || 0) + earned;
+    state.stats.kittyXpEarned = (Number(state.stats.kittyXpEarned) || 0) + earned;
+    state.coins = (Number(state.coins) || 0) + coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    el.resultKicker.textContent = "Hello Kitty Results";
+    el.resultTitle.textContent = found ? "Kuromi Found!" : "Time's Up!";
+    el.resultScore.textContent = formatNumber(score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.kittyBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = found
+      ? `You found Kuromi in ${formatNumber(result.elapsed)} seconds, ${result.hidingPlace}. She is ready to play again!`
+      : `Kuromi was hiding ${result.hidingPlace}. Follow the purple sparkles and try again!`;
+    if (newBest) showToast("New Hide & Seek Best", `${formatNumber(score)} points!`, "win");
+    showToast(found ? "Kuromi Found" : "Good Search", `+${formatNumber(earned)} XP and +${formatNumber(coinsEarned)} coins.`, found ? "win" : "tap");
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -12264,6 +12471,9 @@
       ["mario_level", state.stats.marioLevelsCleared >= 1],
       ["mario_world", Array.isArray(state.stats.marioWorldsCleared) && state.stats.marioWorldsCleared.length >= 1],
       ["mario_32", Object.keys(state.stats.marioLevelCompletions || {}).length >= 32],
+      ["kitty_first", state.stats.kittyRuns >= 1],
+      ["kitty_found", state.stats.kittyFinds >= 1],
+      ["kitty_quick", state.stats.kittyFastest > 0 && state.stats.kittyFastest <= 30],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -12391,6 +12601,7 @@
     const nextName = name.trim().replace(/\s+/g, " ").slice(0, 16);
     if (!nextName) return;
     state.playerName = nextName;
+    kittyEngine?.setPlayerName?.(state.playerName);
     saveState();
     renderAll();
     el.renameModal.classList.add("hidden");
@@ -12680,6 +12891,8 @@
         startFruit();
       } else if (currentGame === "ninja") {
         startNinja();
+      } else if (currentGame === "kitty") {
+        restartKitty();
       } else {
         startSnake();
       }
@@ -12744,6 +12957,10 @@
     });
     el.startMarioBtn.addEventListener("click", startMario);
     el.restartMarioBtn.addEventListener("click", restartMario);
+    el.exitKittyBtn.addEventListener("click", () => showScreen("home"));
+    el.kittyPauseBtn.addEventListener("click", toggleKittyPause);
+    el.startKittyBtn.addEventListener("click", startKitty);
+    el.restartKittyBtn.addEventListener("click", restartKitty);
     el.ninjaCanvas.addEventListener("pointerdown", (event) => {
       if (!ninja.running || ninja.paused || casperHasGameplayControl("ninja")) return;
       event.preventDefault();

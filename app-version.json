@@ -1,6 +1,9 @@
 {
-  "version": "19.28.1.0",
+  "version": "19.29.2.0",
   "patchNotes": [
+    "Game 12 is now titled Hello Kitty World throughout ARCADIA.",
+    "Hello Kitty World now uses the active ARCADIA player name in character conversations, gives My Melody rotating location-aware hints during each search, lowers the mobile controls, and keeps Restart in the bottom action area.",
+    "Hello Kitty World joins ARCADIA as Game 12 with an original pixel-style Friendship Village, mobile and desktop controls, personalized Kuromi dialogue, NPC conversations, a guided story objective, and timed randomized Hide-and-Seek rewards.",
     "Super Mario Bros now treats every A-button tap as its own jump request, buffers rapid taps through landing, and preserves the full-height jump hold without turning a held button into automatic jumping.",
     "Super Mario Bros adds a saved 32-map campaign selector to the in-canvas World badge, with completed, current, unlocked, and locked stages plus automatic continuation from the latest reached map.",
     "Super Mario Bros reserves jumping exclusively for A, gives quick A taps a full 260ms jump hold, prevents joystick release from cutting jumps short, and raises the portrait joystick and A/B controls away from Restart. Player Progress now keeps the top three XP games visible and scrolls the rest.",

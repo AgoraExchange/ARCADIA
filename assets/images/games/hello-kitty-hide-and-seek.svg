@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc" shape-rendering="crispEdges">
+  <title id="title">Hello Kitty World</title>
+  <desc id="desc">Pixel-style Hello Kitty and Kuromi in a pastel neighborhood.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8edff2"/>
+      <stop offset="1" stop-color="#d8f6ef"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#sky)"/>
+  <rect y="280" width="800" height="220" fill="#76cb83"/>
+  <path d="M0 380h800v120H0z" fill="#f8dca8"/>
+  <path d="M330 280h140v220H330z" fill="#f8dca8"/>
+  <g opacity=".25" fill="#fff">
+    <rect x="40" y="56" width="140" height="22"/><rect x="88" y="36" width="58" height="22"/>
+    <rect x="590" y="92" width="164" height="22"/><rect x="640" y="70" width="72" height="22"/>
+  </g>
+  <g transform="translate(284 80)">
+    <path d="M0 120 116 24l116 96v124H0z" fill="#fff1f6"/>
+    <path d="m-18 126 134-112 134 112h-42L116 49 24 126z" fill="#ed557d"/>
+    <rect x="83" y="162" width="66" height="82" fill="#744f63"/>
+    <rect x="22" y="132" width="46" height="38" fill="#77cae5"/>
+    <rect x="164" y="132" width="46" height="38" fill="#77cae5"/>
+    <g transform="translate(176 64)" fill="#ffd5e2">
+      <rect x="-29" y="-16" width="22" height="34"/><rect x="7" y="-16" width="22" height="34"/>
+      <rect x="-8" y="-11" width="16" height="24" fill="#fff"/>
+    </g>
+  </g>
+  <g transform="translate(170 317)">
+    <ellipse cx="0" cy="114" rx="67" ry="18" fill="#3f695f" opacity=".28"/>
+    <path d="M-54 3h108v82H-54z" fill="#fff"/>
+    <path d="M-44 4V-27h25V0M19 0v-27h25V4" fill="#fff"/>
+    <rect x="-37" y="80" width="74" height="62" fill="#e74b70"/>
+    <rect x="-32" y="107" width="64" height="43" fill="#4c91cf"/>
+    <rect x="-27" y="32" width="10" height="15" fill="#232331"/>
+    <rect x="18" y="32" width="10" height="15" fill="#232331"/>
+    <rect x="-7" y="50" width="15" height="10" fill="#f2c64d"/>
+    <rect x="-70" y="39" width="28" height="5" fill="#333"/><rect x="42" y="39" width="28" height="5" fill="#333"/>
+    <g transform="translate(50 2)" fill="#e83f66">
+      <rect x="-29" y="-16" width="22" height="34"/><rect x="7" y="-16" width="22" height="34"/>
+      <rect x="-8" y="-11" width="16" height="24" fill="#ffd3df"/>
+    </g>
+  </g>
+  <g transform="translate(627 324)">
+    <ellipse cx="0" cy="108" rx="63" ry="17" fill="#3f695f" opacity=".28"/>
+    <path d="M-53 5h106v81H-53z" fill="#211a2c"/>
+    <path d="m-53 4-34-55 64 46M53 4 87-51 23-5" fill="#211a2c"/>
+    <rect x="-39" y="25" width="78" height="55" fill="#fff8fb"/>
+    <rect x="-36" y="82" width="72" height="62" fill="#72429a"/>
+    <rect x="-23" y="42" width="10" height="14" fill="#28222d"/>
+    <rect x="14" y="42" width="10" height="14" fill="#28222d"/>
+    <rect x="-7" y="62" width="15" height="9" fill="#ed73aa"/>
+    <rect x="-16" y="-4" width="32" height="25" fill="#f5a6ce"/>
+    <rect x="-7" y="2" width="14" height="13" fill="#fff"/>
+  </g>
+  <g font-family="monospace" text-anchor="middle">
+    <rect x="116" y="20" width="568" height="82" rx="8" fill="#fff8fc" stroke="#6f3e87" stroke-width="8"/>
+    <text x="400" y="57" font-size="32" font-weight="900" fill="#e84975">HELLO KITTY</text>
+    <text x="400" y="88" font-size="28" font-weight="900" fill="#6f3e87">WORLD</text>
+  </g>
+  <g fill="#fff7a8">
+    <rect x="72" y="250" width="14" height="14"/><rect x="704" y="230" width="14" height="14"/>
+    <rect x="742" y="270" width="10" height="10"/><rect x="115" y="210" width="10" height="10"/>
+  </g>
+</svg>
