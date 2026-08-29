@@ -21,6 +21,8 @@ import { ChaseCamera } from './game/Camera';
 import { HUD } from './ui/HUD';
 import { Audio } from './audio/Audio';
 
+if (window.parent !== window) document.documentElement.dataset.arcadiaEmbed = '';
+
 const parent = document.getElementById('app')!;
 
 /**
@@ -128,6 +130,7 @@ function postArcadiaState() {
     raceState: race.state,
     paused: race.state === RaceState.Paused,
     racing: race.state === RaceState.Countdown || race.state === RaceState.Racing,
+    controlScheme: input.pad.prefs.scheme,
   });
 }
 
@@ -137,19 +140,30 @@ window.addEventListener('message', (event) => {
   if (!message || message.source !== ARCADIA_PARENT_SOURCE) return;
   if (message.type === 'start') {
     bridgeFinishReported = false;
+    input.setArcadiaEnabled(true);
+    input.releaseArcadiaControls();
+    input.pad.setAuto(true);
     audio.setMuted(Boolean(message.mutedMusic), Boolean(message.mutedSfx));
     hud.beginFromArcadia();
     postArcadiaState();
   } else if (message.type === 'restart') {
     bridgeFinishReported = false;
+    input.setArcadiaEnabled(true);
+    input.releaseArcadiaControls();
+    input.pad.setAuto(true);
     audio.setMuted(Boolean(message.mutedMusic), Boolean(message.mutedSfx));
     hud.restartFromArcadia();
     postArcadiaState();
   } else if (message.type === 'pause') {
+    if (message.paused) input.releaseArcadiaControls();
     race.setPaused(Boolean(message.paused));
     postArcadiaState();
   } else if (message.type === 'mute') {
     audio.setMuted(Boolean(message.mutedMusic), Boolean(message.mutedSfx));
+  } else if (message.type === 'input') {
+    input.setArcadiaControl(String(message.name || ''), message.value);
+  } else if (message.type === 'release-input') {
+    input.releaseArcadiaControls();
   } else if (message.type === 'status') {
     postArcadiaState();
   }
@@ -160,9 +174,10 @@ ctx.bus.on((event) => {
     bridgeFinishReported = false;
     postArcadiaState();
   }
-  if (event.type === 'ui' && (event.name === 'pause' || event.name === 'resume')) postArcadiaState();
+  if (event.type === 'ui' && ['pause', 'resume', 'move', 'confirm', 'start'].includes(event.name)) postArcadiaState();
   if (event.type !== 'finish' || !event.kart.isPlayer || bridgeFinishReported) return;
   bridgeFinishReported = true;
+  input.releaseArcadiaControls();
   postArcadia('finish', {
     place: event.place,
     raceTime: race.raceTime,
@@ -211,6 +226,7 @@ const SYSTEM_LABELS = [
 ];
 
 function bootProgress(frac: number, label: string) {
+  postArcadia('progress', { percent: Math.round(frac * 100), label });
   const bar = document.querySelector<HTMLElement>('.boot-bar i');
   const step = document.querySelector<HTMLElement>('.boot-step');
   if (bar) bar.style.width = `${Math.round(frac * 100)}%`;

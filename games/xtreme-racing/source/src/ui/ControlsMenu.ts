@@ -49,19 +49,11 @@ type Opt<T> = { value: T; label: string; note?: string };
 const SCHEMES: { id: Scheme; name: string; blurb: string; glyph: string }[] = [
   {
     id: 'floating', name: 'Floating stick', glyph: 'ring',
-    blurb: 'Appears wherever your thumb lands. Never look for it.',
-  },
-  {
-    id: 'fixed', name: 'Fixed stick', glyph: 'ring-fixed',
-    blurb: 'Always in the same place. Muscle memory, no drift.',
+    blurb: 'Use ARCADIA\'s steering stick beside the race screen.',
   },
   {
     id: 'tilt', name: 'Tilt to steer', glyph: 'tilt',
-    blurb: 'Roll the phone. Both thumbs free for the buttons.',
-  },
-  {
-    id: 'buttons', name: 'Steer buttons', glyph: 'pads',
-    blurb: 'Two big pads. Nothing to hold steady.',
+    blurb: 'Roll the phone. The stick hides and both thumbs stay free.',
   },
 ];
 

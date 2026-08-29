@@ -212,6 +212,41 @@ export class Input implements IInput {
   /** REPORTED, for tools/haptic-bench.mjs: what the last correction was */
   assistLast = 0;
 
+  /** ARCADIA's controls live outside the iframe so they never cover the road. */
+  private arcadiaEnabled = false;
+  private arcadiaSteer = 0;
+  private arcadiaSteering = false;
+  private arcadiaDrift = false;
+  private arcadiaItem = false;
+
+  setArcadiaEnabled(enabled: boolean) {
+    this.arcadiaEnabled = enabled;
+    if (!enabled) this.releaseArcadiaControls();
+  }
+
+  setArcadiaControl(name: string, value: number | boolean) {
+    if (name === 'steer') {
+      this.arcadiaSteer = Math.max(-1, Math.min(1, Number(value) || 0));
+      return;
+    }
+    if (name === 'steering') {
+      this.arcadiaSteering = Boolean(value);
+      return;
+    }
+    if (name === 'drift') {
+      this.arcadiaDrift = Boolean(value);
+      return;
+    }
+    if (name === 'item') this.arcadiaItem = Boolean(value);
+  }
+
+  releaseArcadiaControls() {
+    this.arcadiaSteer = 0;
+    this.arcadiaSteering = false;
+    this.arcadiaDrift = false;
+    this.arcadiaItem = false;
+  }
+
   init(ctx: Ctx) {
     this.ctx = ctx;
     addEventListener('keydown', this.onDown);
@@ -583,6 +618,21 @@ export class Input implements IInput {
       item = item || t.item;
       look = look || t.look;
       pause = pause || this.pad.consumePause();
+    }
+
+    // ARCADIA supplies the visible landscape controls in the gutters beside
+    // the iframe. Tilt remains native so DeviceOrientation stays in this frame;
+    // the external stick takes over only for the floating-stick preference.
+    if (this.arcadiaEnabled) {
+      const racing = ctx.race?.state === RaceState.Countdown || ctx.race?.state === RaceState.Racing;
+      if (this.pad.prefs.scheme !== 'tilt' && this.arcadiaSteering) analogue = this.arcadiaSteer;
+      if (racing) {
+        accel = Math.max(accel, 1);
+        accelAuto = true;
+        drift = drift || this.arcadiaDrift;
+        item = item || this.arcadiaItem;
+        if (this.arcadiaSteering || this.arcadiaDrift || this.arcadiaItem) acted = true;
+      }
     }
 
     // --- gamepad, if one is attached -----------------------------------------

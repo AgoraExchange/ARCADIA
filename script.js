@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.30.0.0";
+  const APP_VERSION = "19.30.1.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "XTREME RACING now adds real circuit-building progress, places its floating steering stick and diagonal Drift/Item buttons outside the landscape race canvas, hides the stick in Tilt mode, and spreads the race HUD to the canvas edges.",
     "XTREME RACING joins ARCADIA as Game 13 with Kart Royale's procedural 3D racing, native mobile controls, racer selection, items, drifting, placement rewards, saved progress, the player-provided icon, and a true MPH speedometer.",
     "Hello Kitty World now shows saved lifetime Kuromi finds in the HUD, keeps the total through retries, adds twelve hiding locations, and gives returning players varied rematch dialogue.",
     "Hello Kitty World now keeps its joystick and A/B controls hidden during the title preview and reveals them only after Start Game is pressed.",
@@ -1616,6 +1617,14 @@
     xtremeFrame: $("xtremeFrame"),
     xtremeLoading: $("xtremeLoading"),
     xtremeLoadingText: $("xtremeLoadingText"),
+    xtremeLoadingBar: $("xtremeLoadingBar"),
+    xtremeLoadingStep: $("xtremeLoadingStep"),
+    xtremeLoadingPercent: $("xtremeLoadingPercent"),
+    xtremeControls: $("xtremeControls"),
+    xtremeJoystick: $("xtremeJoystick"),
+    xtremeJoystickKnob: $("xtremeJoystickKnob"),
+    xtremeDriftBtn: $("xtremeDriftBtn"),
+    xtremeItemBtn: $("xtremeItemBtn"),
     startXtremeBtn: $("startXtremeBtn"),
     restartXtremeBtn: $("restartXtremeBtn"),
     toastStack: $("toastStack"),
@@ -12552,6 +12561,15 @@
       frame: el.xtremeFrame,
       loading: el.xtremeLoading,
       loadingText: el.xtremeLoadingText,
+      progressTrack: el.xtremeLoadingBar?.parentElement,
+      progressBar: el.xtremeLoadingBar,
+      progressStep: el.xtremeLoadingStep,
+      progressPercent: el.xtremeLoadingPercent,
+      controls: el.xtremeControls,
+      joystick: el.xtremeJoystick,
+      joystickKnob: el.xtremeJoystickKnob,
+      driftButton: el.xtremeDriftBtn,
+      itemButton: el.xtremeItemBtn,
       startButton: el.startXtremeBtn,
       restartButton: el.restartXtremeBtn,
       pauseButton: el.xtremePauseBtn,

@@ -4057,6 +4057,7 @@ input:focus {
 }
 
 .xtreme-stage {
+  position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto auto;
   gap: 12px;
@@ -4131,6 +4132,46 @@ input:focus {
   font-family: var(--font-ui);
 }
 
+.xtreme-loading-progress {
+  width: min(390px, 80%);
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(73, 244, 255, 0.42);
+  border-radius: 999px;
+  background: rgba(1, 5, 14, 0.72);
+  box-shadow: inset 0 2px 7px rgba(0, 0, 0, 0.65), 0 0 18px rgba(73, 244, 255, 0.1);
+}
+
+.xtreme-loading-progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #25d4ff, #7c5cff 55%, #ff45bd);
+  box-shadow: 0 0 16px rgba(73, 244, 255, 0.74);
+  transition: width 0.28s ease;
+}
+
+.xtreme-loading-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(390px, 80%);
+}
+
+.xtreme-loading-status small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xtreme-loading-status b {
+  flex: 0 0 auto;
+  color: #80f8ff;
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+}
+
 .xtreme-loading-spinner {
   width: 48px;
   height: 48px;
@@ -4150,6 +4191,180 @@ input:focus {
 .xtreme-hint {
   margin: 0;
   text-align: center;
+}
+
+.xtreme-controls {
+  display: none;
+}
+
+.xtreme-steering-control {
+  grid-column: 1;
+  justify-self: start;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: rgba(223, 245, 255, 0.72);
+  font-family: var(--font-display);
+  font-size: 0.48rem;
+  letter-spacing: 0.12em;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: auto;
+}
+
+.xtreme-controls[data-scheme="tilt"] .xtreme-steering-control {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.xtreme-joystick {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  overflow: hidden;
+  border: 2px solid rgba(73, 244, 255, 0.46);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 43%),
+    linear-gradient(135deg, rgba(73, 244, 255, 0.18), rgba(96, 55, 221, 0.15)),
+    rgba(4, 12, 25, 0.82);
+  box-shadow:
+    inset 0 0 28px rgba(0, 0, 0, 0.7),
+    0 10px 24px rgba(0, 0, 0, 0.36),
+    0 0 28px rgba(73, 244, 255, 0.2);
+  touch-action: none;
+}
+
+.xtreme-joystick-directions {
+  position: absolute;
+  inset: 8px;
+  color: rgba(255, 255, 255, 0.42);
+  font-family: sans-serif;
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+
+.xtreme-joystick-directions i,
+.xtreme-joystick-directions b {
+  position: absolute;
+  top: 50%;
+  font-style: normal;
+  font-weight: 500;
+  transform: translateY(-50%);
+}
+
+.xtreme-joystick-directions i { left: 0; }
+.xtreme-joystick-directions b { right: 0; }
+
+.xtreme-joystick-knob {
+  position: absolute;
+  left: calc(50% - 22px);
+  top: calc(50% - 22px);
+  width: 44px;
+  height: 44px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.9), transparent 18%),
+    linear-gradient(145deg, #70fbff, #168dcc 56%, #243d95);
+  box-shadow:
+    inset -5px -8px 12px rgba(0, 18, 40, 0.4),
+    0 7px 16px rgba(0, 0, 0, 0.42),
+    0 0 24px rgba(73, 244, 255, 0.48);
+  pointer-events: none;
+}
+
+.xtreme-action-buttons {
+  grid-column: 3;
+  justify-self: end;
+  position: relative;
+  width: 150px;
+  height: 112px;
+  pointer-events: none;
+}
+
+.xtreme-game-button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 72px;
+  height: 58px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  touch-action: none;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.xtreme-game-button strong {
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  line-height: 1;
+}
+
+.xtreme-game-button small {
+  font-family: var(--font-display);
+  font-size: 0.42rem;
+  letter-spacing: 0.08em;
+}
+
+.xtreme-drift-button {
+  top: 0;
+  right: 0;
+  background:
+    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.64), transparent 18%),
+    linear-gradient(180deg, #4fdfff, #167dbf 58%, #12396f);
+  box-shadow:
+    inset 0 7px 12px rgba(255, 255, 255, 0.24),
+    inset 0 -9px 14px rgba(0, 35, 77, 0.48),
+    0 9px 0 #09264a,
+    0 15px 23px rgba(0, 0, 0, 0.38),
+    0 0 28px rgba(79, 195, 255, 0.38);
+}
+
+.xtreme-item-button {
+  left: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.58), transparent 18%),
+    linear-gradient(180deg, #d181ff, #7735d1 58%, #35146f);
+  box-shadow:
+    inset 0 7px 12px rgba(255, 255, 255, 0.22),
+    inset 0 -9px 14px rgba(38, 8, 78, 0.48),
+    0 9px 0 #24104c,
+    0 15px 23px rgba(0, 0, 0, 0.38),
+    0 0 26px rgba(176, 87, 255, 0.34);
+}
+
+.xtreme-game-button.is-pressed,
+.xtreme-game-button:active {
+  transform: translateY(6px);
+  filter: brightness(1.18);
+  box-shadow:
+    inset 0 6px 12px rgba(255, 255, 255, 0.2),
+    inset 0 -7px 12px rgba(20, 8, 46, 0.5),
+    0 3px 0 #171044,
+    0 7px 16px rgba(0, 0, 0, 0.34);
+}
+
+@media (orientation: landscape) and (max-width: 1180px) {
+  .xtreme-port-shell {
+    width: min(calc(100% - 286px), 1120px);
+  }
+
+  .xtreme-controls.is-active {
+    position: absolute;
+    z-index: 6;
+    inset: 8px 8px 72px;
+    display: grid;
+    grid-template-columns: 126px minmax(0, 1fr) 150px;
+    align-items: center;
+    width: auto;
+    pointer-events: none;
+  }
 }
 
 @media (orientation: portrait) and (max-width: 760px) {
@@ -4214,6 +4429,33 @@ input:focus {
     height: 100%;
     max-height: 100%;
     border-radius: 12px;
+  }
+
+  .xtreme-controls.is-active {
+    inset: 4px 4px 50px;
+    grid-template-columns: 112px minmax(0, 1fr) 132px;
+  }
+
+  .xtreme-joystick {
+    width: 94px;
+    height: 94px;
+  }
+
+  .xtreme-joystick-knob {
+    left: calc(50% - 19px);
+    top: calc(50% - 19px);
+    width: 38px;
+    height: 38px;
+  }
+
+  .xtreme-action-buttons {
+    width: 130px;
+    height: 98px;
+  }
+
+  .xtreme-game-button {
+    width: 62px;
+    height: 50px;
   }
 
   .xtreme-hint {

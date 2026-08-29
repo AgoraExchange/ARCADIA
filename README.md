@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.30.1.0 gives XTREME RACING a real circuit-building progress bar and a landscape-first ARCADIA control deck with an outside floating stick, diagonal Drift/Item buttons, automatic Tilt-mode stick hiding, and edge-aligned race HUD information.
 - Version 19.30.0.0 adds XTREME RACING as Game 13 with Kart Royale's procedural 3D racing, native touch controls, racer selection, items, drifting, race-place rewards, saved progress, the player-provided icon, and a true MPH speedometer.
 - Version 19.29.6.0 gives Hello Kitty World a persistent lifetime Kuromi-find counter, twelve hiding locations, and varied returning-player rematch conversations.
 - Version 19.29.5.0 hides the Hello Kitty World joystick and A/B controls during the title preview and reveals them only after Start Game is pressed.

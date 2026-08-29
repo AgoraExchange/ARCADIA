@@ -141,7 +141,9 @@ function oneOf<T extends string>(v: unknown, allowed: readonly T[], dflt: T): T 
   return typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : dflt;
 }
 
-const SCHEMES = ['floating', 'fixed', 'tilt', 'buttons'] as const;
+// ARCADIA exposes one precise external stick or native tilt steering on mobile.
+// Legacy fixed/button preferences safely migrate back to the floating stick.
+const SCHEMES = ['floating', 'tilt'] as const;
 const HANDS = ['right', 'left'] as const;
 
 /**

@@ -1,6 +1,7 @@
 {
-  "version": "19.30.0.0",
+  "version": "19.30.1.0",
   "patchNotes": [
+    "XTREME RACING now adds real circuit-building progress, places its floating steering stick and diagonal Drift/Item buttons outside the landscape race canvas, hides the stick in Tilt mode, and spreads the race HUD to the canvas edges.",
     "XTREME RACING joins ARCADIA as Game 13 with Kart Royale's procedural 3D racing, native mobile controls, racer selection, items, drifting, placement rewards, saved progress, the player-provided icon, and a true MPH speedometer.",
     "Hello Kitty World now shows the player's saved lifetime Kuromi finds in the game HUD, keeps the total through retries and restarts, expands Hide and Seek to twelve locations, and gives returning players varied rematch dialogue.",
     "Hello Kitty World now keeps its joystick and A/B controls hidden during the title preview and reveals them only after Start Game is pressed.",

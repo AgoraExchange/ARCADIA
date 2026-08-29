@@ -759,11 +759,37 @@
             <div id="xtremeLoading" class="xtreme-loading">
               <span class="xtreme-loading-spinner" aria-hidden="true"></span>
               <strong id="xtremeLoadingText">Building the XTREME RACING circuit...</strong>
-              <small>Procedural track, karts, lighting, music, and effects are loading.</small>
+              <div class="xtreme-loading-progress" role="progressbar" aria-label="XTREME RACING loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <i id="xtremeLoadingBar"></i>
+              </div>
+              <div class="xtreme-loading-status">
+                <small id="xtremeLoadingStep">Preparing the race engine...</small>
+                <b id="xtremeLoadingPercent">0%</b>
+              </div>
             </div>
           </div>
 
-          <p class="hint xtreme-hint">Landscape recommended. Choose a racer, then use the native steering control, DRIFT, BRAKE, and item buttons. Desktop: arrows steer and accelerate, Shift drifts, Space uses an item, and Escape pauses.</p>
+          <div id="xtremeControls" class="xtreme-controls" data-scheme="floating" aria-label="XTREME RACING touch controls">
+            <div id="xtremeJoystickWrap" class="xtreme-steering-control">
+              <div id="xtremeJoystick" class="xtreme-joystick" role="application" aria-label="Steer the kart">
+                <span class="xtreme-joystick-directions" aria-hidden="true"><i>◀</i><b>▶</b></span>
+                <span id="xtremeJoystickKnob" class="xtreme-joystick-knob"></span>
+              </div>
+              <small>STEER</small>
+            </div>
+            <div class="xtreme-action-buttons" aria-label="XTREME RACING A and B buttons">
+              <button id="xtremeItemBtn" class="xtreme-game-button xtreme-item-button" type="button" aria-label="Use held item">
+                <strong>B</strong>
+                <small>ITEM</small>
+              </button>
+              <button id="xtremeDriftBtn" class="xtreme-game-button xtreme-drift-button" type="button" aria-label="Drift">
+                <strong>A</strong>
+                <small>DRIFT</small>
+              </button>
+            </div>
+          </div>
+
+          <p class="hint xtreme-hint">Landscape recommended. Choose Floating Stick or Tilt to Steer in Controls. A drifts and B uses your held item. Desktop: arrows steer and accelerate, Shift drifts, Space uses an item, and Escape pauses.</p>
 
           <div class="game-actions xtreme-actions">
             <button id="startXtremeBtn" class="arcade-btn primary hidden" type="button">Start Game</button>

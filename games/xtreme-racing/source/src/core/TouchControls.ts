@@ -1004,6 +1004,7 @@ export class TouchControls {
 
   private onDown = (e: PointerEvent) => {
     if (!this.mounted) return;
+    if (document.documentElement.hasAttribute('data-arcadia-embed')) return;
     const t = e.target as HTMLElement;
     if (t?.closest?.('.tc-chip')) return; // handled by their own listeners
     this.touchedEver = true;
@@ -1050,6 +1051,7 @@ export class TouchControls {
   }
 
   private onMove = (e: PointerEvent) => {
+    if (document.documentElement.hasAttribute('data-arcadia-embed')) return;
     if (e.pointerId !== this.stickPointer) {
       const known = this.free.has(e.pointerId);
       if (known) this.freeXY.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1136,6 +1138,7 @@ export class TouchControls {
   }
 
   private onUp = (e: PointerEvent) => {
+    if (document.documentElement.hasAttribute('data-arcadia-embed')) return;
     this.free.delete(e.pointerId);
     this.freeXY.delete(e.pointerId);
     if (e.pointerId === this.stickPointer) {
@@ -1895,4 +1898,58 @@ html[data-menu][data-touch-preview] .tc-root { visibility: visible; }
 html[data-menu][data-touch-preview][data-touch-scheme="floating"] .tc-stick-zone,
 html[data-menu][data-touch-preview][data-touch-scheme="fixed"] .tc-stick-zone { display: block; }
 html[data-menu][data-touch-preview][data-touch-scheme="buttons"] .tc-pads { display: flex; }
+
+/* ARCADIA draws the driving controls outside the iframe so neither thumb can
+   cover the road. Keep only the portrait rotation gate here; tilt steering and
+   its permission flow continue to run natively inside the game. */
+html[data-arcadia-embed] .tc-stick-zone,
+html[data-arcadia-embed] .tc-cluster,
+html[data-arcadia-embed] .tc-pads,
+html[data-arcadia-embed] .tc-top,
+html[data-arcadia-embed] .tc-coach { display: none !important; }
+
+/* Use the complete embedded canvas instead of clustering readouts around the
+   middle: lap/time own the top corners, MPH/item own the bottom corners. */
+html[data-arcadia-embed][data-touch] .kr {
+  --safe: 7px;
+  --safe-x: 9px;
+  --rail: 62px;
+  --rail-top: 42px;
+  --map-w: 104px;
+  --map-h: 54px;
+  --t1: 8px;
+  --t2: 10px;
+  --t3: 14px;
+  --t4: 22px;
+  --t5: 26px;
+  --t6: 34px;
+}
+html[data-arcadia-embed][data-touch] .kr .kr-speed,
+html[data-arcadia-embed][data-touch][data-touch-hand="left"] .kr .kr-speed {
+  --speed-s: .82;
+  left: 0;
+  right: auto;
+  bottom: 0;
+  transform-origin: 0 100%;
+}
+html[data-arcadia-embed][data-touch] .kr .kr-item,
+html[data-arcadia-embed][data-touch][data-touch-hand="left"] .kr .kr-item {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: var(--rail);
+  height: var(--rail);
+  --clip: var(--clip-tl);
+}
+html[data-arcadia-embed][data-touch] .kr .kr-pos,
+html[data-arcadia-embed][data-touch][data-touch-hand="left"] .kr .kr-pos {
+  right: auto;
+  left: 0;
+  width: 132px;
+  align-items: flex-start;
+  transform: translateY(-50%) scale(.64);
+  transform-origin: 0 50%;
+  --clip: var(--clip-br);
+}
 `;
