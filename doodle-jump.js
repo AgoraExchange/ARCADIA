@@ -40,7 +40,6 @@
       this.springs = 0;
       this.dangerY = HEIGHT + 72;
       this.dangerActive = false;
-      this.lastGeneratedSafe = true;
       this.lastFacing = 1;
       this.backgroundSeed = Array.from({ length: 28 }, (_, index) => ({
         x: (index * 97 + 31) % WIDTH,
@@ -186,11 +185,11 @@
       this.pointerTargetX = null;
       this.keys.left = false;
       this.keys.right = false;
-      this.lastGeneratedSafe = true;
       this.lastFacing = 1;
 
       const base = this.makePlatform(178, HEIGHT - 76, 184, "arcadia");
       base.spring = false;
+      base.routeSafe = true;
       this.platforms.push(base);
       let y = base.y;
       let x = base.x;
@@ -200,6 +199,7 @@
         x = clamp(x + randomBetween(-155, 155), 18, WIDTH - 106);
         const platform = this.makePlatform(x, y, index < 4 ? 94 : randomBetween(78, 104), "normal");
         platform.spring = index === 4;
+        platform.routeSafe = true;
         this.platforms.push(platform);
       }
 
@@ -227,6 +227,7 @@
         spring: false,
         springCompression: 0,
         springHold: 0,
+        routeSafe: false,
         broken: false,
         breakRotation: 0,
         breakVx: 0,
@@ -241,26 +242,58 @@
       const difficulty = clamp(this.score / 4200, 0, 1.25);
       const gap = randomBetween(72 + difficulty * 10, 92 + difficulty * 27);
       const previous = this.platforms
-        .filter((platform) => !platform.broken)
+        .filter((platform) => platform.routeSafe && !platform.broken)
         .sort((a, b) => a.y - b.y)[0];
       const width = randomBetween(78 - difficulty * 10, 108 - difficulty * 17);
       const anchorX = previous ? previous.x + previous.w / 2 - width / 2 : randomBetween(18, WIDTH - width - 18);
-      const x = clamp(anchorX + randomBetween(-176, 176), 14, WIDTH - width - 14);
-      const roll = Math.random();
-      let type = "normal";
-      if (this.score > 500 && roll < 0.18 + difficulty * 0.08) type = "moving";
-      else if (this.score > 1050 && roll < 0.31 + difficulty * 0.08) type = "breakable";
-      else if (this.score > 1500 && roll < 0.42 + difficulty * 0.08) type = "fading";
-      if (!this.lastGeneratedSafe && (type === "breakable" || type === "fading")) type = "normal";
-      const platform = this.makePlatform(x, topY - gap, width, type);
-      if (platform.type === "moving") platform.vx *= 1 + difficulty * 0.48;
-      platform.spring = (type === "normal" || type === "moving") && this.score > 260 && Math.random() < 0.11;
-      this.lastGeneratedSafe = type !== "breakable";
+      const maxRouteShift = 148 + difficulty * 8;
+      const x = clamp(anchorX + randomBetween(-maxRouteShift, maxRouteShift), 14, WIDTH - width - 14);
+      const platform = this.makePlatform(x, topY - gap, width, "normal");
+      platform.routeSafe = true;
+      platform.spring = this.score > 260 && Math.random() < 0.11;
+      this.addOptionalPlatformBranch(platform, previous, difficulty);
       return platform;
     }
 
+    addOptionalPlatformBranch(route, previous, difficulty) {
+      if (!previous || this.score < 520 || Math.random() > 0.24 + difficulty * 0.12) return;
+
+      const roll = Math.random();
+      let type = "moving";
+      if (this.score > 950 && roll < 0.46) type = "breakable";
+      else if (this.score > 1450 && roll < 0.72) type = "fading";
+      const width = randomBetween(70 - difficulty * 5, 94 - difficulty * 8);
+      const previousCenter = previous.x + previous.w / 2;
+      const routeCenter = route.x + route.w / 2;
+      const minimumSeparation = (route.w + width) / 2 + 24;
+      let branchX = null;
+
+      for (let attempt = 0; attempt < 7; attempt += 1) {
+        const center = clamp(
+          previousCenter + randomBetween(-172, 172),
+          14 + width / 2,
+          WIDTH - 14 - width / 2
+        );
+        if (Math.abs(center - routeCenter) >= minimumSeparation) {
+          branchX = center - width / 2;
+          break;
+        }
+      }
+      if (branchX === null) return;
+
+      const branch = this.makePlatform(branchX, route.y + randomBetween(-14, 18), width, type);
+      if (branch.type === "moving") branch.vx *= 1 + difficulty * 0.48;
+      branch.spring = branch.type === "moving" && this.score > 900 && Math.random() < 0.08;
+      this.platforms.push(branch);
+    }
+
     ensurePlatforms() {
-      let top = Math.min(...this.platforms.filter((platform) => !platform.broken).map((platform) => platform.y), HEIGHT);
+      let top = Math.min(
+        ...this.platforms
+          .filter((platform) => platform.routeSafe && !platform.broken)
+          .map((platform) => platform.y),
+        HEIGHT
+      );
       while (top > -130) {
         const platform = this.createNextPlatform(top);
         this.platforms.push(platform);

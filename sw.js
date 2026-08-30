@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.31.1.0";
+const ARCADIA_VERSION = "19.31.2.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",

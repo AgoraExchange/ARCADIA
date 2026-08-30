@@ -1,6 +1,7 @@
 {
-  "version": "19.31.1.0",
+  "version": "19.31.2.0",
   "patchNotes": [
+    "Doodle Jump now generates a guaranteed reachable solid backbone through every random platform band, keeping breakable, fading, and moving pads as optional branches instead of unavoidable dead ends.",
     "Doodle Jump springs now visibly compress and release, while a score-scaled rising danger floor punishes idling and increasingly difficult platforms pressure long runs.",
     "Doodle Jump now keeps Start Game and Restart visibly stacked in the bottom action area on every mobile height, with the primary button changing to End Game during play.",
     "Doodle Jump joins ARCADIA as Game 14 with an original endless canvas engine, animated title preview, finger-follow and keyboard steering, procedural platforms and springs, live record scoring, saved high scores, XP, coins, and achievements.",

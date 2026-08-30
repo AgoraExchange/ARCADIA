@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.31.2.0 gives Doodle Jump every random platform band a reachable solid route while keeping breakable, fading, and moving platforms as optional branches rather than unavoidable dead ends.
 - Version 19.31.1.0 gives Doodle Jump springs a visible compression/release animation, increases platform difficulty with score, and adds a rising danger floor that catches players who stop climbing.
 - Version 19.31.0.1 keeps Doodle Jump's Start Game and Restart buttons visibly stacked in the bottom mobile action area and changes the primary action to End Game during an active run.
 - Version 19.31.0.0 adds Doodle Jump as Game 14 with an original endless-bounce canvas engine, animated title preview, finger-follow and keyboard steering, procedural moving/breaking/fading platforms, springs, live record scoring, saved progression, XP, coins, and achievements.
