@@ -9,6 +9,8 @@
   const BOUNCE_SPEED = -12.25;
   const SPRING_SPEED = -17.2;
   const CAMERA_LINE = 330;
+  const DANGER_START_LANDINGS = 3;
+  const DANGER_START_SCORE = 140;
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const randomBetween = (min, max) => min + Math.random() * (max - min);
@@ -36,6 +38,8 @@
       this.climbed = 0;
       this.landings = 0;
       this.springs = 0;
+      this.dangerY = HEIGHT + 72;
+      this.dangerActive = false;
       this.lastGeneratedSafe = true;
       this.lastFacing = 1;
       this.backgroundSeed = Array.from({ length: 28 }, (_, index) => ({
@@ -174,6 +178,8 @@
       this.climbed = 0;
       this.landings = 0;
       this.springs = 0;
+      this.dangerY = HEIGHT + 72;
+      this.dangerActive = false;
       this.platforms = [];
       this.particles = [];
       this.pointerId = null;
@@ -219,6 +225,8 @@
         type,
         vx: type === "moving" ? (Math.random() < 0.5 ? -1 : 1) * randomBetween(1.05, 1.75) : 0,
         spring: false,
+        springCompression: 0,
+        springHold: 0,
         broken: false,
         breakRotation: 0,
         breakVx: 0,
@@ -230,12 +238,12 @@
     }
 
     createNextPlatform(topY) {
-      const difficulty = clamp(this.score / 5200, 0, 1);
-      const gap = randomBetween(72 + difficulty * 8, 92 + difficulty * 25);
+      const difficulty = clamp(this.score / 4200, 0, 1.25);
+      const gap = randomBetween(72 + difficulty * 10, 92 + difficulty * 27);
       const previous = this.platforms
         .filter((platform) => !platform.broken)
         .sort((a, b) => a.y - b.y)[0];
-      const width = randomBetween(76 - difficulty * 8, 106 - difficulty * 12);
+      const width = randomBetween(78 - difficulty * 10, 108 - difficulty * 17);
       const anchorX = previous ? previous.x + previous.w / 2 - width / 2 : randomBetween(18, WIDTH - width - 18);
       const x = clamp(anchorX + randomBetween(-176, 176), 14, WIDTH - width - 14);
       const roll = Math.random();
@@ -245,6 +253,7 @@
       else if (this.score > 1500 && roll < 0.42 + difficulty * 0.08) type = "fading";
       if (!this.lastGeneratedSafe && (type === "breakable" || type === "fading")) type = "normal";
       const platform = this.makePlatform(x, topY - gap, width, type);
+      if (platform.type === "moving") platform.vx *= 1 + difficulty * 0.48;
       platform.spring = (type === "normal" || type === "moving") && this.score > 260 && Math.random() < 0.11;
       this.lastGeneratedSafe = type !== "breakable";
       return platform;
@@ -263,6 +272,7 @@
       const player = this.player;
       if (!player) return;
       player.previousY = player.y;
+      let cameraScroll = 0;
 
       let desiredVelocity = 0;
       if (this.keys.left !== this.keys.right) desiredVelocity = this.keys.left ? -7.2 : 7.2;
@@ -295,6 +305,7 @@
 
       if (player.y < CAMERA_LINE && player.vy < 0) {
         const scroll = CAMERA_LINE - player.y;
+        cameraScroll = scroll;
         player.y = CAMERA_LINE;
         this.climbed += scroll;
         this.platforms.forEach((platform) => { platform.y += scroll; });
@@ -306,10 +317,17 @@
         }
       }
 
+      this.updateDanger(step, cameraScroll);
       this.updatePlatforms(step);
       this.checkLandings(time);
       this.updateParticles(step);
       this.ensurePlatforms();
+
+      if (this.dangerActive && player.y + PLAYER_HEIGHT * 0.78 >= this.dangerY) {
+        this.spawnParticles(player.x + PLAYER_WIDTH / 2, this.dangerY, "#ff2fad", 20);
+        this.finishRun();
+        return;
+      }
 
       player.trail.unshift({ x: player.x + PLAYER_WIDTH / 2, y: player.y + PLAYER_HEIGHT * 0.72, life: 1 });
       player.trail = player.trail.slice(0, 7);
@@ -318,9 +336,32 @@
       if (player.y > HEIGHT + 105) this.finishRun();
     }
 
+    updateDanger(step, cameraScroll = 0) {
+      if (!this.dangerActive && (this.landings >= DANGER_START_LANDINGS || this.score >= DANGER_START_SCORE)) {
+        this.dangerActive = true;
+        this.dangerY = Math.min(this.dangerY, HEIGHT + 56);
+      }
+      if (!this.dangerActive) return;
+
+      const difficulty = clamp(this.score / 4200, 0, 1.4);
+      const endurancePressure = Math.min(0.2, this.landings * 0.0025);
+      const riseSpeed = 0.18 + difficulty * 0.42 + endurancePressure;
+      this.dangerY -= riseSpeed * step;
+
+      if (cameraScroll > 0) {
+        const climbRelief = clamp(0.58 - difficulty * 0.12, 0.4, 0.58);
+        this.dangerY += cameraScroll * climbRelief;
+      }
+      this.dangerY = clamp(this.dangerY, 80, HEIGHT + 56);
+    }
+
     updatePlatforms(step) {
       this.platforms.forEach((platform) => {
         platform.pulse += 0.04 * step;
+        if (platform.springCompression > 0) {
+          if (platform.springHold > 0) platform.springHold = Math.max(0, platform.springHold - step);
+          else platform.springCompression = Math.max(0, platform.springCompression - 0.075 * step);
+        }
         if (platform.type === "moving" && !platform.broken) {
           platform.x += platform.vx * step;
           if (platform.x < 8 || platform.x + platform.w > WIDTH - 8) {
@@ -369,7 +410,11 @@
         player.squash = springHit ? 0.34 : 0.22;
         player.stretch = springHit ? 0.3 : 0.14;
         this.landings += 1;
-        if (springHit) this.springs += 1;
+        if (springHit) {
+          this.springs += 1;
+          platform.springCompression = 1;
+          platform.springHold = 3.5;
+        }
         if (platform.type === "fading") platform.fading = true;
         this.spawnParticles(centerX, platform.y, springHit ? "#ffd65a" : "#57ff9a", springHit ? 13 : 6);
         this.onSound(springHit ? "spring" : "bounce", { time });
@@ -538,6 +583,7 @@
       ctx.restore();
 
       this.drawPlayer(this.player, time);
+      this.drawDangerFloor(time);
 
       if (paused) {
         ctx.save();
@@ -628,17 +674,72 @@
       }
 
       if (platform.spring && !platform.broken) {
+        const compression = clamp(platform.springCompression || 0, 0, 1);
+        const springHeight = 24 - compression * 16;
+        const springTop = y - springHeight;
+        const coils = 4;
         ctx.strokeStyle = "#4d3557";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(-5, y);
-        ctx.lineTo(6, y - 8);
-        ctx.lineTo(-5, y - 16);
-        ctx.lineTo(6, y - 24);
+        for (let index = 1; index <= coils; index += 1) {
+          const coilY = y - springHeight * index / coils;
+          ctx.lineTo(index % 2 ? 6 : -5, coilY);
+        }
         ctx.stroke();
+        ctx.shadowColor = compression > 0.1 ? "rgba(255, 214, 90, 0.9)" : "transparent";
+        ctx.shadowBlur = compression * 14;
         ctx.fillStyle = "#ffd65a";
-        this.roundRect(ctx, -12, y - 30, 24, 7, 3);
+        this.roundRect(ctx, -12 - compression * 2, springTop - 7, 24 + compression * 4, 7, 3);
         ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.restore();
+    }
+
+    drawDangerFloor(time) {
+      if (!this.dangerActive || this.dangerY > HEIGHT + 28) return;
+      const ctx = this.ctx;
+      const top = clamp(this.dangerY, -12, HEIGHT + 12);
+      const pulse = 0.5 + Math.sin(time / 150) * 0.5;
+
+      ctx.save();
+      const gradient = ctx.createLinearGradient(0, top, 0, HEIGHT);
+      gradient.addColorStop(0, `rgba(255, 47, 173, ${0.72 + pulse * 0.12})`);
+      gradient.addColorStop(0.18, "rgba(108, 32, 146, 0.9)");
+      gradient.addColorStop(1, "rgba(7, 4, 15, 0.98)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, top, WIDTH, HEIGHT - top);
+
+      ctx.shadowColor = "#ff2fad";
+      ctx.shadowBlur = 22 + pulse * 12;
+      ctx.strokeStyle = pulse > 0.5 ? "#ffd65a" : "#49f4ff";
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      for (let x = -12; x <= WIDTH + 12; x += 18) {
+        const waveY = top + Math.sin(x * 0.07 + time / 170) * 5;
+        if (x === -12) ctx.moveTo(x, waveY);
+        else ctx.lineTo(x, waveY);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.globalAlpha = 0.34;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      for (let x = -60; x < WIDTH + 80; x += 42) {
+        ctx.beginPath();
+        ctx.moveTo(x + (time / 18) % 42, top + 8);
+        ctx.lineTo(x - 28 + (time / 18) % 42, Math.min(HEIGHT, top + 44));
+        ctx.stroke();
+      }
+
+      if (top < HEIGHT - 46) {
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.font = "900 16px ui-monospace, monospace";
+        ctx.fillText("KEEP CLIMBING", WIDTH / 2, top + 31);
       }
       ctx.restore();
     }
