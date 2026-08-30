@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.31.0.1 keeps Doodle Jump's Start Game and Restart buttons visibly stacked in the bottom mobile action area and changes the primary action to End Game during an active run.
 - Version 19.31.0.0 adds Doodle Jump as Game 14 with an original endless-bounce canvas engine, animated title preview, finger-follow and keyboard steering, procedural moving/breaking/fading platforms, springs, live record scoring, saved progression, XP, coins, and achievements.
 - Version 19.30.2.0 keeps XTREME RACING's horizontal A/B controls completely outside the canvas, enlarges its mobile racer picker, moves HUD readouts into the true corners, and adds a top-left steering settings button.
 - Version 19.30.1.0 gives XTREME RACING a real circuit-building progress bar and a landscape-first ARCADIA control deck with an outside floating stick, diagonal Drift/Item buttons, automatic Tilt-mode stick hiding, and edge-aligned race HUD information.

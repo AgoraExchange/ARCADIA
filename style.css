@@ -4210,9 +4210,22 @@ input:focus {
   margin: 0 auto;
 }
 
-.doodle-actions {
+.doodle-stage .doodle-reward-preview {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doodle-stage .doodle-actions {
+  position: relative;
+  z-index: 6;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
   width: min(100%, 360px);
-  margin: 0 auto;
+  margin: 4px auto 0;
+}
+
+.doodle-stage .doodle-actions .arcade-btn {
+  width: 100%;
+  min-height: 44px;
 }
 
 .doodle-hint {
@@ -4226,15 +4239,22 @@ input:focus {
 }
 
 @media (max-width: 760px) {
+  .doodle-screen {
+    overflow: hidden;
+  }
+
   .doodle-game-content {
+    height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 102px);
+    min-height: 0;
     overflow: hidden;
   }
 
   .doodle-stage {
     width: 100%;
     max-width: 100%;
-    min-height: 100%;
-    grid-template-rows: minmax(0, 1fr) auto auto;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
     align-content: stretch;
     gap: 10px;
     padding: 10px;
@@ -4242,9 +4262,12 @@ input:focus {
   }
 
   .doodle-canvas-shell {
-    width: min(100%, calc((var(--app-height) - 190px) * 0.642857), 430px);
-    max-height: calc(var(--app-height) - 190px);
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     min-height: 0;
+    justify-self: center;
     padding: 4px;
     border-radius: 22px;
   }
@@ -4268,7 +4291,7 @@ input:focus {
     padding-top: 8%;
   }
 
-  .doodle-actions {
+  .doodle-stage .doodle-actions {
     width: min(310px, 100%);
     justify-self: center;
     align-self: end;
@@ -4312,7 +4335,7 @@ input:focus {
     justify-self: center;
   }
 
-  .doodle-actions {
+  .doodle-stage .doodle-actions {
     grid-column: 2;
     grid-row: 1;
     width: 100%;
