@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.31.0.0 adds Doodle Jump as Game 14 with an original endless-bounce canvas engine, animated title preview, finger-follow and keyboard steering, procedural moving/breaking/fading platforms, springs, live record scoring, saved progression, XP, coins, and achievements.
 - Version 19.30.2.0 keeps XTREME RACING's horizontal A/B controls completely outside the canvas, enlarges its mobile racer picker, moves HUD readouts into the true corners, and adds a top-left steering settings button.
 - Version 19.30.1.0 gives XTREME RACING a real circuit-building progress bar and a landscape-first ARCADIA control deck with an outside floating stick, diagonal Drift/Item buttons, automatic Tilt-mode stick hiding, and edge-aligned race HUD information.
 - Version 19.30.0.0 adds XTREME RACING as Game 13 with Kart Royale's procedural 3D racing, native touch controls, racer selection, items, drifting, race-place rewards, saved progress, the player-provided icon, and a true MPH speedometer.
@@ -45,7 +46,7 @@
 - Version 19.11.1.0 makes the notification bell match the player's equipped nameplate, including animated RGB and Redline styles.
 - Version 19.11.0.0 adds the notification inbox and the animated level-65 Galaxy Frog Crossy Road cosmetic.
 
-ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play thirteen arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
+ARCADIA is a modern 1980s-inspired arcade web app. Players enter a name, browse a clean game library, play fourteen arcade games, earn XP, collect coins, unlock achievements, and track progress from their player profile.
 
 If you enjoy ARCADIA and would love to see more projects show me some support here https://ko-fi.com/agoraexchange .
 

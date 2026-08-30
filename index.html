@@ -802,6 +802,46 @@
       </main>
     </section>
 
+    <section id="doodleScreen" class="screen game-screen doodle-screen hidden">
+      <header class="page-top">
+        <button id="exitDoodleBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Doodle Jump</h1>
+        <button id="doodlePauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+
+      <main class="game-content doodle-game-content">
+        <section class="doodle-stage panel">
+          <div class="doodle-canvas-shell">
+            <canvas id="doodleCanvas" width="540" height="840" aria-label="Doodle Jump game board. Press or drag inside the board to steer the automatically jumping character."></canvas>
+
+            <div id="doodleScoreChip" class="doodle-score-chip hidden" aria-live="polite">
+              <span id="doodleScoreLabel">Score:</span>
+              <strong id="doodleScore">0</strong>
+            </div>
+
+            <div id="doodleTitleOverlay" class="doodle-title-overlay" aria-hidden="true">
+              <span>ARCADIA PRESENTS</span>
+              <h2>DOODLE</h2>
+              <strong>JUMP</strong>
+              <small>BOUNCE INTO THE NEON SKY</small>
+            </div>
+          </div>
+
+          <div class="reward-preview doodle-reward-preview">
+            <div><span>XP Preview</span><strong id="doodleXpPreview">0</strong></div>
+            <div><span>Coins</span><strong id="doodleCoinPreview">0</strong></div>
+          </div>
+
+          <div class="game-actions doodle-actions">
+            <button id="startDoodleBtn" class="arcade-btn primary" type="button">Start Game</button>
+            <button id="restartDoodleBtn" class="arcade-btn secondary" type="button">Restart</button>
+          </div>
+
+          <p class="hint doodle-hint">Press or drag anywhere inside the game to steer. The doodler jumps automatically. Desktop: Arrow keys or A/D.</p>
+        </section>
+      </main>
+    </section>
+
     <div id="marioMapModal" class="modal mario-map-modal hidden" role="dialog" aria-modal="true" aria-labelledby="marioMapTitle">
       <div class="modal-card mario-map-card">
         <button id="dismissMarioMapBtn" class="modal-x" type="button" aria-label="Close saved maps">X</button>
@@ -987,6 +1027,7 @@
     <script src="super-mario-bros.js"></script>
     <script src="hello-kitty-world.js"></script>
     <script src="xtreme-racing.js"></script>
+    <script src="doodle-jump.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

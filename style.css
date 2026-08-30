@@ -4046,6 +4046,285 @@ input:focus {
   --kitty-cream: #fff7df;
 }
 
+/* Doodle Jump */
+.doodle-stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  width: min(100%, 760px);
+  min-width: 0;
+  min-height: 0;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.doodle-canvas-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, calc((var(--app-height) - 250px) * 0.642857), 460px);
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 9 / 14;
+  margin: 0 auto;
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(73, 244, 255, 0.42);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 47, 173, 0.22), rgba(73, 244, 255, 0.18)),
+    rgba(5, 3, 11, 0.8);
+  box-shadow:
+    0 22px 58px rgba(0, 0, 0, 0.4),
+    0 0 35px rgba(138, 92, 255, 0.22),
+    inset 0 0 24px rgba(73, 244, 255, 0.08);
+}
+
+#doodleCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  border-radius: 21px;
+  background: #f9f7e6;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.doodle-score-chip {
+  position: absolute;
+  z-index: 5;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 126px;
+  padding: 9px 12px;
+  border: 1px solid rgba(49, 91, 99, 0.42);
+  border-radius: 12px;
+  color: #173f42;
+  background: rgba(255, 253, 240, 0.88);
+  box-shadow: 0 8px 24px rgba(35, 67, 70, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.doodle-score-chip.hidden {
+  display: none;
+}
+
+.doodle-score-chip span {
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.doodle-score-chip strong {
+  color: #203c42;
+  font-family: var(--font-numbers);
+  font-size: clamp(1rem, 3vw, 1.32rem);
+}
+
+.doodle-score-chip.is-record {
+  border-color: rgba(255, 47, 173, 0.72);
+  color: #8c1b64;
+  background: rgba(255, 242, 250, 0.93);
+  box-shadow:
+    0 0 0 2px rgba(255, 47, 173, 0.1),
+    0 0 26px rgba(255, 47, 173, 0.3);
+  animation: doodleRecordPulse 1.15s ease-in-out infinite alternate;
+}
+
+.doodle-score-chip.is-record strong {
+  color: #ff2fad;
+}
+
+.doodle-title-overlay {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding-top: 9%;
+  color: #203c42;
+  text-align: center;
+  pointer-events: none;
+}
+
+.doodle-title-overlay.hidden {
+  display: none;
+}
+
+.doodle-title-overlay span,
+.doodle-title-overlay small {
+  color: #315b63;
+  font-family: var(--font-ui);
+  font-size: clamp(0.52rem, 1.8vw, 0.72rem);
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+.doodle-title-overlay h2,
+.doodle-title-overlay strong {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 950;
+  line-height: 0.86;
+  transform: rotate(-3deg);
+}
+
+.doodle-title-overlay h2 {
+  margin-top: 12px;
+  font-size: clamp(2.2rem, 9vw, 4.6rem);
+  letter-spacing: 0.04em;
+  text-shadow: 3px 3px 0 rgba(73, 244, 255, 0.46);
+}
+
+.doodle-title-overlay strong {
+  margin-top: 7px;
+  color: #ff2fad;
+  font-size: clamp(2.8rem, 11vw, 5.6rem);
+  letter-spacing: 0.08em;
+  -webkit-text-stroke: 1px rgba(95, 35, 86, 0.74);
+  text-shadow:
+    4px 4px 0 rgba(138, 92, 255, 0.4),
+    0 0 18px rgba(255, 47, 173, 0.3);
+}
+
+.doodle-title-overlay small {
+  margin-top: 15px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 253, 240, 0.74);
+}
+
+.doodle-reward-preview {
+  width: min(100%, 460px);
+  margin: 0 auto;
+}
+
+.doodle-actions {
+  width: min(100%, 360px);
+  margin: 0 auto;
+}
+
+.doodle-hint {
+  margin: 0;
+  text-align: center;
+}
+
+@keyframes doodleRecordPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.035); }
+}
+
+@media (max-width: 760px) {
+  .doodle-game-content {
+    overflow: hidden;
+  }
+
+  .doodle-stage {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    align-content: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 26px 26px 0 0;
+  }
+
+  .doodle-canvas-shell {
+    width: min(100%, calc((var(--app-height) - 190px) * 0.642857), 430px);
+    max-height: calc(var(--app-height) - 190px);
+    min-height: 0;
+    padding: 4px;
+    border-radius: 22px;
+  }
+
+  #doodleCanvas {
+    border-radius: 17px;
+  }
+
+  .doodle-score-chip {
+    top: 12px;
+    right: 12px;
+    min-width: 108px;
+    padding: 7px 9px;
+  }
+
+  .doodle-score-chip span {
+    font-size: 0.58rem;
+  }
+
+  .doodle-title-overlay {
+    padding-top: 8%;
+  }
+
+  .doodle-actions {
+    width: min(310px, 100%);
+    justify-self: center;
+    align-self: end;
+  }
+
+  .doodle-hint {
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .doodle-screen {
+    padding-top: calc(4px + var(--safe-top));
+    padding-bottom: calc(4px + var(--safe-bottom));
+  }
+
+  .doodle-screen .page-top {
+    margin-bottom: 4px;
+  }
+
+  .doodle-game-content {
+    height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 66px);
+  }
+
+  .doodle-stage {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 310px);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+    height: 100%;
+    gap: 8px 14px;
+    padding: 7px 12px;
+  }
+
+  .doodle-canvas-shell {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    height: 100%;
+    max-height: 100%;
+    justify-self: center;
+  }
+
+  .doodle-actions {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    align-self: center;
+  }
+
+  .doodle-reward-preview,
+  .doodle-hint {
+    display: none;
+  }
+}
+
 /* XTREME RACING / Kart Royale integration */
 .xtreme-screen {
   min-height: var(--app-height);

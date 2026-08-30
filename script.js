@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.30.2.0";
+  const APP_VERSION = "19.31.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Doodle Jump joins ARCADIA as Game 14 with an original endless canvas engine, animated title preview, finger-follow and keyboard steering, procedural platforms and springs, live record scoring, saved high scores, XP, coins, and achievements.",
     "XTREME RACING keeps landscape B and A side by side entirely outside the canvas, reserves separate left/right control gutters, enlarges the mobile racer roster, moves HUD readouts to the true iframe corners, and adds a top-left SET steering picker.",
     "XTREME RACING now adds real circuit-building progress, places its floating steering stick and diagonal Drift/Item buttons outside the landscape race canvas, hides the stick in Tilt mode, and spreads the race HUD to the canvas edges.",
     "XTREME RACING joins ARCADIA as Game 13 with Kart Royale's procedural 3D racing, native mobile controls, racer selection, items, drifting, placement rewards, saved progress, the player-provided icon, and a true MPH speedometer.",
@@ -344,7 +345,13 @@
       xtremeLastPlace: 0,
       xtremeBestLap: 0,
       xtremeXpEarned: 0,
-      xtremePlaySeconds: 0
+      xtremePlaySeconds: 0,
+      doodleRuns: 0,
+      doodleBest: 0,
+      doodleXpEarned: 0,
+      doodleTotalScore: 0,
+      doodlePlatforms: 0,
+      doodleSprings: 0
     },
     achievements: []
   };
@@ -492,6 +499,17 @@
       available: true,
       image: "assets/images/games/xtreme-racing.png",
       mark: "X"
+    },
+    {
+      id: "doodle",
+      title: "Doodle Jump",
+      gameNo: "14",
+      tags: ["doodle", "jump", "platformer", "endless", "vertical", "touch", "high score"],
+      description: "Bounce forever, steer through the neon sky, and climb past your high score.",
+      status: "Play",
+      available: true,
+      image: "assets/images/games/doodle-jump.svg",
+      mark: "D"
     }
   ];
 
@@ -530,6 +548,9 @@
     { id: "xtreme_first", title: "Sunset Grid", text: "Start your first XTREME RACING race." },
     { id: "xtreme_finish", title: "Checkered Flag", text: "Finish an XTREME RACING race." },
     { id: "xtreme_win", title: "XTREME Champion", text: "Win an XTREME RACING race." },
+    { id: "doodle_first", title: "First Bounce", text: "Complete your first Doodle Jump run." },
+    { id: "doodle_1000", title: "Sky Scribbler", text: "Reach a score of 1,000 in Doodle Jump." },
+    { id: "doodle_springs", title: "Spring Loaded", text: "Launch from five Doodle Jump springs." },
     { id: "level_2", title: "Arcade Regular", text: "Reach level 2." },
     { id: "level_5", title: "High Score Hero", text: "Reach level 5." },
     { id: "booster_buyer", title: "Power Shopper", text: "Purchase your first booster." },
@@ -1350,6 +1371,7 @@
   let marioSessionStartedAt = 0;
   let kittyEngine = null;
   let xtremeController = null;
+  let doodleController = null;
   let marioMapPickerWasPlaying = false;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
@@ -1395,6 +1417,7 @@
     marioScreen: $("marioScreen"),
     kittyScreen: $("kittyScreen"),
     xtremeScreen: $("xtremeScreen"),
+    doodleScreen: $("doodleScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -1629,6 +1652,17 @@
     xtremeItemBtn: $("xtremeItemBtn"),
     startXtremeBtn: $("startXtremeBtn"),
     restartXtremeBtn: $("restartXtremeBtn"),
+    exitDoodleBtn: $("exitDoodleBtn"),
+    doodlePauseBtn: $("doodlePauseBtn"),
+    doodleCanvas: $("doodleCanvas"),
+    doodleScoreChip: $("doodleScoreChip"),
+    doodleScoreLabel: $("doodleScoreLabel"),
+    doodleScore: $("doodleScore"),
+    doodleTitleOverlay: $("doodleTitleOverlay"),
+    doodleXpPreview: $("doodleXpPreview"),
+    doodleCoinPreview: $("doodleCoinPreview"),
+    startDoodleBtn: $("startDoodleBtn"),
+    restartDoodleBtn: $("restartDoodleBtn"),
     toastStack: $("toastStack"),
     gameOverModal: $("gameOverModal"),
     resultKicker: $("resultKicker"),
@@ -1855,6 +1889,7 @@
     el.marioScreen.classList.toggle("hidden", name !== "mario");
     el.kittyScreen.classList.toggle("hidden", name !== "kitty");
     el.xtremeScreen.classList.toggle("hidden", name !== "xtreme");
+    el.doodleScreen.classList.toggle("hidden", name !== "doodle");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -1868,14 +1903,15 @@
     if (name !== "mario") stopMario();
     if (name !== "kitty") stopKitty();
     if (name !== "xtreme") stopXtreme();
+    if (name !== "doodle") stopDoodle();
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme", "doodle"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme", "doodle"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -2555,6 +2591,7 @@
     renderStackStats();
     renderSolitaireStats();
     renderNinjaStats();
+    renderDoodleStats();
   }
 
   function progressForXp(totalXp) {
@@ -2696,6 +2733,7 @@
         if (game.id === "mario") openMario();
         if (game.id === "kitty") openKitty();
         if (game.id === "xtreme") openXtreme();
+        if (game.id === "doodle") openDoodle();
       });
       el.gameGrid.appendChild(card);
     });
@@ -2817,6 +2855,14 @@
         best: Number(state.stats.xtremeFirsts) || 0,
         metricLabel: "Wins",
         meta: `${formatNumber(state.stats.xtremeRuns)} races · ${formatNumber(state.stats.xtremeRacesFinished)} finishes · ${formatNumber(state.stats.xtremeFirsts)} wins · Best ${formatXtremePlace(state.stats.xtremeBestPlace)}`
+      },
+      {
+        title: "Doodle Jump",
+        xp: Number(state.stats.doodleXpEarned) || 0,
+        runs: Number(state.stats.doodleRuns) || 0,
+        best: Number(state.stats.doodleBest) || 0,
+        metricLabel: "Best",
+        meta: `${formatNumber(state.stats.doodleRuns)} jumps · Best ${formatNumber(state.stats.doodleBest)} · ${formatNumber(state.stats.doodlePlatforms)} platforms landed`
       }
     ].sort((a, b) => b.xp - a.xp || b.runs - a.runs || b.best - a.best);
   }
@@ -3032,6 +3078,13 @@
         runs: Number(state.stats.xtremeRuns) || 0,
         xp: Number(state.stats.xtremeXpEarned) || 0,
         best: Number(state.stats.xtremeFirsts) || 0
+      },
+      {
+        id: "doodle",
+        title: "Doodle Jump",
+        runs: Number(state.stats.doodleRuns) || 0,
+        xp: Number(state.stats.doodleXpEarned) || 0,
+        best: Number(state.stats.doodleBest) || 0
       }
     ];
 
@@ -12698,6 +12751,183 @@
     el.gameOverModal.classList.remove("hidden");
   }
 
+  function getDoodleController() {
+    if (doodleController) return doodleController;
+    if (typeof window.ArcadiaDoodleJump !== "function" || !el.doodleCanvas) return null;
+    doodleController = new window.ArcadiaDoodleJump({
+      canvas: el.doodleCanvas,
+      onScore() {
+        if (currentScreen === "doodle") renderDoodleStats();
+      },
+      onState() {
+        if (currentScreen === "doodle") renderDoodleStats();
+      },
+      onSound(kind) {
+        if (kind === "spring") playToneAt(1080, 0.095, "square", 0.055);
+        else if (kind === "break") playToneAt(190, 0.11, "sawtooth", 0.045);
+        else playToneAt(610, 0.035, "sine", 0.028);
+      },
+      onGameOver(result) {
+        if (currentScreen === "doodle") finishDoodleRun(result, "fall");
+      }
+    });
+    return doodleController;
+  }
+
+  function openDoodle() {
+    currentGame = "doodle";
+    prepareGameTheme();
+    showScreen("doodle");
+    const controller = getDoodleController();
+    if (!controller) {
+      showToast("Game Error", "The Doodle Jump engine did not load.", "fail", 4200);
+      return;
+    }
+    el.gameOverModal.classList.add("hidden");
+    controller.showPreview();
+    renderDoodleStats();
+  }
+
+  function startDoodle() {
+    currentGame = "doodle";
+    const controller = getDoodleController();
+    if (!controller) return;
+    el.gameOverModal.classList.add("hidden");
+    controller.start();
+    playTone("tap");
+    renderDoodleStats();
+  }
+
+  function restartDoodle() {
+    startDoodle();
+  }
+
+  function stopDoodle() {
+    doodleController?.suspend();
+  }
+
+  function handlePrimaryDoodleAction() {
+    const controller = getDoodleController();
+    if (!controller) return;
+    if (controller.mode === "running" || controller.mode === "paused") {
+      const result = controller.getResult();
+      controller.suspend();
+      finishDoodleRun(result, "manual");
+      return;
+    }
+    startDoodle();
+  }
+
+  function toggleDoodlePause() {
+    const controller = getDoodleController();
+    if (!controller || (controller.mode !== "running" && controller.mode !== "paused")) return;
+    controller.togglePause();
+    playTone("tap");
+    renderDoodleStats();
+  }
+
+  function calculateDoodleXp(result = doodleController?.getResult() || {}) {
+    const score = Math.max(0, Math.round(Number(result.score) || 0));
+    const landings = Math.max(0, Math.round(Number(result.landings) || 0));
+    const springs = Math.max(0, Math.round(Number(result.springs) || 0));
+    const altitudeReward = Math.floor(score * 0.18);
+    const enduranceReward = Math.floor(Math.pow(score, 0.72) * 1.8);
+    const milestoneReward = Math.floor(score / 500) * 24;
+    return Math.max(4, altitudeReward + enduranceReward + landings * 3 + springs * 14 + milestoneReward);
+  }
+
+  function previewDoodleCoins(result = doodleController?.getResult() || {}, newBest = false) {
+    const score = Math.max(0, Math.round(Number(result.score) || 0));
+    const landings = Math.max(0, Math.round(Number(result.landings) || 0));
+    const springs = Math.max(0, Math.round(Number(result.springs) || 0));
+    const base = Math.max(2, Math.floor(score / 90) + Math.floor(landings / 4) + springs * 2);
+    return applyRewardBooster(base + (newBest ? 25 : 0));
+  }
+
+  function renderDoodleStats() {
+    if (!el.doodleScore) return;
+    const controller = doodleController;
+    const result = controller?.getResult?.() || { score: 0, landings: 0, springs: 0 };
+    const score = Math.max(0, Math.round(Number(result.score) || 0));
+    const savedBest = Math.max(0, Number(state.stats.doodleBest) || 0);
+    const active = controller?.mode === "running" || controller?.mode === "paused";
+    const previewing = controller?.mode === "preview" || !controller || controller.mode === "idle";
+    const liveRecord = active && score > savedBest;
+    const newBest = score > savedBest;
+
+    el.doodleScore.textContent = formatNumber(score);
+    el.doodleScoreLabel.textContent = liveRecord ? "High Score:" : "Score:";
+    el.doodleScoreChip.classList.toggle("hidden", !active && controller?.mode !== "ended");
+    el.doodleScoreChip.classList.toggle("is-record", liveRecord);
+    el.doodleTitleOverlay.classList.toggle("hidden", !previewing);
+    el.doodlePauseBtn.disabled = !active;
+    el.doodlePauseBtn.textContent = controller?.mode === "paused" ? "Resume" : "Pause";
+    el.startDoodleBtn.textContent = active ? "End Game" : "Start Game";
+    el.doodleXpPreview.textContent = formatNumber(applyRewardBooster(calculateDoodleXp(result)) + highScoreLevelUpBonus(newBest, applyRewardBooster(calculateDoodleXp(result))));
+    el.doodleCoinPreview.textContent = formatNumber(previewDoodleCoins(result, newBest));
+  }
+
+  function finishDoodleRun(result = {}, reason = "fall") {
+    if (currentScreen !== "doodle") return;
+    const score = Math.max(0, Math.round(Number(result.score) || 0));
+    const landings = Math.max(0, Math.round(Number(result.landings) || 0));
+    const springs = Math.max(0, Math.round(Number(result.springs) || 0));
+    const previousBest = Math.max(0, Number(state.stats.doodleBest) || 0);
+    const newBest = score > previousBest;
+    const oldAchievements = new Set(state.achievements);
+    const boosterUsed = getEquippedBoosterItem("doodle");
+    let earned = applyRewardBooster(calculateDoodleXp({ score, landings, springs }));
+    earned += highScoreLevelUpBonus(newBest, earned);
+    const coinsEarned = previewDoodleCoins({ score, landings, springs }, newBest);
+
+    if (reason === "fall") playGameOverSound();
+    else playTone("tap");
+    stopGameTheme(reason === "fall" ? "death" : "stop");
+
+    state.stats.gamesPlayed = (Number(state.stats.gamesPlayed) || 0) + 1;
+    state.stats.doodleRuns = (Number(state.stats.doodleRuns) || 0) + 1;
+    state.stats.doodleBest = Math.max(previousBest, score);
+    state.stats.doodleTotalScore = (Number(state.stats.doodleTotalScore) || 0) + score;
+    state.stats.doodlePlatforms = (Number(state.stats.doodlePlatforms) || 0) + landings;
+    state.stats.doodleSprings = (Number(state.stats.doodleSprings) || 0) + springs;
+
+    if (boosterUsed) {
+      state.boosterCooldowns[boosterUsed.boost] = Date.now() + 10 * 60 * 1000;
+      state.equippedBooster = null;
+      state.boosterUses += 1;
+      if (!state.boosterLevelTarget || state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+      showToast("Booster Used", `${boosterUsed.title} applied. Cooldown started.`, "win");
+    }
+
+    state.xp = (Number(state.xp) || 0) + earned;
+    state.stats.doodleXpEarned = (Number(state.stats.doodleXpEarned) || 0) + earned;
+    state.coins = (Number(state.coins) || 0) + coinsEarned;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    if (boosterUsed && state.level >= state.boosterLevelTarget) state.boosterLevelTarget = state.level + 2;
+    saveState();
+    renderAll();
+
+    const newAchievements = achievements.filter((item) => !oldAchievements.has(item.id) && state.achievements.includes(item.id));
+    currentGame = "doodle";
+    el.resultKicker.textContent = "Doodle Jump Results";
+    el.resultTitle.textContent = newBest ? "New Sky Record!" : "Game Over";
+    el.resultScore.textContent = formatNumber(score);
+    el.resultXp.textContent = formatNumber(earned);
+    el.resultCoins.textContent = formatNumber(coinsEarned);
+    el.resultBest.textContent = formatNumber(state.stats.doodleBest);
+    el.newBestBadge.classList.toggle("hidden", !newBest);
+    el.resultAchievements.innerHTML = newAchievements.map((item) => `<span>${item.title}</span>`).join("");
+    el.resultMessage.textContent = newBest
+      ? `You climbed past your old record and landed on ${formatNumber(landings)} platforms.`
+      : reason === "manual"
+        ? "Jump saved. Retry whenever you are ready to climb higher."
+        : "The doodler fell out of the sky. Follow the next platform and try again.";
+    if (newBest) showToast("New High Score", `Doodle Jump best is now ${formatNumber(score)}.`, "win");
+    showToast("Jump Rewards", `+${formatNumber(earned)} XP and +${formatNumber(coinsEarned)} coins.`, "win");
+    el.gameOverModal.classList.remove("hidden");
+  }
+
   function unlockEarnedAchievements() {
     const checks = [
       ["first_run", state.stats.gamesPlayed >= 1],
@@ -12734,6 +12964,9 @@
       ["xtreme_first", state.stats.xtremeRuns >= 1],
       ["xtreme_finish", state.stats.xtremeRacesFinished >= 1],
       ["xtreme_win", state.stats.xtremeFirsts >= 1],
+      ["doodle_first", state.stats.doodleRuns >= 1],
+      ["doodle_1000", state.stats.doodleBest >= 1000],
+      ["doodle_springs", state.stats.doodleSprings >= 5],
       ["level_2", state.level >= 2],
       ["level_5", state.level >= 5],
       ["booster_buyer", state.boosterPurchases >= 1],
@@ -13155,6 +13388,8 @@
         restartKitty();
       } else if (currentGame === "xtreme") {
         restartXtreme();
+      } else if (currentGame === "doodle") {
+        restartDoodle();
       } else {
         startSnake();
       }
@@ -13227,6 +13462,10 @@
     el.xtremePauseBtn.addEventListener("click", toggleXtremePause);
     el.startXtremeBtn.addEventListener("click", startXtreme);
     el.restartXtremeBtn.addEventListener("click", restartXtreme);
+    el.exitDoodleBtn.addEventListener("click", () => showScreen("home"));
+    el.doodlePauseBtn.addEventListener("click", toggleDoodlePause);
+    el.startDoodleBtn.addEventListener("click", handlePrimaryDoodleAction);
+    el.restartDoodleBtn.addEventListener("click", restartDoodle);
     el.ninjaCanvas.addEventListener("pointerdown", (event) => {
       if (!ninja.running || ninja.paused || casperHasGameplayControl("ninja")) return;
       event.preventDefault();
@@ -13403,6 +13642,15 @@
         event.preventDefault();
         moveCrossy(keyMap[event.key]);
       }
+      if (["ArrowLeft", "a", "A", "ArrowRight", "d", "D"].includes(event.key) && currentScreen === "doodle") {
+        event.preventDefault();
+        const direction = ["ArrowLeft", "a", "A"].includes(event.key) ? "left" : "right";
+        getDoodleController()?.setInput(direction, true);
+      }
+      if ((event.key === "p" || event.key === "P") && currentScreen === "doodle") {
+        event.preventDefault();
+        if (!event.repeat) toggleDoodlePause();
+      }
       if (event.key === " " && currentScreen === "game") {
         event.preventDefault();
         snake.running ? togglePause() : startSnake();
@@ -13430,6 +13678,11 @@
         event.preventDefault();
         if (!fruit.running) startFruit();
         else if (!casperHasGameplayControl("fruit")) dropFruit();
+      }
+      if ((event.key === " " || event.key === "Enter") && currentScreen === "doodle") {
+        event.preventDefault();
+        const mode = getDoodleController()?.mode;
+        if (mode !== "running" && mode !== "paused") startDoodle();
       }
       if (event.key === " " && currentScreen === "ninja") {
         event.preventDefault();
@@ -13485,6 +13738,11 @@
       if (currentScreen === "kart" && getKartController()?.started && kartInputMap[event.key]) {
         event.preventDefault();
         getKartController().setInput(kartInputMap[event.key], false);
+      }
+      if (["ArrowLeft", "a", "A", "ArrowRight", "d", "D"].includes(event.key) && currentScreen === "doodle") {
+        event.preventDefault();
+        const direction = ["ArrowLeft", "a", "A"].includes(event.key) ? "left" : "right";
+        getDoodleController()?.setInput(direction, false);
       }
       if (currentScreen !== "star" || casperHasGameplayControl("star")) return;
       if (["ArrowLeft", "ArrowRight", "a", "A", "d", "D"].includes(event.key)) star.input.x = 0;
