@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.31.3.0 confines Doodle Jump moving platforms to collision-free patrol lanes and makes high-score runs substantially harder through narrower pads, larger gaps, wider lateral jumps, and stronger rising-floor pressure.
 - Version 19.31.2.0 gives Doodle Jump every random platform band a reachable solid route while keeping breakable, fading, and moving platforms as optional branches rather than unavoidable dead ends.
 - Version 19.31.1.0 gives Doodle Jump springs a visible compression/release animation, increases platform difficulty with score, and adds a rising danger floor that catches players who stop climbing.
 - Version 19.31.0.1 keeps Doodle Jump's Start Game and Restart buttons visibly stacked in the bottom mobile action area and changes the primary action to End Game during an active run.

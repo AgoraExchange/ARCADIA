@@ -224,6 +224,8 @@
         h: type === "arcadia" ? 22 : 17,
         type,
         vx: type === "moving" ? (Math.random() < 0.5 ? -1 : 1) * randomBetween(1.05, 1.75) : 0,
+        moveMinX: null,
+        moveMaxX: null,
         spring: false,
         springCompression: 0,
         springHold: 0,
@@ -239,15 +241,31 @@
     }
 
     createNextPlatform(topY) {
-      const difficulty = clamp(this.score / 4200, 0, 1.25);
-      const gap = randomBetween(72 + difficulty * 10, 92 + difficulty * 27);
+      const difficulty = clamp(this.score / 3800, 0, 1.35);
+      const gap = randomBetween(72 + difficulty * 14, 92 + difficulty * 33);
       const previous = this.platforms
         .filter((platform) => platform.routeSafe && !platform.broken)
         .sort((a, b) => a.y - b.y)[0];
-      const width = randomBetween(78 - difficulty * 10, 108 - difficulty * 17);
-      const anchorX = previous ? previous.x + previous.w / 2 - width / 2 : randomBetween(18, WIDTH - width - 18);
-      const maxRouteShift = 148 + difficulty * 8;
-      const x = clamp(anchorX + randomBetween(-maxRouteShift, maxRouteShift), 14, WIDTH - width - 14);
+      const width = randomBetween(78 - difficulty * 15, 108 - difficulty * 23);
+      const maxRouteShift = 142 + difficulty * 30;
+      const minimumRouteShift = difficulty > 0.35 ? 20 + (difficulty - 0.35) * 32 : 0;
+      const minimumCenter = 14 + width / 2;
+      const maximumCenter = WIDTH - 14 - width / 2;
+      let center = randomBetween(minimumCenter, maximumCenter);
+      if (previous) {
+        const previousCenter = previous.x + previous.w / 2;
+        let routeOffset = randomBetween(-maxRouteShift, maxRouteShift);
+        if (minimumRouteShift > 0) {
+          const magnitude = randomBetween(minimumRouteShift, maxRouteShift);
+          let direction = Math.random() < 0.5 ? -1 : 1;
+          const chosenRoom = direction < 0 ? previousCenter - minimumCenter : maximumCenter - previousCenter;
+          const oppositeRoom = direction < 0 ? maximumCenter - previousCenter : previousCenter - minimumCenter;
+          if (chosenRoom < magnitude && oppositeRoom > chosenRoom) direction *= -1;
+          routeOffset = direction * magnitude;
+        }
+        center = clamp(previousCenter + routeOffset, minimumCenter, maximumCenter);
+      }
+      const x = center - width / 2;
       const platform = this.makePlatform(x, topY - gap, width, "normal");
       platform.routeSafe = true;
       platform.spring = this.score > 260 && Math.random() < 0.11;
@@ -281,8 +299,20 @@
       }
       if (branchX === null) return;
 
-      const branch = this.makePlatform(branchX, route.y + randomBetween(-14, 18), width, type);
-      if (branch.type === "moving") branch.vx *= 1 + difficulty * 0.48;
+      const branchY = route.y + (type === "moving" ? randomBetween(30, 38) : randomBetween(-14, 18));
+      const branch = this.makePlatform(branchX, branchY, width, type);
+      if (branch.type === "moving") {
+        const patrolRadius = 38 + difficulty * 12;
+        const branchCenter = branch.x + branch.w / 2;
+        if (branchCenter < routeCenter) {
+          branch.moveMinX = Math.max(8, branch.x - patrolRadius);
+          branch.moveMaxX = Math.max(branch.x, Math.min(branch.x + patrolRadius, route.x - branch.w - 18));
+        } else {
+          branch.moveMinX = Math.min(branch.x, Math.max(branch.x - patrolRadius, route.x + route.w + 18));
+          branch.moveMaxX = Math.min(WIDTH - branch.w - 8, branch.x + patrolRadius);
+        }
+        branch.vx *= 1 + difficulty * 0.65;
+      }
       branch.spring = branch.type === "moving" && this.score > 900 && Math.random() < 0.08;
       this.platforms.push(branch);
     }
@@ -376,13 +406,13 @@
       }
       if (!this.dangerActive) return;
 
-      const difficulty = clamp(this.score / 4200, 0, 1.4);
-      const endurancePressure = Math.min(0.2, this.landings * 0.0025);
-      const riseSpeed = 0.18 + difficulty * 0.42 + endurancePressure;
+      const difficulty = clamp(this.score / 3600, 0, 1.5);
+      const endurancePressure = Math.min(0.28, this.landings * 0.004);
+      const riseSpeed = 0.2 + difficulty * 0.58 + endurancePressure;
       this.dangerY -= riseSpeed * step;
 
       if (cameraScroll > 0) {
-        const climbRelief = clamp(0.58 - difficulty * 0.12, 0.4, 0.58);
+        const climbRelief = clamp(0.56 - difficulty * 0.18, 0.27, 0.56);
         this.dangerY += cameraScroll * climbRelief;
       }
       this.dangerY = clamp(this.dangerY, 80, HEIGHT + 56);
@@ -396,9 +426,11 @@
           else platform.springCompression = Math.max(0, platform.springCompression - 0.075 * step);
         }
         if (platform.type === "moving" && !platform.broken) {
+          const moveMinX = Number.isFinite(platform.moveMinX) ? platform.moveMinX : 8;
+          const moveMaxX = Number.isFinite(platform.moveMaxX) ? platform.moveMaxX : WIDTH - platform.w - 8;
           platform.x += platform.vx * step;
-          if (platform.x < 8 || platform.x + platform.w > WIDTH - 8) {
-            platform.x = clamp(platform.x, 8, WIDTH - platform.w - 8);
+          if (platform.x < moveMinX || platform.x > moveMaxX) {
+            platform.x = clamp(platform.x, moveMinX, moveMaxX);
             platform.vx *= -1;
           }
         }

@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.31.2.0";
+  const APP_VERSION = "19.31.3.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Doodle Jump moving pads now stay inside collision-free patrol lanes, while long runs gain narrower platforms, wider jumps, larger gaps, and much stronger rising-floor pressure.",
     "Doodle Jump now generates a guaranteed reachable solid backbone through every random platform band, keeping breakable, fading, and moving pads as optional branches instead of unavoidable dead ends.",
     "Doodle Jump springs now visibly compress and release, while a score-scaled rising danger floor punishes idling and increasingly difficult platforms pressure long runs.",
     "Doodle Jump now keeps Start Game and Restart visibly stacked in the bottom action area on every mobile height, with the primary button changing to End Game during play.",
