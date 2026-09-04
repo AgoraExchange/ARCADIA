@@ -216,7 +216,8 @@
         item: { key: "s", code: "KeyS", value: 83 },
         jump: { key: "c", code: "KeyC", value: 67 },
         start: { key: "Enter", code: "Enter", value: 13 },
-        lookback: { key: " ", code: "Space", value: 32 }
+        lookback: { key: " ", code: "Space", value: 32 },
+        starBooster: { key: "F10", code: "F10", value: 121 }
       });
       const arcadiaHeldKeys = new Set();
       const arcadiaAudioContexts = new Set();
@@ -436,7 +437,13 @@
       };
 
       window.arcadiaSMKReleaseAll = function () {
-        [...arcadiaHeldKeys].forEach((name) => window.arcadiaSMKInput(name, false));
+        [...arcadiaHeldKeys]
+          .filter((name) => name !== "starBooster")
+          .forEach((name) => window.arcadiaSMKInput(name, false));
+      };
+
+      window.arcadiaSMKSetStarBooster = function (active) {
+        return window.arcadiaSMKInput("starBooster", Boolean(active));
       };
 
       window.arcadiaSMKResumeAudio = function () {
@@ -464,6 +471,7 @@
         if (data.type === "input") window.arcadiaSMKInput(data.name, Boolean(data.pressed));
         if (data.type === "tap") window.arcadiaSMKTap(data.name, data.duration);
         if (data.type === "release-all") window.arcadiaSMKReleaseAll();
+        if (data.type === "star-booster") window.arcadiaSMKSetStarBooster(Boolean(data.active));
         if (data.type === "resume-audio") window.arcadiaSMKResumeAudio();
       });
 
@@ -689,7 +697,7 @@
 "e377ab6cbc449ec110f6f2f8f6989c92",
 "e3754f2da9fedc07e5c8dbde2a64e27f",
 "e8f1e8db8cf996f8715a6f2164c2e44e",
-"b9f27d5a69711aa55b0b366701fc856f" ];
+"b0a7bce8015e5b62981e151fba5861a8" ];
       }
 
       function onFirstFrameRendered()

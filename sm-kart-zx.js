@@ -223,6 +223,7 @@
       this.progressTimer = null;
       this.progressSignature = "";
       this.progress = null;
+      this.starBoosterActive = false;
       this.loadTimeoutTimer = null;
       this.loadSequence = 0;
       this.version = "1";
@@ -473,6 +474,7 @@
       this.loadTimeoutTimer = null;
       this.ready = true;
       this.setLoading(false);
+      this.applyStarBoosterState();
       this.startProgressDetector();
       this.onReady();
       this.introTimer = window.setTimeout(() => {
@@ -560,6 +562,24 @@
 
     post(payload) {
       this.frame?.contentWindow?.postMessage({ source: MESSAGE_SOURCE, ...payload }, window.location.origin);
+    }
+
+    setStarBooster(active) {
+      this.starBoosterActive = Boolean(active);
+      return this.applyStarBoosterState();
+    }
+
+    applyStarBoosterState() {
+      if (!this.ready) return false;
+      try {
+        const setBooster = this.frame?.contentWindow?.arcadiaSMKSetStarBooster;
+        if (typeof setBooster === "function") {
+          setBooster(this.starBoosterActive);
+          return true;
+        }
+      } catch {}
+      this.post({ type: "star-booster", active: this.starBoosterActive });
+      return true;
     }
 
     setInput(name, pressed) {

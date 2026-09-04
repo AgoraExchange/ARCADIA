@@ -1,6 +1,7 @@
 {
-  "version": "19.31.3.0",
+  "version": "19.32.0.0",
   "patchNotes": [
+    "The Rewards Store adds the reusable Mario Kart Starman booster: every mystery box grants a Star throughout the next Grand Prix attempt, ending after a non-podium finish, a five-race cup, or a newly earned trophy.",
     "Doodle Jump moving pads now stay inside collision-free patrol lanes, while long runs gain narrower platforms, wider jumps, larger gaps, and much stronger rising-floor pressure.",
     "Doodle Jump now generates a guaranteed reachable solid backbone through every random platform band, keeping breakable, fading, and moving pads as optional branches instead of unavoidable dead ends.",
     "Doodle Jump springs now visibly compress and release, while a score-scaled rising danger floor punishes idling and increasingly difficult platforms pressure long runs.",

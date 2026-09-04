@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.31.3.0";
+  const APP_VERSION = "19.32.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "The Rewards Store adds the reusable Mario Kart Starman booster: every mystery box grants a Star throughout the next Grand Prix attempt, ending after a non-podium finish, a five-race cup, or a newly earned trophy.",
     "Doodle Jump moving pads now stay inside collision-free patrol lanes, while long runs gain narrower platforms, wider jumps, larger gaps, and much stronger rising-floor pressure.",
     "Doodle Jump now generates a guaranteed reachable solid backbone through every random platform band, keeping breakable, fading, and moving pads as optional branches instead of unavoidable dead ends.",
     "Doodle Jump springs now visibly compress and release, while a score-scaled rising danger floor punishes idling and increasingly difficult platforms pressure long runs.",
@@ -1330,6 +1331,19 @@
       cost: 1750,
       tags: ["booster", "block", "grid", "earthquake", "clear", "shake"],
       text: "Shake every placed block off the board in your next Block Grid run. Clear five lines to trigger it again."
+    },
+    {
+      id: "starman_kart",
+      title: "Starman",
+      category: "boosters",
+      type: "booster",
+      boost: "starman_kart",
+      effect: "force_star",
+      game: "kart",
+      level: 18,
+      cost: 2500,
+      tags: ["booster", "mario", "kart", "grand prix", "starman", "star", "invincibility", "item box"],
+      text: "Every mystery box grants a Star through your next Grand Prix attempt. Ends after a 4th-8th finish, a completed five-race cup, or a newly earned trophy."
     }
   ];
 
@@ -1371,6 +1385,9 @@
   let kartRaceResultsThisSession = 0;
   let kartResultAutoTimer = null;
   let kartProgressHydrated = false;
+  let kartStarBoosterActive = false;
+  let kartStarBoosterRaceResults = 0;
+  let kartStarBoosterTrophyBaseline = 0;
   let marioController = null;
   let marioSessionStartedAt = 0;
   let kittyEngine = null;
@@ -3249,6 +3266,7 @@
         { id: "crossy", label: "Crossy Road" },
         { id: "block", label: "Block Grid" },
         { id: "star", label: "Star Invaders" },
+        { id: "kart", label: "Mario Kart" },
         { id: "ready", label: "Ready" }
       ];
     }
@@ -3274,6 +3292,7 @@
     if (filter === "crossy") return item.slot === "crossy_character" || storeItemSupportsGame(item, "crossy");
     if (filter === "block") return storeItemSupportsGame(item, "block");
     if (filter === "star") return item.slot === "laser" || storeItemSupportsGame(item, "star");
+    if (filter === "kart") return storeItemSupportsGame(item, "kart");
     if (filter === "universal") return item.type === "booster" && !item.game && !item.games?.length;
     if (filter === "owned") return state.owned.includes(item.id);
     if (filter === "ready") return item.type === "booster" && state.owned.includes(item.id) && getBoosterCooldownRemaining(item) <= 0;
@@ -3404,6 +3423,14 @@
     }
     if (item.effect === "earthquake") {
       return `<div class="store-item-preview earthquake-store-preview" aria-hidden="true"><span></span><strong>QUAKE</strong><span></span></div>`;
+    }
+    if (item.effect === "force_star") {
+      return `
+        <div class="store-item-preview starman-store-preview" aria-hidden="true">
+          <span class="starman-store-star"><i></i><i></i></span>
+          <strong>EVERY BOX</strong><em>STAR POWER</em>
+        </div>
+      `;
     }
     return "";
   }
@@ -11912,6 +11939,41 @@
     el.kartRaceResultOverlay?.classList.add("hidden");
   }
 
+  function armKartStarBooster(controller = getKartController()) {
+    const booster = getEquippedBoosterItem("kart");
+    kartStarBoosterActive = booster?.effect === "force_star";
+    kartStarBoosterRaceResults = 0;
+    kartStarBoosterTrophyBaseline = getKartTrophyCount(controller?.progress?.cups || state.stats.kartCupTrophies);
+    controller?.setStarBooster(kartStarBoosterActive);
+    if (kartStarBoosterActive) {
+      showToast(
+        "Starman Grand Prix Active",
+        "Every mystery box will grant a Star until you lose, finish the five-race cup, or earn a trophy.",
+        "win",
+        4400
+      );
+    }
+    return kartStarBoosterActive;
+  }
+
+  function finishKartStarBooster(reason = "Grand Prix attempt complete.") {
+    if (!kartStarBoosterActive) return false;
+    kartStarBoosterActive = false;
+    kartStarBoosterRaceResults = 0;
+    getKartController()?.setStarBooster(false);
+
+    const booster = getStoreItem(state.equippedBooster);
+    if (booster?.effect !== "force_star" || booster.game !== "kart") return false;
+    state.boosterCooldowns[booster.boost] = Date.now() + 10 * 60 * 1000;
+    state.equippedBooster = null;
+    state.boosterUses += 1;
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+    showToast("Starman Booster Used", `${reason} Ready again in 10 minutes.`, "silent", 4200);
+    return true;
+  }
+
   async function continueKartAfterResult() {
     if (kartResultAutoTimer) window.clearTimeout(kartResultAutoTimer);
     kartResultAutoTimer = null;
@@ -11932,6 +11994,15 @@
     if (place < 1 || place > 8) return;
     const reward = getKartPlacementReward(place);
     const previousBest = Number(state.stats.kartBestPlace) || 0;
+
+    if (kartStarBoosterActive) {
+      kartStarBoosterRaceResults += 1;
+      if (place > 3) {
+        finishKartStarBooster(`${formatKartPlace(place)} ended the powered attempt.`);
+      } else if (kartStarBoosterRaceResults >= 5) {
+        finishKartStarBooster("The five-race Grand Prix cup is complete.");
+      }
+    }
 
     kartRaceResultsThisSession += 1;
     state.stats.kartRacesFinished = (Number(state.stats.kartRacesFinished) || 0) + 1;
@@ -12008,6 +12079,13 @@
         );
       }
       return;
+    }
+
+    if (
+      kartStarBoosterActive
+      && (upgradedTrophies.length || nextEntries.length > kartStarBoosterTrophyBaseline)
+    ) {
+      finishKartStarBooster("A Grand Prix podium trophy was earned.");
     }
 
     if (upgradedTrophies.length) {
@@ -12095,6 +12173,9 @@
     kartSessionStartedAt = 0;
     kartRaceResultsThisSession = 0;
     kartProgressHydrated = false;
+    kartStarBoosterActive = false;
+    kartStarBoosterRaceResults = 0;
+    kartStarBoosterTrophyBaseline = getKartTrophyCount();
     hideKartRaceResult();
     prepareGameTheme();
     showScreen("kart");
@@ -12103,6 +12184,7 @@
       showToast("Port Error", "The Super Mario Kart ZX wrapper did not load.", "fail", 4200);
       return;
     }
+    controller.setStarBooster(false);
     controller.load(APP_VERSION);
   }
 
@@ -12110,6 +12192,7 @@
     const controller = getKartController();
     if (!controller || !(await controller.start())) return;
     currentGame = "kart";
+    armKartStarBooster(controller);
     kartSessionStartedAt = Date.now();
     state.stats.gamesPlayed += 1;
     state.stats.kartRuns += 1;
@@ -12145,8 +12228,12 @@
     kartSessionStartedAt = 0;
     kartRaceResultsThisSession = 0;
     kartProgressHydrated = false;
+    kartStarBoosterActive = false;
+    kartStarBoosterRaceResults = 0;
     hideKartRaceResult();
-    getKartController()?.restart(APP_VERSION);
+    const controller = getKartController();
+    controller?.setStarBooster(false);
+    controller?.restart(APP_VERSION);
   }
 
   function stopKart(recordSession = true) {
@@ -12154,7 +12241,10 @@
     else kartSessionStartedAt = 0;
     kartRaceResultsThisSession = 0;
     kartProgressHydrated = false;
+    kartStarBoosterActive = false;
+    kartStarBoosterRaceResults = 0;
     hideKartRaceResult();
+    kartController?.setStarBooster(false);
     kartController?.stop();
   }
 

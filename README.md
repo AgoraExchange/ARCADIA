@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.32.0.0 adds the reusable Mario Kart Starman Store booster, forcing every mystery box to award a Star throughout the next Grand Prix attempt until a loss, completed five-race cup, or trophy podium.
 - Version 19.31.3.0 confines Doodle Jump moving platforms to collision-free patrol lanes and makes high-score runs substantially harder through narrower pads, larger gaps, wider lateral jumps, and stronger rising-floor pressure.
 - Version 19.31.2.0 gives Doodle Jump every random platform band a reachable solid route while keeping breakable, fading, and moving platforms as optional branches rather than unavoidable dead ends.
 - Version 19.31.1.0 gives Doodle Jump springs a visible compression/release animation, increases platform difficulty with score, and adds a rising danger floor that catches players who stop climbing.

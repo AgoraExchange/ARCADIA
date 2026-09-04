@@ -3248,6 +3248,91 @@ input:focus {
   transform: scaleX(-1);
 }
 
+.starman-store-preview {
+  position: relative;
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  min-height: 52px;
+  margin: 3px 0 8px;
+  padding: 5px 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 222, 72, 0.38);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255, 246, 151, 0.24), transparent 28%),
+    linear-gradient(120deg, rgba(73, 244, 255, 0.12), rgba(255, 47, 173, 0.1)),
+    rgba(5, 4, 16, 0.68);
+}
+
+.starman-store-preview::after {
+  content: "";
+  position: absolute;
+  inset: -70% -25%;
+  pointer-events: none;
+  background: conic-gradient(from 90deg, transparent, rgba(255, 255, 255, 0.14), transparent 30%);
+  animation: starmanPreviewSweep 2.6s linear infinite;
+}
+
+.starman-store-star {
+  position: relative;
+  z-index: 1;
+  grid-row: 1 / 3;
+  display: block;
+  width: 43px;
+  height: 43px;
+  background: linear-gradient(135deg, #fffbd1 4%, #ffe23f 38%, #ff943d 72%, #ff49bb);
+  clip-path: polygon(50% 0, 62% 34%, 98% 35%, 69% 56%, 79% 94%, 50% 72%, 21% 94%, 31% 56%, 2% 35%, 38% 34%);
+  filter: drop-shadow(0 0 8px rgba(255, 226, 63, 0.92));
+  animation: starmanPreviewPulse 1.15s ease-in-out infinite alternate;
+}
+
+.starman-store-star i {
+  position: absolute;
+  top: 17px;
+  width: 4px;
+  height: 9px;
+  border-radius: 50%;
+  background: #1b1433;
+}
+
+.starman-store-star i:first-child { left: 15px; }
+.starman-store-star i:last-child { right: 15px; }
+
+.starman-store-preview strong,
+.starman-store-preview em {
+  position: relative;
+  z-index: 1;
+  margin-left: 6px;
+  font-style: normal;
+  letter-spacing: 0.08em;
+}
+
+.starman-store-preview strong {
+  align-self: end;
+  color: #fff6a6;
+  font-family: var(--font-player);
+  font-size: 0.68rem;
+  text-shadow: 0 0 10px rgba(255, 211, 90, 0.75);
+}
+
+.starman-store-preview em {
+  align-self: start;
+  color: #73f6ff;
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+}
+
+@keyframes starmanPreviewPulse {
+  from { transform: rotate(-5deg) scale(0.9); filter: drop-shadow(0 0 5px rgba(255, 226, 63, 0.76)) hue-rotate(0deg); }
+  to { transform: rotate(5deg) scale(1.08); filter: drop-shadow(0 0 12px rgba(73, 244, 255, 0.95)) hue-rotate(55deg); }
+}
+
+@keyframes starmanPreviewSweep {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes snakeStoreRainbow {
   to { background-position: 280% 50%; }
 }
