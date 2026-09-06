@@ -1,11 +1,15 @@
 function get_item(arg0, arg1)
 {
-    // ARCADIA holds virtual F10 while the Starman Store booster is active.
-    // Returning item 8 here keeps the original item logic completely intact
-    // whenever the booster is not in use.
+    // ARCADIA holds virtual F10/F11 while a Mario Kart Store booster is active.
+    // Item 8 is Starman and item 7 is Lightning. The normal item logic remains
+    // completely intact whenever neither booster is in use.
     if (!cpu && keyboard_check(121))
     {
         return 8;
+    }
+    if (!cpu && keyboard_check(122))
+    {
+        return 7;
     }
     var p = arg0;
     var r = arg1;

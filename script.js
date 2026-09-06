@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.32.0.0";
+  const APP_VERSION = "19.33.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "The Rewards Store adds the reusable Mario Kart Lightning Bolt booster: every mystery box grants Lightning throughout the next Grand Prix attempt, shrinking and slowing every opponent until the attempt ends, followed by a 10-minute cooldown.",
     "The Rewards Store adds the reusable Mario Kart Starman booster: every mystery box grants a Star throughout the next Grand Prix attempt, ending after a non-podium finish, a five-race cup, or a newly earned trophy.",
     "Doodle Jump moving pads now stay inside collision-free patrol lanes, while long runs gain narrower platforms, wider jumps, larger gaps, and much stronger rising-floor pressure.",
     "Doodle Jump now generates a guaranteed reachable solid backbone through every random platform band, keeping breakable, fading, and moving pads as optional branches instead of unavoidable dead ends.",
@@ -1344,6 +1345,19 @@
       cost: 2500,
       tags: ["booster", "mario", "kart", "grand prix", "starman", "star", "invincibility", "item box"],
       text: "Every mystery box grants a Star through your next Grand Prix attempt. Ends after a 4th-8th finish, a completed five-race cup, or a newly earned trophy."
+    },
+    {
+      id: "lightning_kart",
+      title: "Lightning Bolt",
+      category: "boosters",
+      type: "booster",
+      boost: "lightning_kart",
+      effect: "force_lightning",
+      game: "kart",
+      level: 22,
+      cost: 3200,
+      tags: ["booster", "mario", "kart", "grand prix", "lightning", "thunderbolt", "bolt", "shrink", "slow", "item box"],
+      text: "Every mystery box grants Lightning through your next Grand Prix attempt, shrinking and slowing every opponent. Ends after a 4th-8th finish, a completed five-race cup, or a newly earned trophy."
     }
   ];
 
@@ -1388,6 +1402,9 @@
   let kartStarBoosterActive = false;
   let kartStarBoosterRaceResults = 0;
   let kartStarBoosterTrophyBaseline = 0;
+  let kartLightningBoosterActive = false;
+  let kartLightningBoosterRaceResults = 0;
+  let kartLightningBoosterTrophyBaseline = 0;
   let marioController = null;
   let marioSessionStartedAt = 0;
   let kittyEngine = null;
@@ -3429,6 +3446,14 @@
         <div class="store-item-preview starman-store-preview" aria-hidden="true">
           <span class="starman-store-star"><i></i><i></i></span>
           <strong>EVERY BOX</strong><em>STAR POWER</em>
+        </div>
+      `;
+    }
+    if (item.effect === "force_lightning") {
+      return `
+        <div class="store-item-preview lightning-store-preview" aria-hidden="true">
+          <span class="lightning-store-bolt"></span>
+          <strong>EVERY BOX</strong><em>SHRINK RIVALS</em>
         </div>
       `;
     }
@@ -11974,6 +11999,41 @@
     return true;
   }
 
+  function armKartLightningBooster(controller = getKartController()) {
+    const booster = getEquippedBoosterItem("kart");
+    kartLightningBoosterActive = booster?.effect === "force_lightning";
+    kartLightningBoosterRaceResults = 0;
+    kartLightningBoosterTrophyBaseline = getKartTrophyCount(controller?.progress?.cups || state.stats.kartCupTrophies);
+    controller?.setLightningBooster(kartLightningBoosterActive);
+    if (kartLightningBoosterActive) {
+      showToast(
+        "Lightning Grand Prix Active",
+        "Every mystery box will grant Lightning and shrink every opponent until you lose, finish the five-race cup, or earn a trophy.",
+        "win",
+        4600
+      );
+    }
+    return kartLightningBoosterActive;
+  }
+
+  function finishKartLightningBooster(reason = "Grand Prix attempt complete.") {
+    if (!kartLightningBoosterActive) return false;
+    kartLightningBoosterActive = false;
+    kartLightningBoosterRaceResults = 0;
+    getKartController()?.setLightningBooster(false);
+
+    const booster = getStoreItem(state.equippedBooster);
+    if (booster?.effect !== "force_lightning" || booster.game !== "kart") return false;
+    state.boosterCooldowns[booster.boost] = Date.now() + 10 * 60 * 1000;
+    state.equippedBooster = null;
+    state.boosterUses += 1;
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+    showToast("Lightning Booster Used", `${reason} Ready again in 10 minutes.`, "silent", 4200);
+    return true;
+  }
+
   async function continueKartAfterResult() {
     if (kartResultAutoTimer) window.clearTimeout(kartResultAutoTimer);
     kartResultAutoTimer = null;
@@ -12001,6 +12061,14 @@
         finishKartStarBooster(`${formatKartPlace(place)} ended the powered attempt.`);
       } else if (kartStarBoosterRaceResults >= 5) {
         finishKartStarBooster("The five-race Grand Prix cup is complete.");
+      }
+    }
+    if (kartLightningBoosterActive) {
+      kartLightningBoosterRaceResults += 1;
+      if (place > 3) {
+        finishKartLightningBooster(`${formatKartPlace(place)} ended the powered attempt.`);
+      } else if (kartLightningBoosterRaceResults >= 5) {
+        finishKartLightningBooster("The five-race Grand Prix cup is complete.");
       }
     }
 
@@ -12086,6 +12154,12 @@
       && (upgradedTrophies.length || nextEntries.length > kartStarBoosterTrophyBaseline)
     ) {
       finishKartStarBooster("A Grand Prix podium trophy was earned.");
+    }
+    if (
+      kartLightningBoosterActive
+      && (upgradedTrophies.length || nextEntries.length > kartLightningBoosterTrophyBaseline)
+    ) {
+      finishKartLightningBooster("A Grand Prix podium trophy was earned.");
     }
 
     if (upgradedTrophies.length) {
@@ -12176,6 +12250,9 @@
     kartStarBoosterActive = false;
     kartStarBoosterRaceResults = 0;
     kartStarBoosterTrophyBaseline = getKartTrophyCount();
+    kartLightningBoosterActive = false;
+    kartLightningBoosterRaceResults = 0;
+    kartLightningBoosterTrophyBaseline = getKartTrophyCount();
     hideKartRaceResult();
     prepareGameTheme();
     showScreen("kart");
@@ -12185,6 +12262,7 @@
       return;
     }
     controller.setStarBooster(false);
+    controller.setLightningBooster(false);
     controller.load(APP_VERSION);
   }
 
@@ -12193,6 +12271,7 @@
     if (!controller || !(await controller.start())) return;
     currentGame = "kart";
     armKartStarBooster(controller);
+    armKartLightningBooster(controller);
     kartSessionStartedAt = Date.now();
     state.stats.gamesPlayed += 1;
     state.stats.kartRuns += 1;
@@ -12230,9 +12309,12 @@
     kartProgressHydrated = false;
     kartStarBoosterActive = false;
     kartStarBoosterRaceResults = 0;
+    kartLightningBoosterActive = false;
+    kartLightningBoosterRaceResults = 0;
     hideKartRaceResult();
     const controller = getKartController();
     controller?.setStarBooster(false);
+    controller?.setLightningBooster(false);
     controller?.restart(APP_VERSION);
   }
 
@@ -12243,8 +12325,11 @@
     kartProgressHydrated = false;
     kartStarBoosterActive = false;
     kartStarBoosterRaceResults = 0;
+    kartLightningBoosterActive = false;
+    kartLightningBoosterRaceResults = 0;
     hideKartRaceResult();
     kartController?.setStarBooster(false);
+    kartController?.setLightningBooster(false);
     kartController?.stop();
   }
 

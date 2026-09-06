@@ -224,6 +224,7 @@
       this.progressSignature = "";
       this.progress = null;
       this.starBoosterActive = false;
+      this.lightningBoosterActive = false;
       this.loadTimeoutTimer = null;
       this.loadSequence = 0;
       this.version = "1";
@@ -475,6 +476,7 @@
       this.ready = true;
       this.setLoading(false);
       this.applyStarBoosterState();
+      this.applyLightningBoosterState();
       this.startProgressDetector();
       this.onReady();
       this.introTimer = window.setTimeout(() => {
@@ -579,6 +581,24 @@
         }
       } catch {}
       this.post({ type: "star-booster", active: this.starBoosterActive });
+      return true;
+    }
+
+    setLightningBooster(active) {
+      this.lightningBoosterActive = Boolean(active);
+      return this.applyLightningBoosterState();
+    }
+
+    applyLightningBoosterState() {
+      if (!this.ready) return false;
+      try {
+        const setBooster = this.frame?.contentWindow?.arcadiaSMKSetLightningBooster;
+        if (typeof setBooster === "function") {
+          setBooster(this.lightningBoosterActive);
+          return true;
+        }
+      } catch {}
+      this.post({ type: "lightning-booster", active: this.lightningBoosterActive });
       return true;
     }
 

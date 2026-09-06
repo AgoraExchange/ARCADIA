@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.33.0.0 adds the reusable Mario Kart Lightning Bolt Store booster, forcing every mystery box to award Lightning throughout the next Grand Prix attempt so every opponent is shrunk and slowed, followed by a 10-minute cooldown.
 - Version 19.32.0.0 adds the reusable Mario Kart Starman Store booster, forcing every mystery box to award a Star throughout the next Grand Prix attempt until a loss, completed five-race cup, or trophy podium.
 - Version 19.31.3.0 confines Doodle Jump moving platforms to collision-free patrol lanes and makes high-score runs substantially harder through narrower pads, larger gaps, wider lateral jumps, and stronger rising-floor pressure.
 - Version 19.31.2.0 gives Doodle Jump every random platform band a reachable solid route while keeping breakable, fading, and moving platforms as optional branches rather than unavoidable dead ends.
@@ -121,6 +122,7 @@ Most ARCADIA games can run from a directly opened HTML file, but the bundled Mar
   - Automatic gamepad-screen advance when audio is available, with a compact Tap to Continue sound gate for iOS when a real gesture is required
   - Left-side precision steering with hold-forward acceleration, proportional corrections, immediate hard turns, and pull-back native braking/reverse, while menu navigation remains separate from selection
   - Diagonal A/B jump-select and back-cancel buttons, plus a debounced center item slot with reliable one-press power-up use
+  - Purchasable Starman and Lightning Bolt Grand Prix boosters that guarantee their native item from every mystery box for one powered cup attempt
   - Desktop keyboard and gamepad support retained from the original port, plus ARCADIA XP, coins, playtime, and an achievement
 - Super Mario Bros game page
   - Complete numbered campaign from World 1-1 through World 8-4, with Random map and mod controls unavailable in ARCADIA
@@ -147,7 +149,7 @@ The theme is based on dark arcade poster art, hot magenta, violet, purple, cyan,
 
 Fruit Ninja's custom ARCADIA canvas renderer is an original implementation inspired by Caleb Miller's open-source Menja cube-smashing prototype, including its tiny-renderer approach to shaded geometry, projected backboard shadows, swipe trails, and flying fragments.
 
-Super Mario Kart ZX was created by srPerez and its web port was published by burnedpopcorn. ARCADIA includes the exact compiled port with the user's confirmed permission and adds only the surrounding launch, touch-control, responsive-layout, and progression integration. See `games/sm-kart-zx/ATTRIBUTION.md` for upstream links and details.
+Super Mario Kart ZX was created by srPerez and its web port was published by burnedpopcorn. ARCADIA includes the port with the user's confirmed permission and adds the surrounding launch, touch-control, responsive-layout, progression integration, and documented Store-booster item overrides. See `games/sm-kart-zx/ATTRIBUTION.md` for upstream links and details.
 
 Super Mario Bros uses the PlayMario HTML5 Client's original 32 numbered campaign maps with the user's confirmed permission from its maintainer. ARCADIA adds its title launch, touch controls, responsive presentation, pause/audio bridge, and progression integration while leaving its random map and mod interfaces inaccessible. See `games/super-mario-bros/ATTRIBUTION.md` for upstream links and details.
 
