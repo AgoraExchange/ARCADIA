@@ -5,6 +5,7 @@
   let started = false;
   let solved = 0;
   let pendingVictory = null;
+  let records = {};
   let mutedMusic = false;
   let mutedSfx = false;
   const levelCount = window.ARCADIA_ANGRY_LEVEL_COUNT;
@@ -34,6 +35,8 @@
   gameState.throwBird = function () {
     const launched = Boolean(this.bird.body);
     originalThrowBird.call(this);
+    // The native sign calculation divides by zero on an exactly level shot.
+    if (!Number.isFinite(this.bird.body.velocity.y)) this.bird.body.velocity.y = 0;
     if (!launched) this.arcadiaBirdsLaunched++;
   };
   const originalUpdateDeadCount = gameState.updateDeadCount;
@@ -46,6 +49,10 @@
       unusedBirds: Math.max(0, (this.levelData.birds || 3) - this.arcadiaBirdsLaunched)
     };
     // Award synchronously, including replay wins, before navigation can unload us.
+    const { level, unusedBirds } = pendingVictory;
+    const best = records[level] || {};
+    records[level] = { stars: Math.max(best.stars || 0, Math.min(3, unusedBirds + 1)),
+      bestUnusedBirds: Math.max(best.bestUnusedBirds || 0, unusedBirds), wins: (best.wins || 0) + 1 };
     parent.arcadiaCompleteAngryBirds?.();
   };
   const originalLoadLevel = gameState.loadLevel;
@@ -103,6 +110,7 @@
     game.state.start('AngryBirds.SplashGame');
   }
   window.arcadiaAngryBirds = {
+    getRecord(level) { return records[level] || null; },
     takeVictory() {
       const victory = pendingVictory;
       pendingVictory = null;
@@ -111,6 +119,7 @@
     start(options = {}) {
       if (!ready || started) return false;
       solved = Math.max(0, Math.min(levelCount, Number(options.solved) || 0));
+      records = JSON.parse(JSON.stringify(options.records || {}));
       GAME_SOUND_ENABLED = options.soundEnabled !== false;
       this.setMuted(options);
       unlockAudio();

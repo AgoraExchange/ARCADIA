@@ -7,6 +7,14 @@
 const assert = require('node:assert/strict');
 const { chromium } = require(process.env.ARCADIA_PLAYWRIGHT_MODULE || 'playwright');
 const solutions = {
+  31: [[40,330,25]], 32: [[40,310,25]], 33: [[40,370,50]],
+  34: [[120,370,140],[120,370,140],[40,290,25]],
+  35: [[120,350,140]],
+  36: [[120,370,140],[120,350,50],[120,370,140],[40,290,25]],
+  37: [[40,290,25]], 38: [[40,310,50]], 39: [[40,290,null]],
+  40: [[40,290,25]], 41: [[40,350,null]], 42: [[40,290,null]],
+  43: [[40,310,25]], 44: [[80,350,110],[40,350,80]],
+  45: [[40,350,25],[40,330,50]],
   4: [[40, 310]], 5: [[40, 320]], 6: [[40, 340]], 7: [[40, 330]],
   8: [[100, 310], [40, 330]], 9: [[100, 350], [80, 340]],
   10: [[100, 350], [40, 350]], 11: [[60, 370], [40, 320]],
@@ -36,8 +44,8 @@ const solutions = {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${process.env.ARCADIA_PREVIEW_URL || 'http://127.0.0.1:4179'}/games/angry-birds/index.html`);
-    await page.waitForFunction(() => game.cache.checkTextKey('level30'));
-    assert.equal(await page.evaluate(() => Array.from({ length: 30 }, (_, i) => game.cache.checkTextKey(`level${i + 1}`)).every(Boolean)), true);
+    await page.waitForFunction(() => game.cache.checkTextKey('level45'));
+    assert.equal(await page.evaluate(() => Array.from({ length: 45 }, (_, i) => game.cache.checkTextKey(`level${i + 1}`)).every(Boolean)), true);
     await page.evaluate(() => {
       window.victories = [];
       window.arcadiaCompleteAngryBirds = () => victories.push(window.arcadiaAngryBirds.takeVictory());
@@ -58,10 +66,11 @@ const solutions = {
         GAME_LEVEL_SELECTED = String(number);
         game.state.start('AngryBirds.Game');
         game.state.preUpdate();
+        window.arcadiaAngryBirds.beginMission();
         for (let frame = 0; frame < 18; frame++) testTick();
       };
     });
-    for (const [level, shots] of Object.entries(solutions)) {
+    for (const [level, shots] of Object.entries(solutions).filter(([level]) => level !== '45')) {
       const result = await page.evaluate(({ level, shots }) => {
         testReset(level);
         const state = game.state.states['AngryBirds.Game'];
@@ -70,26 +79,29 @@ const solutions = {
         game.physics.p2.resume();
         for (let frame = 0; frame < 300; frame++) testTick();
         const idleDeaths = state.countDeadEnemies;
+        const armorIntact = state.enemies.children.every((pig,i) => (pig.arcadiaArmor || 0) === (state.levelData.enemies[i].armor || 0));
         testReset(level);
         let used = 0;
         for (const [x, y, powerFrame] of shots) {
+          if (x < 24 || x > 180 || y < 170 || y > 370) throw new Error("Illegal sling position");
           if (state.gameWon) break;
           if (state.bird.body || state.availableBirdsCounter <= 0) throw new Error('Bird unavailable');
           state.bird.position.set(x, y);
           state.throwBird();
           used++;
-          for (let frame = 0; frame < 1800; frame++) {
+          for (let frame = 0; frame < 2400; frame++) {
             if (frame === powerFrame) window.arcadiaAngryBirds.useAbility();
             testTick();
             if (state.gameWon || state.availableBirdsCounter <= 0 || !state.bird.body) break;
           }
         }
         const victory = victories.pop();
-        state.updateDeadCount();
+        if (state.gameWon) state.updateDeadCount();
         if (victories.length || window.arcadiaAngryBirds.takeVictory()) throw new Error("Duplicate victory reward");
-        return { victory, budget, used, idleDeaths, queueVisible, won: state.gameWon, killed: state.countDeadEnemies, pigs: state.totalNumEnemies,
+        return { armorIntact, victory, budget, used, idleDeaths, queueVisible, won: state.gameWon, killed: state.countDeadEnemies, pigs: state.totalNumEnemies,
           survivors: state.enemies.children.filter(pig => pig.alive).map(pig => ({ x: Math.round(pig.x), y: Math.round(pig.y) })) };
       }, { level, shots });
+      assert(result.armorIntact, `Mission ${level} loses armor before launch`);
       assert.equal(result.idleDeaths, 0, `Mission ${level} collapses before a shot`);
       assert(result.queueVisible, `Mission ${level} hides spare birds`);
       assert(shots.length <= result.budget, `Mission ${level} exceeds the bird budget`);

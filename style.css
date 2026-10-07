@@ -9047,6 +9047,10 @@ input:focus {
 .angry-ability-controls { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: min(100%, 680px); min-height: 44px; }
 .angry-ability-controls span { color: #efe6ff; font-size: 15px; }
 .angry-ability-controls .arcade-btn { min-width: 130px; min-height: 44px; }
+.angry-ability-controls #angryMissionHelpBtn { min-width: 38px; padding: 8px; margin-left: auto; }
+.angry-mission-card { display: grid; gap: 14px; width: min(520px, 100%); max-height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 32px); overflow-y: auto; }
+.angry-mission-card p { margin: 0; line-height: 1.5; }
+#angryMissionHint { color: #f5d27a; }
 @media (max-width: 600px) and (orientation: portrait) {
   /* Fit the safe-area-aware game-content, including visible browser chrome. */
   .angry-stage { min-height: 100%; padding: 12px; }

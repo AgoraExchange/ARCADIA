@@ -5,17 +5,33 @@
   const campaign = game.state.states['AngryBirds.SplashGame'];
   const play = game.state.states['AngryBirds.Game'];
   const pageCount = Math.ceil(window.ARCADIA_ANGRY_LEVEL_COUNT / 15);
+  const chapters = ['Piggy Plains', 'Royal Rumble', 'Fortress Falls'];
   let selectedPage = null;
   const unlockedPage = () => Math.min(pageCount - 1, Math.floor(Number(campaign.getSolvedLevels()) / 15));
   const createButton = selector.createLevelButton;
   selector.createLevelButton = function (x, y, number, solved) {
-    createButton.call(this, x, y, String(Number(number) + selectedPage * 15), solved);
+    const level = Number(number) + selectedPage * 15;
+    const before = game.world.children.length;
+    createButton.call(this, x, y, String(level), solved);
+    // Replace the native automatic three-star badge with earned ratings.
+    game.world.children.slice(before).filter(child => child.key === 'imageLevelSelectorCompleted').forEach(child => child.destroy());
+    const record = window.arcadiaAngryBirds.getRecord(level);
+    if (record) {
+      const stars = game.add.text(x + 50, y + 68, '\u2605'.repeat(record.stars) + '\u2606'.repeat(3-record.stars),
+        { font: 'bold 20px sans-serif', fill: '#ffd342', stroke: '#543005', strokeThickness: 2 });
+      stars.anchor.set(0.5);
+    } else if (level <= solved) {
+      game.add.bitmapText(x+16, y+62, 'AngryBirdsFont', 'CLEARED', 14);
+    }
   };
   const originalCreate = selector.create;
   selector.create = function () {
     selectedPage = Math.min(selectedPage ?? unlockedPage(), unlockedPage());
     this.arcadiaPage = selectedPage;
     originalCreate.call(this);
+    const chapter = game.add.text(391, 23, `CHAPTER ${selectedPage + 1}: ${chapters[selectedPage]}`,
+      { font: 'bold 23px sans-serif', fill: '#fff4cb', stroke: '#442b17', strokeThickness: 4 });
+    chapter.anchor.set(0.5);
     const label = game.add.bitmapText(340, 382, 'AngryBirdsFont', `PAGE ${selectedPage + 1} / ${pageCount}`, 22);
     label.x = 390 - label.width / 2;
     const arrow = (x, text, enabled, target) => {

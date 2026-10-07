@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.38.0.0 adds Chapter 3, Fortress Falls (missions 31-45), with named chapter selector headings, briefings and tactical hints, TNT chain reactions, hanging bridges, armored Corporal Pigs, a two-hit King Pig, saved star ratings, personal bests, and replayable challenge rewards.
 - Version 19.37.0.0 makes Angry Birds replayable for rewards: every win earns 50 + 10 per mission XP and 10 + 2 per mission coins, plus 20 XP / 5 coins per unused bird. First clears add 150 XP / 30 coins.
 - Version 19.36.0.0 adds Angry Birds Page 2 (missions 16-30), unlocked after mission 15, with Chuck, Bomb, Hal, mixed flocks, Corporal/King Pigs, tap/Space powers, and saved page progression.
 

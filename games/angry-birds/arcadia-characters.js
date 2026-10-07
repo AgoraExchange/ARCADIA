@@ -115,6 +115,7 @@
       const dx = pig.x - x, dy = pig.y - y;
       const distance = Math.max(1, Math.hypot(dx, dy));
       if (distance <= 115) {
+        if (state.arcadiaAbsorbArmor?.(pig)) continue;
         pig.alpha = 0.99;
         pig.kill();
         pig.explosion.position.set(pig.x - 24, pig.y - 24);
@@ -126,6 +127,7 @@
         pig.body.velocity.y += dy / distance * 380 - 100;
       }
     }
+    state.arcadiaBlastStructures?.(x, y);
     state.killBird();
   }
   function activate() {

@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.37.0.1";
+  const APP_VERSION = "19.38.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Angry Birds adds Fortress Falls, missions 31-45, with mission briefings, TNT chains, hanging bridges, armored pigs, a boss king, named chapters, saved star ratings, and personal bests.",
     "Angry Birds portrait layout now keeps Start and Restart inside the visible phone screen, respecting safe areas and browser toolbar height.",
     "Angry Birds now rewards every victory, including replays, with higher payouts for later missions, bonus XP and coins per unused bird, and an extra first-clear bonus.",
     "Angry Birds adds a second page of 15 missions, unlocked after mission 15, with Chuck speed boosts, Bomb blasts, Hal boomerangs, mixed flocks, Corporal and King Pigs, page arrows, and saved progression through mission 30.",
@@ -541,7 +542,8 @@
     { id: "angry_clear", title: "Pig Popper", text: "Complete an Angry Birds mission." },
     { id: "angry_all", title: "Original Flock", text: "Complete the first three Angry Birds missions." },
     { id: "angry_campaign", title: "Flock Champion", text: "Complete the first 15 Angry Birds missions." },
-    { id: "angry_flock", title: "Royal Flock", text: "Complete all 30 Angry Birds missions." },
+    { id: "angry_fortress", title: "Fortress Breaker", text: "Complete all 45 Angry Birds missions." },
+    { id: "angry_flock", title: "Royal Flock", text: "Complete the first 30 Angry Birds missions." },
     { id: "first_run", title: "Inserted Coin", text: "Complete your first Snake run." },
     { id: "snake_10", title: "Grid Runner", text: "Score 10 or higher in Snake." },
     { id: "snake_25", title: "Snake Master", text: "Score 25 or higher in Snake." },
@@ -2929,7 +2931,7 @@
         runs: Number(state.stats.angryRuns) || 0,
         best: Number(state.stats.angrySolved) || 0,
         metricLabel: "Missions",
-        meta: `${formatNumber(state.stats.angryRuns)} attempts · ${formatNumber(state.stats.angrySolved)} / 30 missions cleared`
+        meta: `${formatNumber(state.stats.angryRuns)} attempts · ${formatNumber(state.stats.angrySolved)} / 45 missions cleared`
       },
       {
         title: "Doodle Jump",
@@ -12998,7 +13000,7 @@
   }
 
   function angryOptions() {
-    return { solved: state.stats.angrySolved, soundEnabled: state.stats.angrySoundEnabled !== false, mutedMusic: state.muteMusic, mutedSfx: state.muteSfx };
+    return { solved: state.stats.angrySolved, records: state.stats.angryRecords || {}, soundEnabled: state.stats.angrySoundEnabled !== false, mutedMusic: state.muteMusic, mutedSfx: state.muteSfx };
   }
 
   function openAngry() {
@@ -13032,12 +13034,16 @@
     const victory = angryController.api?.takeVictory();
     if (!victory) return;
     const { level, unusedBirds } = victory;
-    if (!Number.isInteger(level) || level < 1 || level > 30 ||
+    if (!Number.isInteger(level) || level < 1 || level > 45 ||
         !Number.isInteger(unusedBirds) || unusedBirds < 0 || unusedBirds > 5) return;
     const previous = Number(state.stats.angrySolved) || 0;
     const firstClear = level > previous;
     const earned = 50 + level * 10 + unusedBirds * 20 + (firstClear ? 150 : 0);
     const coins = 10 + level * 2 + unusedBirds * 5 + (firstClear ? 30 : 0);
+    const records = state.stats.angryRecords || (state.stats.angryRecords = {});
+    const best = records[level] || {};
+    records[level] = { stars: Math.max(best.stars || 0, Math.min(3, unusedBirds + 1)),
+      bestUnusedBirds: Math.max(best.bestUnusedBirds || 0, unusedBirds), wins: (best.wins || 0) + 1 };
     state.stats.angrySolved = Math.max(previous, level);
     state.stats.angryXpEarned = (Number(state.stats.angryXpEarned) || 0) + earned;
     state.xp += earned;
@@ -13046,7 +13052,7 @@
     unlockEarnedAchievements();
     saveState();
     renderAll();
-    showToast(`Mission ${level} Cleared`, `+${earned} XP and +${coins} coins. ${unusedBirds} unused birds${firstClear ? " + first-clear bonus" : ""}.`, "win");
+    showToast(`Mission ${level} Cleared`, `+${earned} XP and +${coins} coins. ${Math.min(3, unusedBirds + 1)}/3 stars; ${unusedBirds} unused birds${firstClear ? " + first-clear bonus" : ""}.`, "win");
   };
 
   function openDoodle() {
@@ -13210,6 +13216,7 @@
       ["angry_all", state.stats.angrySolved >= 3],
       ["angry_campaign", state.stats.angrySolved >= 15],
       ["angry_flock", state.stats.angrySolved >= 30],
+      ["angry_fortress", state.stats.angrySolved >= 45],
       ["first_run", state.stats.gamesPlayed >= 1],
       ["snake_10", state.stats.snakeBest >= 10],
       ["snake_25", state.stats.snakeBest >= 25],
