@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.37.0.0";
+  const APP_VERSION = "19.37.0.1";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Angry Birds portrait layout now keeps Start and Restart inside the visible phone screen, respecting safe areas and browser toolbar height.",
     "Angry Birds now rewards every victory, including replays, with higher payouts for later missions, bonus XP and coins per unused bird, and an extra first-clear bonus.",
     "Angry Birds adds a second page of 15 missions, unlocked after mission 15, with Chuck speed boosts, Bomb blasts, Hal boomerangs, mixed flocks, Corporal and King Pigs, page arrows, and saved progression through mission 30.",
     "Angry Birds now uses the player-provided game artwork, organized in assets/images/games/angry-birds-icon.png.",
