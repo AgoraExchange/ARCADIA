@@ -1,6 +1,12 @@
 {
-  "version": "19.33.0.0",
+  "version": "19.37.0.0",
   "patchNotes": [
+    "Angry Birds now rewards every victory, including replays, with higher payouts for later missions, bonus XP and coins per unused bird, and an extra first-clear bonus.",
+    "Angry Birds adds a second page of 15 missions, unlocked after mission 15, with Chuck speed boosts, Bomb blasts, Hal boomerangs, mixed flocks, Corporal and King Pigs, page arrows, and saved progression through mission 30.",
+    "Angry Birds now uses the player-provided game artwork, organized in assets/images/games/angry-birds-icon.png.",
+    "Angry Birds expands to 15 playable missions with twelve original ARCADIA layouts, tougher towers and longer shots, balanced bird counts, saved unlocks, and rewards through the final mission.",
+    "Angry Birds joins ARCADIA as Game 15 with its native splash, music, menus, three included missions, saved unlocks, pause, restart, and first-clear rewards.",
+    "Doodle Jump now grants full floor clearance for climbing and springs, with capped chase speed and extra pressure only after stalled progress.",
     "The Rewards Store adds the reusable Mario Kart Lightning Bolt booster: every mystery box grants Lightning throughout the next Grand Prix attempt, shrinking and slowing every opponent until the attempt ends, followed by a 10-minute cooldown.",
     "The Rewards Store adds the reusable Mario Kart Starman booster: every mystery box grants a Star throughout the next Grand Prix attempt, ending after a non-podium finish, a five-race cup, or a newly earned trophy.",
     "Doodle Jump moving pads now stay inside collision-free patrol lanes, while long runs gain narrower platforms, wider jumps, larger gaps, and much stronger rising-floor pressure.",

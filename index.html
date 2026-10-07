@@ -842,6 +842,35 @@
       </main>
     </section>
 
+    <section id="angryScreen" class="screen game-screen angry-screen hidden">
+      <header class="page-top">
+        <button id="exitAngryBtn" class="arcade-btn secondary game-close-btn" type="button" aria-label="Close game">X</button>
+        <h1>Angry Birds</h1>
+        <button id="angryPauseBtn" class="arcade-btn secondary game-pause-btn" type="button" disabled>Pause</button>
+      </header>
+      <main class="game-content angry-game-content">
+        <section class="angry-stage panel">
+          <div class="angry-port-shell">
+            <iframe id="angryFrame" title="Angry Birds game" src="about:blank" allow="autoplay" scrolling="no"></iframe>
+            <div id="angryCover" class="angry-cover">
+              <img src="assets/images/games/angry-birds-icon.png" alt="Angry Birds" />
+              <strong>ANGRY BIRDS</strong>
+              <small id="angryStatus" role="status">Loading Angry Birds…</small>
+            </div>
+          </div>
+          <div id="angryAbilityControls" class="angry-ability-controls hidden">
+            <span id="angryAbilityLabel" role="status">Drag back and launch</span>
+            <button id="angryAbilityBtn" class="arcade-btn primary" type="button" disabled>Power</button>
+          </div>
+          <p id="angryHint" class="hint angry-hint">Drag back, aim, and release. Every win earns XP and coins: later missions and unused birds pay more. Clear 15 missions to unlock the next page.</p>
+          <div class="game-actions angry-actions">
+            <button id="startAngryBtn" class="arcade-btn primary" type="button" disabled>Start Game</button>
+            <button id="restartAngryBtn" class="arcade-btn secondary" type="button" disabled>Restart</button>
+          </div>
+        </section>
+      </main>
+    </section>
+
     <div id="marioMapModal" class="modal mario-map-modal hidden" role="dialog" aria-modal="true" aria-labelledby="marioMapTitle">
       <div class="modal-card mario-map-card">
         <button id="dismissMarioMapBtn" class="modal-x" type="button" aria-label="Close saved maps">X</button>
@@ -1028,6 +1057,7 @@
     <script src="hello-kitty-world.js"></script>
     <script src="xtreme-racing.js"></script>
     <script src="doodle-jump.js"></script>
+    <script src="angry-birds.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.33.0.0";
+const ARCADIA_VERSION = "19.37.0.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -11,6 +11,19 @@ const APP_SHELL = [
   "hello-kitty-world.js",
   "xtreme-racing.js",
   "doodle-jump.js",
+  "angry-birds.js",
+  "games/angry-birds/index.html",
+  "games/angry-birds/AngryBirdsGame.js",
+  "games/angry-birds/arcadia-bridge.js",
+  "games/angry-birds/arcadia-levels.js",
+  "games/angry-birds/arcadia-characters.js",
+  "games/angry-birds/arcadia-pages.js",
+  "games/angry-birds/characters/chuck.png",
+  "games/angry-birds/characters/bomb.png",
+  "games/angry-birds/characters/hal.png",
+  "games/angry-birds/characters/corporal-pig.png",
+  "games/angry-birds/characters/king-pig.png",
+  "assets/images/games/angry-birds-icon.png",
   "manifest.webmanifest",
   "app-version.json",
   "assets/images/games/stack.png",

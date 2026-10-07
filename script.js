@@ -3,11 +3,17 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.33.0.0";
+  const APP_VERSION = "19.37.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Angry Birds now rewards every victory, including replays, with higher payouts for later missions, bonus XP and coins per unused bird, and an extra first-clear bonus.",
+    "Angry Birds adds a second page of 15 missions, unlocked after mission 15, with Chuck speed boosts, Bomb blasts, Hal boomerangs, mixed flocks, Corporal and King Pigs, page arrows, and saved progression through mission 30.",
+    "Angry Birds now uses the player-provided game artwork, organized in assets/images/games/angry-birds-icon.png.",
+    "Angry Birds expands to 15 playable missions with twelve original ARCADIA layouts, tougher towers and longer shots, balanced bird counts, saved unlocks, and rewards through the final mission.",
+    "Angry Birds joins ARCADIA as Game 15 with its native splash, music, menus, three included missions, saved unlocks, pause, restart, and first-clear rewards.",
+    "Doodle Jump now grants full floor clearance for climbing and springs, with capped chase speed and extra pressure only after stalled progress.",
     "The Rewards Store adds the reusable Mario Kart Lightning Bolt booster: every mystery box grants Lightning throughout the next Grand Prix attempt, shrinking and slowing every opponent until the attempt ends, followed by a 10-minute cooldown.",
     "The Rewards Store adds the reusable Mario Kart Starman booster: every mystery box grants a Star throughout the next Grand Prix attempt, ending after a non-podium finish, a five-race cup, or a newly earned trophy.",
     "Doodle Jump moving pads now stay inside collision-free patrol lanes, while long runs gain narrower platforms, wider jumps, larger gaps, and much stronger rising-floor pressure.",
@@ -357,7 +363,11 @@
       doodleXpEarned: 0,
       doodleTotalScore: 0,
       doodlePlatforms: 0,
-      doodleSprings: 0
+      doodleSprings: 0,
+      angryRuns: 0,
+      angrySolved: 0,
+      angrySoundEnabled: true,
+      angryXpEarned: 0
     },
     achievements: []
   };
@@ -516,10 +526,21 @@
       available: true,
       image: "assets/images/games/doodle-jump.svg",
       mark: "D"
+    },
+    {
+      id: "angry", title: "Angry Birds", gameNo: "15",
+      tags: ["angry", "birds", "slingshot", "physics", "missions"],
+      description: "Launch the flock, topple pig towers, and unlock every included mission.",
+      status: "Play", available: true, image: "assets/images/games/angry-birds-icon.png", mark: "A"
     }
   ];
 
   const achievements = [
+    { id: "angry_first", title: "Flock Launched", text: "Start your first Angry Birds mission." },
+    { id: "angry_clear", title: "Pig Popper", text: "Complete an Angry Birds mission." },
+    { id: "angry_all", title: "Original Flock", text: "Complete the first three Angry Birds missions." },
+    { id: "angry_campaign", title: "Flock Champion", text: "Complete the first 15 Angry Birds missions." },
+    { id: "angry_flock", title: "Royal Flock", text: "Complete all 30 Angry Birds missions." },
     { id: "first_run", title: "Inserted Coin", text: "Complete your first Snake run." },
     { id: "snake_10", title: "Grid Runner", text: "Score 10 or higher in Snake." },
     { id: "snake_25", title: "Snake Master", text: "Score 25 or higher in Snake." },
@@ -1410,6 +1431,7 @@
   let kittyEngine = null;
   let xtremeController = null;
   let doodleController = null;
+  let angryController = null;
   let marioMapPickerWasPlaying = false;
   let touchStart = null;
   let headerSeenXp = Number(state.xp) || 0;
@@ -1456,6 +1478,7 @@
     kittyScreen: $("kittyScreen"),
     xtremeScreen: $("xtremeScreen"),
     doodleScreen: $("doodleScreen"),
+    angryScreen: $("angryScreen"),
     skipBootBtn: $("skipBootBtn"),
     playerForm: $("playerForm"),
     playerName: $("playerName"),
@@ -1928,6 +1951,7 @@
     el.kittyScreen.classList.toggle("hidden", name !== "kitty");
     el.xtremeScreen.classList.toggle("hidden", name !== "xtreme");
     el.doodleScreen.classList.toggle("hidden", name !== "doodle");
+    el.angryScreen.classList.toggle("hidden", name !== "angry");
     if (name !== "game") stopSnake();
     if (name !== "block") stopBlock(false);
     if (name !== "star") stopStar(false);
@@ -1942,14 +1966,15 @@
     if (name !== "kitty") stopKitty();
     if (name !== "xtreme") stopXtreme();
     if (name !== "doodle") stopDoodle();
+    if (name !== "angry" && angryController?.frame.getAttribute("src") !== "about:blank") angryController?.stop();
     if (name !== "solitaire") {
       el.resultKicker.textContent = "Classic Results";
       el.resultTitle.textContent = "Game Over";
     }
     renderAll();
     if (name === "home") {
-      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme", "doodle"].includes(previousScreen) });
-    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme", "doodle"].includes(previousScreen) && name !== previousScreen) {
+      playLobbyTheme({ transition: ["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme", "doodle", "angry"].includes(previousScreen) });
+    } else if (["game", "block", "star", "stack", "flappy", "crossy", "solitaire", "fruit", "ninja", "kart", "mario", "kitty", "xtreme", "doodle", "angry"].includes(previousScreen) && name !== previousScreen) {
       stopGameTheme();
     }
   }
@@ -2444,6 +2469,7 @@
     state.muteSfx = !state.muteSfx;
     kittyEngine?.setMuted({ mutedSfx: state.muteSfx });
     xtremeController?.setMuted({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx });
+    angryController?.setMuted(angryOptions());
     saveState();
     updateAudioToggleButtons();
     if (!state.muteSfx) {
@@ -2457,6 +2483,7 @@
     state.muteMusic = !state.muteMusic;
     kittyEngine?.setMuted({ mutedMusic: state.muteMusic });
     xtremeController?.setMuted({ mutedMusic: state.muteMusic, mutedSfx: state.muteSfx });
+    angryController?.setMuted(angryOptions());
     saveState();
     updateAudioToggleButtons();
     if (state.muteMusic) {
@@ -2772,6 +2799,7 @@
         if (game.id === "kitty") openKitty();
         if (game.id === "xtreme") openXtreme();
         if (game.id === "doodle") openDoodle();
+        if (game.id === "angry") openAngry();
       });
       el.gameGrid.appendChild(card);
     });
@@ -2893,6 +2921,14 @@
         best: Number(state.stats.xtremeFirsts) || 0,
         metricLabel: "Wins",
         meta: `${formatNumber(state.stats.xtremeRuns)} races · ${formatNumber(state.stats.xtremeRacesFinished)} finishes · ${formatNumber(state.stats.xtremeFirsts)} wins · Best ${formatXtremePlace(state.stats.xtremeBestPlace)}`
+      },
+      {
+        title: "Angry Birds",
+        xp: Number(state.stats.angryXpEarned) || 0,
+        runs: Number(state.stats.angryRuns) || 0,
+        best: Number(state.stats.angrySolved) || 0,
+        metricLabel: "Missions",
+        meta: `${formatNumber(state.stats.angryRuns)} attempts · ${formatNumber(state.stats.angrySolved)} / 30 missions cleared`
       },
       {
         title: "Doodle Jump",
@@ -3116,6 +3152,13 @@
         runs: Number(state.stats.xtremeRuns) || 0,
         xp: Number(state.stats.xtremeXpEarned) || 0,
         best: Number(state.stats.xtremeFirsts) || 0
+      },
+      {
+        id: "angry",
+        title: "Angry Birds",
+        runs: Number(state.stats.angryRuns) || 0,
+        xp: Number(state.stats.angryXpEarned) || 0,
+        best: Number(state.stats.angrySolved) || 0
       },
       {
         id: "doodle",
@@ -12953,6 +12996,58 @@
     return doodleController;
   }
 
+  function angryOptions() {
+    return { solved: state.stats.angrySolved, soundEnabled: state.stats.angrySoundEnabled !== false, mutedMusic: state.muteMusic, mutedSfx: state.muteSfx };
+  }
+
+  function openAngry() {
+    currentGame = "angry";
+    prepareGameTheme();
+    showScreen("angry");
+    if (!angryController) angryController = new window.ArcadiaAngryBirds({
+      frame: $("angryFrame"), cover: $("angryCover"), status: $("angryStatus"),
+      abilityControls: $("angryAbilityControls"), abilityButton: $("angryAbilityBtn"), abilityLabel: $("angryAbilityLabel"), hint: $("angryHint"),
+      startButton: $("startAngryBtn"), restartButton: $("restartAngryBtn"), pauseButton: $("angryPauseBtn"),
+      onLevelStart() {
+        if (currentScreen !== "angry") return;
+        state.stats.angryRuns = (Number(state.stats.angryRuns) || 0) + 1;
+        state.stats.gamesPlayed = (Number(state.stats.gamesPlayed) || 0) + 1;
+        unlockEarnedAchievements();
+        saveState();
+        renderAll();
+      }
+    });
+    angryController.load(APP_VERSION);
+  }
+
+  window.arcadiaSaveAngryBirdsSound = (enabled) => {
+    if (currentScreen !== "angry" || !angryController?.started) return;
+    state.stats.angrySoundEnabled = Boolean(enabled);
+    saveState();
+  };
+
+  window.arcadiaCompleteAngryBirds = () => {
+    if (currentScreen !== "angry" || !angryController?.started) return;
+    const victory = angryController.api?.takeVictory();
+    if (!victory) return;
+    const { level, unusedBirds } = victory;
+    if (!Number.isInteger(level) || level < 1 || level > 30 ||
+        !Number.isInteger(unusedBirds) || unusedBirds < 0 || unusedBirds > 5) return;
+    const previous = Number(state.stats.angrySolved) || 0;
+    const firstClear = level > previous;
+    const earned = 50 + level * 10 + unusedBirds * 20 + (firstClear ? 150 : 0);
+    const coins = 10 + level * 2 + unusedBirds * 5 + (firstClear ? 30 : 0);
+    state.stats.angrySolved = Math.max(previous, level);
+    state.stats.angryXpEarned = (Number(state.stats.angryXpEarned) || 0) + earned;
+    state.xp += earned;
+    state.coins += coins;
+    state.level = deriveLevel(state.xp);
+    unlockEarnedAchievements();
+    saveState();
+    renderAll();
+    showToast(`Mission ${level} Cleared`, `+${earned} XP and +${coins} coins. ${unusedBirds} unused birds${firstClear ? " + first-clear bonus" : ""}.`, "win");
+  };
+
   function openDoodle() {
     currentGame = "doodle";
     prepareGameTheme();
@@ -13109,6 +13204,11 @@
 
   function unlockEarnedAchievements() {
     const checks = [
+      ["angry_first", state.stats.angryRuns >= 1],
+      ["angry_clear", state.stats.angrySolved >= 1],
+      ["angry_all", state.stats.angrySolved >= 3],
+      ["angry_campaign", state.stats.angrySolved >= 15],
+      ["angry_flock", state.stats.angrySolved >= 30],
       ["first_run", state.stats.gamesPlayed >= 1],
       ["snake_10", state.stats.snakeBest >= 10],
       ["snake_25", state.stats.snakeBest >= 25],
@@ -13642,6 +13742,10 @@
     el.startXtremeBtn.addEventListener("click", startXtreme);
     el.restartXtremeBtn.addEventListener("click", restartXtreme);
     el.exitDoodleBtn.addEventListener("click", () => showScreen("home"));
+    $("exitAngryBtn").addEventListener("click", () => showScreen("home"));
+    $("startAngryBtn").addEventListener("click", () => angryController?.start(angryOptions()));
+    $("restartAngryBtn").addEventListener("click", () => angryController?.restart(angryOptions()));
+    $("angryPauseBtn").addEventListener("click", () => angryController?.togglePause());
     el.doodlePauseBtn.addEventListener("click", toggleDoodlePause);
     el.startDoodleBtn.addEventListener("click", handlePrimaryDoodleAction);
     el.restartDoodleBtn.addEventListener("click", restartDoodle);

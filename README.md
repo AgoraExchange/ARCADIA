@@ -1,5 +1,13 @@
 # ARCADIA
 
+- Version 19.37.0.0 makes Angry Birds replayable for rewards: every win earns 50 + 10 per mission XP and 10 + 2 per mission coins, plus 20 XP / 5 coins per unused bird. First clears add 150 XP / 30 coins.
+- Version 19.36.0.0 adds Angry Birds Page 2 (missions 16-30), unlocked after mission 15, with Chuck, Bomb, Hal, mixed flocks, Corporal/King Pigs, tap/Space powers, and saved page progression.
+
+- Version 19.35.0.0 expands Angry Birds to all 15 missions: the three upstream levels plus twelve original ARCADIA challenges, with saved progression and first-clear rewards throughout.
+
+- Version 19.34.0.0 adds Angry Birds as Game 15 with the complete included three-level campaign, saved missions and native launch flow, and fixes Doodle Jump floor pressure during successful climbs.
+- Angry Birds source and resource notice: `games/angry-birds/UPSTREAM.md`.
+
 - Version 19.33.0.0 adds the reusable Mario Kart Lightning Bolt Store booster, forcing every mystery box to award Lightning throughout the next Grand Prix attempt so every opponent is shrunk and slowed, followed by a 10-minute cooldown.
 - Version 19.32.0.0 adds the reusable Mario Kart Starman Store booster, forcing every mystery box to award a Star throughout the next Grand Prix attempt until a loss, completed five-race cup, or trophy podium.
 - Version 19.31.3.0 confines Doodle Jump moving platforms to collision-free patrol lanes and makes high-score runs substantially harder through narrower pads, larger gaps, wider lateral jumps, and stronger rising-floor pressure.

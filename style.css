@@ -9032,3 +9032,31 @@ input:focus {
     transition-duration: 0.001ms !important;
   }
 }
+/* Angry Birds keeps the original 782 x 440 stage fully visible. */
+.angry-game-content { width: 100%; }
+.angry-stage { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+.angry-port-shell { position: relative; width: min(100%, 1100px, calc((100dvh - 360px) * 782 / 440)); aspect-ratio: 782 / 440; flex-shrink: 0; overflow: hidden; border-radius: 12px; background: #000; }
+#angryFrame { display: block; width: 100%; height: 100%; border: 0; }
+.angry-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: radial-gradient(ellipse at center, #342157, #100d22 75%); }
+.angry-cover img { width: min(32%, 170px); border-radius: 22%; }
+.angry-cover strong { font-size: clamp(16px, 3vw, 28px); color: #fff; }
+.angry-cover small { color: #d9d2ef; }
+.angry-actions { display: flex; flex-direction: column; width: min(100%, 320px); gap: 10px; margin-top: auto; }
+.angry-actions .arcade-btn { width: 100%; min-height: 44px; }
+.angry-hint { max-width: 780px; text-align: center; }
+.angry-ability-controls { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: min(100%, 680px); min-height: 44px; }
+.angry-ability-controls span { color: #efe6ff; font-size: 15px; }
+.angry-ability-controls .arcade-btn { min-width: 130px; min-height: 44px; }
+@media (max-width: 600px) and (orientation: portrait) {
+  .angry-stage { min-height: calc(100dvh - 145px); padding: 12px; }
+  .angry-port-shell { margin-top: auto; }
+  .angry-hint { font-size: 11px; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .angry-stage { padding: 8px; gap: 8px; }
+  .angry-port-shell { width: min(100%, calc((100dvh - 205px) * 782 / 440)); }
+  .angry-hint { display: none; }
+  .angry-ability-controls { display: none; }
+  .angry-actions { gap: 6px; }
+  .angry-actions .arcade-btn { min-height: 36px; padding: 7px 12px; }
+}

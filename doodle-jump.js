@@ -40,6 +40,7 @@
       this.springs = 0;
       this.dangerY = HEIGHT + 72;
       this.dangerActive = false;
+      this.dangerIdleFrames = 0;
       this.lastFacing = 1;
       this.backgroundSeed = Array.from({ length: 28 }, (_, index) => ({
         x: (index * 97 + 31) % WIDTH,
@@ -179,6 +180,7 @@
       this.springs = 0;
       this.dangerY = HEIGHT + 72;
       this.dangerActive = false;
+      this.dangerIdleFrames = 0;
       this.platforms = [];
       this.particles = [];
       this.pointerId = null;
@@ -406,15 +408,13 @@
       }
       if (!this.dangerActive) return;
 
-      const difficulty = clamp(this.score / 3600, 0, 1.5);
-      const endurancePressure = Math.min(0.28, this.landings * 0.004);
-      const riseSpeed = 0.2 + difficulty * 0.58 + endurancePressure;
-      this.dangerY -= riseSpeed * step;
-
-      if (cameraScroll > 0) {
-        const climbRelief = clamp(0.56 - difficulty * 0.18, 0.27, 0.56);
-        this.dangerY += cameraScroll * climbRelief;
-      }
+      // The floor lives in world space: every pixel climbed earns a full pixel
+      // of clearance. Score must never make its speed exceed a healthy climb.
+      this.dangerIdleFrames = cameraScroll > 0 ? 0 : this.dangerIdleFrames + step;
+      const difficulty = clamp(this.score / 6000, 0, 1);
+      const idlePressure = clamp((this.dangerIdleFrames - 150) / 240, 0, 1);
+      const riseSpeed = 0.2 + difficulty * 0.15 + idlePressure * 0.75;
+      this.dangerY += cameraScroll - riseSpeed * step;
       this.dangerY = clamp(this.dangerY, 80, HEIGHT + 56);
     }
 
