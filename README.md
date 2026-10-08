@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.39.0.0 adds Thunderclap Citadel, Angry Birds missions 46-60. Clear Chapter 3 to unlock the new page, with mixed flocks, sheltered targets, TNT chains, suspended platforms, an armored king, and the Stormbreaker achievement. Missions open immediately and keep native completion stars and scaling replay rewards.
 - Version 19.38.2.0 fixes stalled Angry Birds turns when pigs or debris keep rolling, handles birds leaving the left edge, and prevents double consumption of a bird.
 - Version 19.38.1.0 restores the original completion stars for all Angry Birds saves and removes Chapter 3 briefing popups so missions start immediately.
 - Version 19.38.0.0 adds Chapter 3, Fortress Falls (missions 31-45), with named chapter selector headings, briefings and tactical hints, TNT chain reactions, hanging bridges, armored Corporal Pigs, a two-hit King Pig, saved star ratings, personal bests, and replayable challenge rewards.

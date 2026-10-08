@@ -7,6 +7,21 @@
 const assert = require('node:assert/strict');
 const { chromium } = require(process.env.ARCADIA_PLAYWRIGHT_MODULE || 'playwright');
 const solutions = {
+  46: [[40,350,null]],
+  47: [[40,290,25]],
+  48: [[40,290,25]],
+  49: [[120,350,null],[120,350,140],[40,290,25]],
+  50: [[40,290,null]],
+  51: [[40,310,50]],
+  52: [[120,370,140],[80,290,25],[40,290,null],[40,350,50]],
+  53: [[40,330,50]],
+  54: [[40,370,25]],
+  55: [[40,350,110],[40,350,25],[40,330,50]],
+  56: [[40,330,50]],
+  57: [[40,330,80]],
+  58: [[120,350,null],[40,290,25],[40,350,25],[140,350,150],[120,350,140]],
+  59: [[40,290,25],[120,330,10],[40,310,null],[140,350,150],[40,310,50]],
+  60: [[40,350,null],[40,310,25],[40,310,null],[40,330,50],[130,345,135]],
   31: [[40,330,25]], 32: [[40,310,25]], 33: [[40,370,50]],
   34: [[120,370,140],[120,370,140],[40,290,25]],
   35: [[120,350,140]],
@@ -44,8 +59,8 @@ const solutions = {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${process.env.ARCADIA_PREVIEW_URL || 'http://127.0.0.1:4179'}/games/angry-birds/index.html`);
-    await page.waitForFunction(() => game.cache.checkTextKey('level45'));
-    assert.equal(await page.evaluate(() => Array.from({ length: 45 }, (_, i) => game.cache.checkTextKey(`level${i + 1}`)).every(Boolean)), true);
+    await page.waitForFunction(() => game.cache.checkTextKey('level60'));
+    assert.equal(await page.evaluate(() => Array.from({ length: 60 }, (_, i) => game.cache.checkTextKey(`level${i + 1}`)).every(Boolean)), true);
     await page.evaluate(() => {
       window.victories = [];
       window.arcadiaCompleteAngryBirds = () => victories.push(window.arcadiaAngryBirds.takeVictory());
@@ -98,7 +113,7 @@ const solutions = {
         if (state.gameWon) state.updateDeadCount();
         if (victories.length || window.arcadiaAngryBirds.takeVictory()) throw new Error("Duplicate victory reward");
         return { armorIntact, victory, budget, used, idleDeaths, queueVisible, won: state.gameWon, killed: state.countDeadEnemies, pigs: state.totalNumEnemies,
-          survivors: state.enemies.children.filter(pig => pig.alive).map(pig => ({ x: Math.round(pig.x), y: Math.round(pig.y) })) };
+          survivors: state.enemies.children.filter(pig => pig.alive).map(pig => ({ x: Math.round(pig.x), y: Math.round(pig.y), armor: pig.arcadiaArmor || 0 })) };
       }, { level, shots });
       assert(result.armorIntact, `Mission ${level} loses armor before launch`);
       assert.equal(result.idleDeaths, 0, `Mission ${level} collapses before a shot`);

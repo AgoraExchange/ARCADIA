@@ -5,7 +5,7 @@
   const campaign = game.state.states['AngryBirds.SplashGame'];
   const play = game.state.states['AngryBirds.Game'];
   const pageCount = Math.ceil(window.ARCADIA_ANGRY_LEVEL_COUNT / 15);
-  const chapters = ['Piggy Plains', 'Royal Rumble', 'Fortress Falls'];
+  const chapters = ['Piggy Plains', 'Royal Rumble', 'Fortress Falls', 'Thunderclap Citadel'];
   let selectedPage = null;
   const unlockedPage = () => Math.min(pageCount - 1, Math.floor(Number(campaign.getSolvedLevels()) / 15));
   const createButton = selector.createLevelButton;

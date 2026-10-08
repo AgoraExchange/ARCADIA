@@ -40,7 +40,7 @@ const { chromium } = require(process.env.ARCADIA_PLAYWRIGHT_MODULE || 'playwrigh
       }, used);
     }
     let before = await save();
-    for (const [level, used, first] of [[1, 1, true], [1, 2, false], [15, 3, true], [15, 1, false], [30, 3, true], [30, 3, false]]) {
+    for (const [level, used, first] of [[1, 1, true], [1, 2, false], [15, 3, true], [15, 1, false], [30, 3, true], [30, 3, false], [46, 2, true], [46, 3, false], [60, 3, true], [60, 4, false]]) {
       const unused = await win(level, used);
       const after = await save();
       const xp = 50 + level * 10 + unused * 20 + (first ? 150 : 0);
@@ -58,7 +58,8 @@ const { chromium } = require(process.env.ARCADIA_PLAYWRIGHT_MODULE || 'playwrigh
     const persisted = await save();
     assert.equal(persisted.xp, before.xp);
     assert.equal(persisted.coins, before.coins);
-    assert.equal(persisted.stats.angrySolved, 30);
+    assert.equal(persisted.stats.angrySolved, 60);
+    assert(persisted.achievements.includes('angry_citadel'));
     assert(persisted.level > 1);
     assert.deepEqual(errors, []);
     console.log('PASS first clears, replays, mission scaling, unused birds, duplicate protection, restart, level-up and persistence');

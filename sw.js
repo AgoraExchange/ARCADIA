@@ -1,4 +1,4 @@
-const ARCADIA_VERSION = "19.38.2.0";
+const ARCADIA_VERSION = "19.39.0.0";
 const CACHE_NAME = `arcadia-${ARCADIA_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -19,6 +19,7 @@ const APP_SHELL = [
   "games/angry-birds/arcadia-characters.js",
   "games/angry-birds/arcadia-pages.js",
   "games/angry-birds/arcadia-fortress-levels.js",
+  "games/angry-birds/arcadia-citadel-levels.js",
   "games/angry-birds/arcadia-fortress.js",
   "games/angry-birds/characters/chuck.png",
   "games/angry-birds/characters/bomb.png",

@@ -67,6 +67,8 @@ const { chromium } = require(process.env.ARCADIA_PLAYWRIGHT_MODULE || 'playwrigh
     assert.deepEqual(s.stats.angryRecords[45],{stars:3,bestUnusedBirds:2,wins:1});
     await frame.evaluate(()=>game.state.start('AngryBirds.LevelSelector'));
     await frame.waitForFunction(()=>game.state.current==='AngryBirds.LevelSelector');
+    await frame.evaluate(()=>game.state.states['AngryBirds.LevelSelector'].arcadiaPreviousPage.events.onInputUp.dispatch());
+    await frame.waitForFunction(()=>game.state.states['AngryBirds.LevelSelector'].arcadiaPage===2);
     assert.equal(await starCount(),15,'New clears must also show native stars');
     await mission(38);
     await page.evaluate(()=>{const style=document.documentElement.style;style.setProperty('--safe-top','59px');style.setProperty('--safe-bottom','34px');});

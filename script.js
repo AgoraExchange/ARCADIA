@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.38.2.0";
+  const APP_VERSION = "19.39.0.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Angry Birds adds Chapter 4: Thunderclap Citadel, with missions 46-60, mixed-flock sieges, sheltered targets, TNT chains, suspended platforms, and the Stormbreaker achievement.",
     "Angry Birds now loads the next bird when pigs or debris keep rolling, retires birds that leave the left edge, and prevents duplicate bird consumption.",
     "Angry Birds restores the original stars on completed missions and starts Chapter 3 levels immediately without briefing popups.",
     "Angry Birds adds Fortress Falls, missions 31-45, with mission briefings, TNT chains, hanging bridges, armored pigs, a boss king, named chapters, saved star ratings, and personal bests.",
@@ -544,7 +545,8 @@
     { id: "angry_clear", title: "Pig Popper", text: "Complete an Angry Birds mission." },
     { id: "angry_all", title: "Original Flock", text: "Complete the first three Angry Birds missions." },
     { id: "angry_campaign", title: "Flock Champion", text: "Complete the first 15 Angry Birds missions." },
-    { id: "angry_fortress", title: "Fortress Breaker", text: "Complete all 45 Angry Birds missions." },
+    { id: "angry_fortress", title: "Fortress Breaker", text: "Complete the first 45 Angry Birds missions." },
+    { id: "angry_citadel", title: "Stormbreaker", text: "Complete all 60 Angry Birds missions." },
     { id: "angry_flock", title: "Royal Flock", text: "Complete the first 30 Angry Birds missions." },
     { id: "first_run", title: "Inserted Coin", text: "Complete your first Snake run." },
     { id: "snake_10", title: "Grid Runner", text: "Score 10 or higher in Snake." },
@@ -2933,7 +2935,7 @@
         runs: Number(state.stats.angryRuns) || 0,
         best: Number(state.stats.angrySolved) || 0,
         metricLabel: "Missions",
-        meta: `${formatNumber(state.stats.angryRuns)} attempts · ${formatNumber(state.stats.angrySolved)} / 45 missions cleared`
+        meta: `${formatNumber(state.stats.angryRuns)} attempts · ${formatNumber(state.stats.angrySolved)} / 60 missions cleared`
       },
       {
         title: "Doodle Jump",
@@ -13036,7 +13038,7 @@
     const victory = angryController.api?.takeVictory();
     if (!victory) return;
     const { level, unusedBirds } = victory;
-    if (!Number.isInteger(level) || level < 1 || level > 45 ||
+    if (!Number.isInteger(level) || level < 1 || level > 60 ||
         !Number.isInteger(unusedBirds) || unusedBirds < 0 || unusedBirds > 5) return;
     const previous = Number(state.stats.angrySolved) || 0;
     const firstClear = level > previous;
@@ -13219,6 +13221,7 @@
       ["angry_campaign", state.stats.angrySolved >= 15],
       ["angry_flock", state.stats.angrySolved >= 30],
       ["angry_fortress", state.stats.angrySolved >= 45],
+      ["angry_citadel", state.stats.angrySolved >= 60],
       ["first_run", state.stats.gamesPlayed >= 1],
       ["snake_10", state.stats.snakeBest >= 10],
       ["snake_25", state.stats.snakeBest >= 25],
