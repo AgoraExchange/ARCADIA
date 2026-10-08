@@ -11,18 +11,7 @@
   const createButton = selector.createLevelButton;
   selector.createLevelButton = function (x, y, number, solved) {
     const level = Number(number) + selectedPage * 15;
-    const before = game.world.children.length;
     createButton.call(this, x, y, String(level), solved);
-    // Replace the native automatic three-star badge with earned ratings.
-    game.world.children.slice(before).filter(child => child.key === 'imageLevelSelectorCompleted').forEach(child => child.destroy());
-    const record = window.arcadiaAngryBirds.getRecord(level);
-    if (record) {
-      const stars = game.add.text(x + 50, y + 68, '\u2605'.repeat(record.stars) + '\u2606'.repeat(3-record.stars),
-        { font: 'bold 20px sans-serif', fill: '#ffd342', stroke: '#543005', strokeThickness: 2 });
-      stars.anchor.set(0.5);
-    } else if (level <= solved) {
-      game.add.bitmapText(x+16, y+62, 'AngryBirdsFont', 'CLEARED', 14);
-    }
   };
   const originalCreate = selector.create;
   selector.create = function () {

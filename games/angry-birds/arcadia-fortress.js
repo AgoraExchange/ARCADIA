@@ -2,11 +2,7 @@
 (() => {
   'use strict';
   const state = game.state.states['AngryBirds.Game'];
-  const api = window.arcadiaAngryBirds;
-  let briefing = false;
-  let externallyPaused = false;
   const pending = new Set();
-  const notify = (type, detail = {}) => parent.postMessage({ source: 'arcadia-angry-birds', type, ...detail }, location.origin);
   const impactSpeed = equations => {
     const e = equations?.[0];
     return e ? Math.hypot(e.bodyA.velocity[0] - e.bodyB.velocity[0], e.bodyA.velocity[1] - e.bodyB.velocity[1]) : 0;
@@ -109,32 +105,14 @@
       }
     });
   }
-  api.beginMission = () => {
-    briefing = false;
-    game.paused = externallyPaused;
-    notify('briefing-close');
-  };
-  api.showMissionBriefing = () => {
-    if (!state.levelData?.challenge || game.state.current !== 'AngryBirds.Game') return;
-    briefing = true; game.paused = true;
-    notify('briefing', { level: Number(state.currentLevel), name: state.levelData.name,
-      chapter: state.levelData.chapter, challenge: state.levelData.challenge, hint: state.levelData.hint,
-      birds: state.levelData.birds, best: api.getRecord(state.currentLevel) });
-  };
-  const pause = api.pause;
-  api.pause = function (value) {
-    externallyPaused = Boolean(value);
-    pause.call(this, externallyPaused || briefing);
-  };
   const create = state.create;
   state.create = function () {
-    pending.clear(); briefing = false; externallyPaused = false;
+    pending.clear();
     create.call(this);
     this.enemies.children.forEach((pig, i) => {
       pig.arcadiaArmor = this.levelData.enemies[i].armor || 0;
       if (pig.arcadiaArmor) pig.arcadiaArmorBadge = game.add.graphics();
     });
-    if (this.levelData.challenge) api.showMissionBriefing();
   };
   const update = state.update;
   state.update = function () {
@@ -153,8 +131,7 @@
   };
   const shutdown = state.shutdown;
   state.shutdown = function () {
-    pending.clear(); briefing = false;
-    notify('briefing-close');
+    pending.clear();
     shutdown?.call(this);
   };
 })();

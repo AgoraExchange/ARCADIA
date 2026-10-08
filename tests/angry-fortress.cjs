@@ -16,7 +16,7 @@ const { chromium } = require(process.env.ARCADIA_PLAYWRIGHT_MODULE || 'playwrigh
       window.resetMission = n => {
         game.paused=false; game.sound.stopAll(); game.time.events.removeAll();
         GAME_LEVEL_SELECTED=String(n); game.state.start('AngryBirds.Game'); game.state.preUpdate();
-        arcadiaAngryBirds.beginMission(); for(let i=0;i<18;i++) tick();
+        for(let i=0;i<18;i++) tick();
       };
     });
     const pages = await page.evaluate(() => {
@@ -70,15 +70,15 @@ const { chromium } = require(process.env.ARCADIA_PLAYWRIGHT_MODULE || 'playwrigh
       return {exploded, reset:s.blocks.children.filter(b=>b.arcadiaTnt&&b.alive&&!b.arcadiaExploded).length};
     });
     assert.equal(tnt.exploded,4); assert.equal(tnt.reset,4);
-    const briefing = await page.evaluate(() => {
-      resetMission(31); arcadiaAngryBirds.showMissionBriefing();
-      const paused=game.paused;
-      arcadiaAngryBirds.pause(true); arcadiaAngryBirds.beginMission();
-      const externalPause=game.paused; arcadiaAngryBirds.pause(false);
-      return {paused,externalPause,resumed:!game.paused};
+    const pause = await page.evaluate(() => {
+      resetMission(31);
+      const started=!game.paused;
+      arcadiaAngryBirds.pause(true);
+      const paused=game.paused; arcadiaAngryBirds.pause(false);
+      return {started,paused,resumed:!game.paused};
     });
-    assert.deepEqual(briefing,{paused:true,externalPause:true,resumed:true});
+    assert.deepEqual(pause,{started:true,paused:true,resumed:true});
     assert.deepEqual(errors,[]);
-    console.log('PASS chapter unlock/title, armor impact threshold and cooldown, three-hit king, bridge release, TNT chain/reset, briefing pause');
+    console.log('PASS chapter unlock/title, armor impact threshold and cooldown, three-hit king, bridge release, TNT chain/reset, immediate start and manual pause');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode=1; });

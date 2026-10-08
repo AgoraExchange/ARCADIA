@@ -66,7 +66,6 @@ const solutions = {
         GAME_LEVEL_SELECTED = String(number);
         game.state.start('AngryBirds.Game');
         game.state.preUpdate();
-        window.arcadiaAngryBirds.beginMission();
         for (let frame = 0; frame < 18; frame++) testTick();
       };
     });

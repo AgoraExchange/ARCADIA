@@ -6,13 +6,6 @@
       this.ready = false;
       this.started = false;
       this.paused = false;
-      this.missionModal = document.getElementById('angryMissionModal');
-      this.missionHelp = document.getElementById('angryMissionHelpBtn');
-      document.getElementById('angryMissionBeginBtn').addEventListener('click', () => {
-        this.api?.beginMission();
-        this.frame.focus();
-      });
-      this.missionHelp.addEventListener('click', () => this.api?.showMissionBriefing());
       window.addEventListener('message', (event) => {
         if (event.origin !== location.origin || event.source !== this.frame.contentWindow || event.data?.source !== 'arcadia-angry-birds') return;
         if (event.data.type === 'ready') {
@@ -23,21 +16,8 @@
           this.restartButton.disabled = false;
         }
         if (event.data.type === 'level-start' && this.started) this.onLevelStart?.(event.data.level);
-        if (event.data.type === 'briefing' && this.started) {
-          const info = event.data;
-          document.getElementById('angryMissionChapter').textContent = `CHAPTER ${Math.ceil(info.level / 15)} · ${info.chapter}`;
-          document.getElementById('angryMissionTitle').textContent = `${info.level}. ${info.name}`;
-          document.getElementById('angryMissionChallenge').textContent = info.challenge;
-          document.getElementById('angryMissionHint').textContent = info.hint;
-          document.getElementById('angryMissionBest').textContent = `${info.birds} birds available. ${info.best ? `Personal best: ${info.best.stars}/3 stars, ${info.best.bestUnusedBirds} unused birds.` : 'New challenge: earn your first stars.'}`;
-          this.missionModal.classList.remove('hidden');
-          this.missionHelp.classList.remove('hidden');
-          document.getElementById('angryMissionBeginBtn').focus();
-        }
-        if (event.data.type === 'briefing-close') this.missionModal.classList.add('hidden');
         if (event.data.type === 'ability') {
           const active = Boolean(this.started && event.data.active);
-          if (!active) this.missionHelp.classList.add('hidden');
           this.abilityControls?.classList.toggle('hidden', !active);
           this.hint?.classList.toggle('hidden', active);
           if (this.abilityButton) {
@@ -103,8 +83,6 @@
     }
     setMuted(options) { if (this.ready) this.api?.setMuted(options); }
     stop() {
-      this.missionModal?.classList.add('hidden');
-      this.missionHelp?.classList.add('hidden');
       clearTimeout(this.loadTimer);
       if (this.started) this.api?.pause(true);
       this.ready = this.started = this.paused = false;
