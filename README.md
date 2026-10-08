@@ -1,5 +1,6 @@
 # ARCADIA
 
+- Version 19.38.2.0 fixes stalled Angry Birds turns when pigs or debris keep rolling, handles birds leaving the left edge, and prevents double consumption of a bird.
 - Version 19.38.1.0 restores the original completion stars for all Angry Birds saves and removes Chapter 3 briefing popups so missions start immediately.
 - Version 19.38.0.0 adds Chapter 3, Fortress Falls (missions 31-45), with named chapter selector headings, briefings and tactical hints, TNT chain reactions, hanging bridges, armored Corporal Pigs, a two-hit King Pig, saved star ratings, personal bests, and replayable challenge rewards.
 - Version 19.37.0.0 makes Angry Birds replayable for rewards: every win earns 50 + 10 per mission XP and 10 + 2 per mission coins, plus 20 XP / 5 coins per unused bird. First clears add 150 XP / 30 coins.

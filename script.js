@@ -3,11 +3,12 @@
 
   const STORAGE_KEY = "arcadia_player_v1";
   const VERSION_KEY = "arcadia_app_version";
-  const APP_VERSION = "19.38.1.0";
+  const APP_VERSION = "19.38.2.0";
   const VERSION_URL = "app-version.json";
   const DEV_ACCESS_CODE = "80sarcadia";
   const MARIO_CAMPAIGN_LEVELS = Array.from({ length: 32 }, (_, index) => `${Math.floor(index / 4) + 1}-${(index % 4) + 1}`);
   const PATCH_NOTES = [
+    "Angry Birds now loads the next bird when pigs or debris keep rolling, retires birds that leave the left edge, and prevents duplicate bird consumption.",
     "Angry Birds restores the original stars on completed missions and starts Chapter 3 levels immediately without briefing popups.",
     "Angry Birds adds Fortress Falls, missions 31-45, with mission briefings, TNT chains, hanging bridges, armored pigs, a boss king, named chapters, saved star ratings, and personal bests.",
     "Angry Birds portrait layout now keeps Start and Restart inside the visible phone screen, respecting safe areas and browser toolbar height.",

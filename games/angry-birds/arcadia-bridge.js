@@ -37,7 +37,39 @@
     originalThrowBird.call(this);
     // The native sign calculation divides by zero on an exactly level shot.
     if (!Number.isFinite(this.bird.body.velocity.y)) this.bird.body.velocity.y = 0;
-    if (!launched) this.arcadiaBirdsLaunched++;
+    if (!launched) {
+      this.arcadiaBirdsLaunched++;
+      this.arcadiaShotSeconds = 0;
+      this.arcadiaSpentSeconds = 0;
+    }
+  };
+  const originalKillBird = gameState.killBird;
+  gameState.killBird = function () {
+    if (!this.bird?.alive || !this.bird.body) return;
+    originalKillBird.call(this);
+  };
+  const originalUpdate = gameState.update;
+  gameState.update = function () {
+    originalUpdate.call(this);
+    if (game.paused || this.gameWon || !this.turnInProgress || !this.bird?.body) return;
+    const step = Math.min(game.time.physicsElapsed || 1 / 60, 0.1);
+    this.arcadiaShotSeconds += step;
+    const bird = this.bird;
+    // A returning Hal can leave through the left edge, which the native game
+    // does not retire. Also bound the lifetime of birds that keep rolling.
+    if (bird.alive && bird.alpha === 1 &&
+        (bird.x < -60 || bird.y > game.world.height + 60 || this.arcadiaShotSeconds >= 15)) {
+      this.killBird();
+    }
+    if (bird.alive) return; // Let any native delayed kill finish before handoff.
+    this.arcadiaSpentSeconds += step;
+    // Native handoff requires almost zero movement in every pig and block.
+    // Allow collisions to finish, then provide the next bird even if debris
+    // keeps rolling. Keep all surviving pigs and the remaining bird budget.
+    if (this.arcadiaSpentSeconds < 5 && this.arcadiaShotSeconds < 15) return;
+    this.turnInProgress = false;
+    game.physics.p2.pause();
+    this.endTurn();
   };
   const originalUpdateDeadCount = gameState.updateDeadCount;
   gameState.updateDeadCount = function () {
